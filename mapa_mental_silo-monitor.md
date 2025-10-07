@@ -1,0 +1,156 @@
+# Mind map (markdown hierárquico)
+
+- **Silo-Monitor — Plataforma**
+  - **Perfis & Permissões**
+    - **Equipe (nossa empresa)**
+      - Super Admin — *tudo, RBAC, billing, variáveis*
+      - Operações/Implantação — *orgs, silos, dispositivos, sensores*
+      - Suporte/Analista — *monitora e atua em alertas*
+    - **Clientes (organização)**
+      - Admin da Organização — *usuários, cultura por silo, limites, relatórios, config*
+      - Técnico — *dash, leituras, alertas (ack/encerrar), exportar, pode editar limites*
+      - Visualizador — *somente leitura*
+  - **Modelo de Dados — Resumo**
+    - Cultura atribuída a Silo (1-N; cada silo tem 1 cultura vigente)
+    - Limites por Cultura×Variável → herdados pelos silos
+    - Alertas N:1 Leituras
+    - Leituras N:1 Sensores
+    - Sensores N:1 Dispositivo
+    - Dispositivo N:1 Silo
+    - Silo N:1 Organização
+    - Usuários↔Organizações (N:N via usuarios_organizacoes)
+  - **Métricas-chave**
+    - Tempo em faixa ideal por variável/cultura/silo
+    - Alertas por severidade e tempo de resposta
+    - Tendências de CO₂, Temperatura, Umidade
+    - Sensores com calibração pendente
+  - **Telas & Fluxos**
+    - **/dashboard** — *KPIs, últimos alertas, filtros, mapa, previsão, SLA*
+      - Especificações
+        - KPIs: tempo em faixa ideal (org/silo/período), alertas abertos por severidade, sensores offline, tendência 7/30 dias.
+        - Filtros globais: organização, silo, cultura, período, severidade; persistência por usuário.
+        - Mapa: status do silo (verde/amarelo/vermelho/cinza), tooltip com último dado e link para detalhes.
+        - Últimos alertas: lista com ações rápidas (ack, atribuir, ver detalhes), paginação e busca.
+        - Previsão: projeção por variável quando disponível; indicador de confiança.
+        - Permissões: Visualizador lê; Técnico pode reconhecer/atribuir; Admin configura preferências.
+        - Estados vazios: sem dados → CTA para cadastrar silo/dispositivo; sem alertas → mensagem informativa.
+        - Performance: cache 5 min por combinação de filtros; paginação server-side; loading incremental.
+    - **/silos**
+      - Lista — *nome, organização, cultura, status, último dado; filtros*
+        - Especificações
+          - Colunas: nome, organização, cultura vigente, status (OK/Aviso/Crítico/Offline), último dado, alertas abertos.
+          - Filtros: por organização, cultura, status, texto livre; ordenação por nome/atualização/status.
+          - Ações: abrir detalhes, exportar CSV da lista, seleção em massa para ações (atribuir cultura, notificar).
+          - Indicadores: badge de calibr. pendente e de overrides ativos no silo.
+          - Permissões: Visualizador lê; Técnico executa ações em massa limitadas; Admin gerencia cultura em lote.
+      - **/silos/[id]** — *gráficos por variável; trocar Cultura; ver Limites; dispositivos/sensores; anotações; override local*
+        - Especificações
+          - Abas
+            - Visão Geral: status, KPIs do silo, último pacote, alertas abertos, anotações recentes.
+            - Leituras: gráficos por variável (zoom, intervalos, média/máx/mín), downsampling, export CSV.
+            - Alertas: timeline com filtros; ações de ack/atribuir/encerrar/comentar; SLA e escalonamentos.
+            - Cultura & Limites: cultura vigente, histórico de versões, limites efetivos e herdados, overrides locais com validade.
+            - Dispositivos & Sensores: lista, status online, bateria, firmware; calibrações agendadas e histórico.
+            - Anotações: criar/editar; etiquetas; anexos; menções; auditoria de mudanças.
+            - Configurações: renomear silo, localização, desativar/arquivar, transferência de organização.
+          - Ações rápidas: trocar cultura (com pré-visualização de limites), criar alerta manual, abrir relatório do silo.
+          - Validações: impedir troca de cultura com alertas críticos abertos (com override opcional e justificativa).
+          - Permissões: Técnico altera limites locais/ack; Admin troca cultura/arquiva; Visualizador só lê.
+          - Performance: consultas paginadas por período; lazy load por aba.
+    - **/culturas** — *CRUD; atribuir culturas a silos; templates*
+      - Especificações
+        - CRUD: nome, descrição, variáveis aplicáveis, faixas recomendadas por variável, presets por região.
+        - Versionamento: cada alteração gera nova versão; silos podem fixar versão; diff entre versões.
+        - Impacto: simulação de limites em silos selecionados antes de aplicar em massa.
+        - Atribuição: vínculo em massa a silos com filtros; agendamento opcional.
+        - Permissões: Admin da organização cria/edita; Técnico sugere alterações (workflow de aprovação opcional).
+    - **/limites** — *Limites por Cultura×Variável; min/max; validação; versionamento*
+      - Especificações
+        - Modelo: min/max, histerese, janela de tolerância e período de avaliação; unidades e conversões.
+        - Eficazes: pré-visualizar limites efetivos por silo considerando cultura e overrides.
+        - Edição em massa: aplicar limites a múltiplas culturas/variáveis; validação de faixas inconsistentes.
+        - Versionamento e auditoria: log de mudanças com autor, motivo e ticket relacionado.
+        - Permissões: Técnico edita limites dentro de políticas; Admin publica versões.
+    - **/alertas** — *listar; reconhecer/atribuir/encerrar; filtros; notificações multicanal; escalonamento; runbooks; snooze*
+      - Especificações
+        - Filtros: severidade, status (aberto/ack/encerrado), variável, silo, período, atribuído a.
+        - Painel: contadores por severidade e SLA; ordenação por prioridade/tempo.
+        - Workflow: reconhecer, atribuir responsável, comentar, anexar evidências, encerrar com causa raiz.
+        - Escalonamento: regras por severidade/tempo; envio por email/SMS/WhatsApp/Webhook; snooze com motivo.
+        - Runbooks: sugestão de ações baseadas na causa e variável; links rápidos.
+        - Permissões: Técnico executa workflow; Visualizador lê; Admin configura regras.
+    - **/usuarios** (org) — *CRUD usuários/papéis; SSO; MFA*
+      - Especificações
+        - Convites por email, gestão de papéis (Admin/Técnico/Visualizador), políticas de senha e MFA.
+        - SSO: configuração de provedores (OIDC/SAML) por organização; mapeamento de grupos→papéis.
+        - Gestão: ativar/desativar, reset de MFA, transferência de propriedade.
+        - Permissões: somente Admin org; trilha de auditoria para mudanças.
+    - **/dispositivos** (equipe) — *registro; ativação; vínculo a silo; OTA; diagnósticos; lotes*
+      - Especificações
+        - Registro por número de série/QR; ativação; vincular/desvincular silo; geolocalização opcional.
+        - OTA: agendar atualização firmware; janelas de manutenção; rollback; status por lote.
+        - Diagnóstico: uptime, RSSI, bateria, última comunicação; comandos ping/restart.
+        - Operações em massa: import CSV, etiquetar, mover entre orgs (com validação de licenças).
+        - Permissões: equipe interna; leitura restrita para clientes quando vinculado ao seu silo.
+    - **/sensores** (equipe) — *cadastro; variável; calibração; agenda; vida útil*
+      - Especificações
+        - Cadastro: tipo, variável medida, precisão, faixa operacional, data de fabricação/instalação.
+        - Calibração: agendar, registrar certificados, lembretes; bloqueio de leituras inválidas conforme política.
+        - Saúde: deriva, drift detectado, vida útil estimada, recomendações de substituição.
+        - Permissões: equipe interna; visibilidade resumida para clientes no contexto do silo.
+    - **/organizacoes** (equipe) — *CRUD; convites; planos*
+      - Especificações
+        - Dados: nome, CNPJ, contato, timezone, idioma, domínios confiáveis, plano/quotas.
+        - Convites: criar admins iniciais; políticas padrão (limites, notificações, retenção).
+        - Ações: arquivar/reactivar; migração de plano; transferência de dispositivos.
+        - Permissões: equipe interna; algumas infos visíveis ao Admin org.
+    - **/config** — *unidades, timezone, idioma; notificações; políticas*
+      - Especificações
+        - Preferências do usuário: unidades, timezone, idioma, tema; salvar por perfil.
+        - Notificações: canais por severidade, quiet hours, templates; teste de envio.
+        - Políticas: retenção de dados, privacidade, compartilhamento; consentimentos.
+        - Permissões: usuário ajusta preferências pessoais; Admin define políticas org.
+    - **/relatorios** — *export CSV; PDF mensal; agendamento; data explorer*
+      - Especificações
+        - Relatórios prontos: PDF mensal por silo/org com KPIs e alertas; branding do cliente.
+        - Exportações: CSV de leituras e alertas com seleção de campos e período; paginação por lote.
+        - Agendamento: envio por email, periodicidade, destinatários; histórico e reenvio.
+        - Data Explorer: consultas salvas, gráficos ad-hoc, limites de amostragem.
+        - Permissões: Visualizador exporta leitura; Admin gerencia agendamentos e branding.
+    - **/integracoes** — *webhooks; API Keys; n8n; ThingSpeak/LoRa; logs; replay*
+      - Especificações
+        - API Keys: criação/escopo/expiração; rotação; restrição por IP.
+        - Webhooks: eventos (alerta_criado/atualizado, leitura, dispositivo); assinaturas; reenvio; logs e DLQ.
+        - Conectores: n8n, ThingSpeak/LoRa; testes de conexão; limites de taxa.
+        - Observabilidade: logs por integração, health-check, métricas de entrega.
+        - Permissões: Admin org; equipe pode ver diagnósticos globais.
+    - **/variaveis** — *catálogo; unidades/conversões; faixas sugeridas*
+      - Especificações
+        - Catálogo: nome, unidade base, conversões, casas decimais, ícone, cor.
+        - Faixas sugeridas por cultura; documentos e referências técnicas.
+        - Derivadas: fórmulas (ex.: VPD) com dependências e validação.
+        - Permissões: equipe e Admin org.
+    - **/operacao-suporte** — *tickets; base de conhecimento; playbooks*
+      - Especificações
+        - Tickets: abertura a partir de alerta/silo; SLAs; anexos; comentários; status.
+        - Base de conhecimento: artigos, busca, versões; link em runbooks.
+        - Playbooks: checklists por incidente; métricas de resolução.
+        - Permissões: equipe interna; clientes podem abrir/acompanhar seus tickets.
+    - **/auditoria** — *trilhas de auditoria; buscas/filtros*
+      - Especificações
+        - Eventos: log de autenticação, alterações de limites, cultura, usuários, dispositivos.
+        - Filtros/busca: por ator, recurso, período; exportação.
+        - Retenção: conforme plano/política; assinatura digital opcional.
+        - Permissões: Admin org e equipe; Visualizador sem acesso.
+    - **/billing** — *planos, cobrança, retenção de dados*
+      - Especificações
+        - Planos: limites de dispositivos, retenção de dados, integrações premium.
+        - Cobrança: faturas, formas de pagamento, notas; histórico e download.
+        - Uso: consumo por mês (leituras, alertas, dispositivos ativos); alertas de quase limite.
+        - Permissões: Admin financeiro/org; somente leitura para equipe.
+    - **Auth/RBAC** — *Supabase Auth; RLS; auditoria completa*
+      - Especificações
+        - Perfis: Super Admin, Operações, Suporte, Admin Org, Técnico, Visualizador.
+        - Regras: RLS por organização, escopos por recurso (silos, alertas, dispositivos).
+        - Sessão: expiração, refresh, MFA; recuperação de conta; políticas de senha.
+        - Auditoria: trilhas para login e mudanças de permissão.

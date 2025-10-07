@@ -8,9 +8,6 @@ Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o das
 - [ ] Integrar shadcn/ui (comando `pnpm dlx shadcn-ui@latest init`).
 - [ ] Definir estrutura de pastas em `src/` seguindo padrão do README.
 - [ ] Configurar ESLint/Prettier e scripts básicos (`lint`, `format`).
-- [ ] Instalar dependências para PWA (ex.: `next-pwa` ou config `next.config.mjs` com `@ducanh2912/next-pwa`).
-- [ ] Criar manifesto web (`public/manifest.json`) com ícones, cores de tema e nome "Silos Monitor".
-- [ ] Adicionar ícones em múltiplas resoluções para instalação (Android/desktop) em `public/icons`.
 
 ## 2. Fundamentos de UI compartilhada
 - [ ] Criar tema/preset de cores seguindo paleta proposta (primária azul, estados OK/Atenção/Risco etc.).
@@ -23,15 +20,13 @@ Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o das
 - [ ] Criar layout raiz (`src/app/layout.tsx`) com fontes, tema e provedores necessários.
 - [ ] Implementar shell principal com `Topbar` fixa, `Sidebar` fixa e área de conteúdo central.
 - [ ] Garantir responsividade mínima para resolução 1440x900 e estados menores (scroll interno).
-- [ ] Preparar componentes globais para reagirem a estados online/offline (contexto de conectividade).
 
 ## 4. Topbar
 - [ ] Adicionar logotipo (ícone de silo) + nome "Silos Monitor".
-- [ ] Exibir indicador de conectividade com estados Online/Offline usando API de Network Information ou fallback.
+- [ ] Exibir indicador de conectividade com estados Online/Offline.
 - [ ] Implementar relógio ou label de "Última sincronização" atualizável.
 - [ ] Adicionar botões "Criar Relatório", "Ajuda" e avatar com menu (Perfil, Sair).
 - [ ] Tratar estado offline: banner e ocultar botões de exportação em tempo real.
-- [ ] Exibir CTA "Instalar app" quando disponível (prompt PWA) na topbar ou menu do usuário.
 
 ## 5. Sidebar
 - [ ] Criar lista de navegação com itens Dashboard, Silos, Alertas, Relatórios, Configurações.
@@ -42,7 +37,6 @@ Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o das
 - [ ] Implementar título "Dashboard" com filtros horizontais (Safra, Cultura, Local/Unidade, Status, Ordenar).
 - [ ] Adicionar campo de busca ("Buscar silo…") e exibir chips de filtros ativos.
 - [ ] Criar botões "Exportar CSV" e "Exportar PDF" obedecendo estados de permissão/offline.
-- [ ] Incluir indicativo visual quando dados estão provenientes de cache offline.
 
 ## 7. Cards de KPI
 - [ ] Montar grade 4 colunas com cards: "Silos monitorados", "Alertas ativos", "% Silos OK", "Temperatura média (24h)".
@@ -65,9 +59,6 @@ Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o das
 - [ ] Criar mocks tipados para KPIs, lista de silos e alertas.
 - [ ] Definir hooks para sincronização de dados e simulação de estados (offline, vazio, sem alertas).
 - [ ] Planejar integração futura com backend/IoT (definir interfaces e endpoints esperados).
-- [ ] Estruturar camada de persistência local (IndexedDB/localforage) para armazenar leituras e alertas offline.
-- [ ] Mapear políticas de cache do service worker (estratégias `Stale-While-Revalidate`, cache-first para assets, network-first para dados críticos).
-- [ ] Implementar fila de ações offline (ex.: reconhecer alerta) para sincronizar quando a conexão for restabelecida.
 
 ## 11. Acessibilidade e usabilidade
 - [ ] Garantir foco visível, navegação por teclado e tooltips.
@@ -78,17 +69,8 @@ Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o das
 - [ ] Configurar testes com Playwright/React Testing Library para componentes críticos.
 - [ ] Criar testes unitários para componentes de status e listas.
 - [ ] Validar layout em diferentes navegadores/resoluções (quando possível).
-- [ ] Testar instalação PWA em navegadores desktop/mobile e comportamento offline.
-- [ ] Verificar métricas Lighthouse (categoria PWA) e ajustar manifest/service worker conforme recomendações.
 
-## 13. Funcionalidades PWA
-- [ ] Configurar geração do service worker (build) com cache automático dos assets do Next.
-- [ ] Implementar atualização do service worker com notificação ao usuário para recarregar quando nova versão estiver disponível.
-- [ ] Adicionar tela de fallback offline amigável para rotas críticas.
-- [ ] Garantir que o app funcione como standalone (display `standalone`, orientation `landscape`) no manifesto.
-- [ ] Criar documentação de deploy com HTTPS obrigatório e cabeçalhos para PWA.
-
-## 14. Documentação
-- [ ] Atualizar README com instruções específicas do dashboard, scripts de dados e requisitos PWA.
+## 13. Documentação
+- [ ] Atualizar README com instruções específicas do dashboard e scripts de dados.
 - [ ] Criar documentação de componentes (Storybook opcional) ou MDX em `docs/`.
 - [ ] Registrar fluxos principais e convenções de código.
