@@ -1,9 +1,9 @@
 # Plano de Tarefas – Dashboard "Silos Monitor"
 
-Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o dashboard descrito no prompt.
+Lista priorizada de atividades para implementar, em Next.js com shadcn/ui, o dashboard descrito no prompt, agora considerando suporte completo a PWA (Progressive Web App) para experiência offline e instalação.
 
 ## 1. Preparação do projeto
-- [ ] Criar projeto Next.js com TypeScript (`npx create-next-app@latest`).
+- [ ] Criar projeto Next.js com TypeScript (`npx create-next-app@latest`) já com suporte a `app router`.
 - [ ] Configurar Tailwind CSS e postcss conforme documentação do Next.
 - [ ] Integrar shadcn/ui (comando `pnpm dlx shadcn-ui@latest init`).
 - [ ] Definir estrutura de pastas em `src/` seguindo padrão do README.
