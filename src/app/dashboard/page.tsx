@@ -107,6 +107,7 @@ export default function DashboardPage() {
                   key={metricKey}
                   role="button"
                   tabIndex={0}
+                  aria-label={`Ver detalhes da métrica ${metric.label}`}
                   onClick={() => handleMetricSelect(metricKey)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -114,7 +115,7 @@ export default function DashboardPage() {
                       handleMetricSelect(metricKey);
                     }
                   }}
-                  className="group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   <MetricCard
                     metric={metric}
@@ -140,7 +141,12 @@ export default function DashboardPage() {
                 Atividades que exigem atenção imediata
               </h2>
             </div>
-            <Button type="button" variant="outline" onClick={handleViewAllAlerts}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleViewAllAlerts}
+              aria-label="Ver todos os alertas críticos"
+            >
               Ver todos
             </Button>
           </div>
