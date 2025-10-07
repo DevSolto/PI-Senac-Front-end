@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Header } from "@/components/header";
 
 type RootLayoutProps = Readonly<{
   children: ReactNode;
@@ -23,8 +24,15 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="pt-BR">
       <body className={inter.className}>
         <SidebarProvider>
-          <AppSidebar />
-          {children}
+          <div className="flex min-h-screen w-full bg-background">
+            <AppSidebar />
+            <SidebarInset className="flex min-h-screen flex-1 flex-col bg-muted/20">
+              <Header />
+              <div className="flex-1 overflow-y-auto">
+                {children}
+              </div>
+            </SidebarInset>
+          </div>
         </SidebarProvider>
       </body>
     </html>
