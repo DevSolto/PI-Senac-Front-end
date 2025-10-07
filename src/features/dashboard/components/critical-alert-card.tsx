@@ -59,12 +59,21 @@ export function CriticalAlertCard({
         </p>
         <div className="flex flex-wrap gap-2">
           {onAcknowledge && (
-            <Button size="sm" variant="outline" onClick={() => onAcknowledge(alert)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onAcknowledge(alert)}
+              aria-label={`Registrar reconhecimento para ${alert.siloName}`}
+            >
               Registrar reconhecimento
             </Button>
           )}
           {onResolve && (
-            <Button size="sm" onClick={() => onResolve(alert)}>
+            <Button
+              size="sm"
+              onClick={() => onResolve(alert)}
+              aria-label={`Marcar como resolvido o alerta de ${alert.siloName}`}
+            >
               Marcar como resolvido
             </Button>
           )}

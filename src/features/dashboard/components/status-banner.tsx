@@ -34,9 +34,13 @@ export function StatusBanner({
   };
 
   const Icon = variant === "ok" ? CircleDot : AlertTriangle;
+  const liveRegionMode = variant === "danger" ? "assertive" : "polite";
 
   return (
     <Card
+      role="status"
+      aria-live={liveRegionMode}
+      aria-atomic="true"
       className={cn(
         "flex flex-col gap-3 rounded-xl border px-4 py-3 transition-all sm:flex-row sm:items-center sm:justify-between",
         variantStyles[variant],
