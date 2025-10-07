@@ -29,16 +29,6 @@ export function DashboardHeader({
     >
       <CardHeader className="flex flex-col gap-4 pb-0 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onMenuToggle}
-            aria-label="Abrir menu de navegação"
-            className="shrink-0"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
           <div className="space-y-1">
             <CardTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">
               {farm.name}

@@ -10,6 +10,7 @@ import { StatusBanner } from "@/features/dashboard/components/status-banner";
 import { CriticalAlertCard } from "@/features/dashboard/components/critical-alert-card";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
 import type { DashboardMetrics } from "@/features/dashboard/types";
+import { Header } from "@/components/header";
 
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
@@ -83,9 +84,9 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-muted/20 py-10">
+      <Header />
       <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
         <DashboardHeader farm={farm} sensorStatus={sensorStatus} />
-
         <StatusBanner
           sensorStatus={sensorStatus}
           variant={bannerVariant}
