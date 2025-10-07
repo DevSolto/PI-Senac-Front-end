@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 180 180">
+  <mask id="a" width="180" height="180" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:luminance">
+    <path fill="#fff" d="M0 0h180v180H0V0Z" />
+  </mask>
+  <g mask="url(#a)">
+    <path fill="url(#b)" d="M180 0H0v180h180V0Z" />
+    <path fill="url(#c)" d="M149 180 69 69l-8 12 58 82h30Z" />
+    <path fill="url(#d)" d="M120 0H60l90 180h30L120 0Z" />
+  </g>
+  <defs>
+    <linearGradient id="b" x1="180" x2="0" y1="0" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000" />
+      <stop offset="1" stop-color="#fff" />
+    </linearGradient>
+    <linearGradient id="c" x1="90" x2="126" y1="106" y2="173" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" />
+      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="d" x1="115" x2="173" y1="-15" y2="109" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" />
+      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+</svg>
