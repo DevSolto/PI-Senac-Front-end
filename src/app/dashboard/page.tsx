@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
@@ -11,8 +11,29 @@ import { CriticalAlertCard } from "@/features/dashboard/components/critical-aler
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
 import type { DashboardMetrics } from "@/features/dashboard/types";
 
+function EmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center">
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const { data } = useDashboardOverview();
+  const { data, refresh } = useDashboardOverview();
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      refresh().catch((error) => {
+        console.error("Falha ao atualizar a visão geral do dashboard", error);
+      });
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [refresh]);
 
   const handleMetricSelect = useCallback((metricKey: keyof DashboardMetrics) => {
     console.info("Selecionar métrica para detalhamento futuro:", metricKey);
@@ -26,9 +47,32 @@ export default function DashboardPage() {
     return null;
   }
 
-  const { farm, sensorStatus, metrics, criticalAlerts, monthlyAlertBreakdown } = data;
-  const bannerVariant =
-    sensorStatus.offline > 0 || sensorStatus.batteryCritical > 0 ? "warning" : "ok";
+  const { farm, sensorStatus, sensorsStatus, metrics, criticalAlerts, monthlyAlertBreakdown } =
+    data;
+
+  const { bannerVariant, bannerMessage } = useMemo(() => {
+    const hasSensorFailures = sensorsStatus !== "OK";
+    const hasOperationalWarnings = sensorStatus.offline > 0 || sensorStatus.batteryCritical > 0;
+
+    if (hasSensorFailures) {
+      return {
+        bannerVariant: "danger" as const,
+        bannerMessage: "Alguns sensores apresentam falhas",
+      };
+    }
+
+    if (hasOperationalWarnings) {
+      return {
+        bannerVariant: "warning" as const,
+        bannerMessage: undefined,
+      };
+    }
+
+    return {
+      bannerVariant: "ok" as const,
+      bannerMessage: undefined,
+    };
+  }, [sensorStatus.batteryCritical, sensorStatus.offline, sensorsStatus]);
 
   const metricToneMap: Partial<Record<keyof DashboardMetrics, MetricCardTone>> = {
     monitoredSilos: "info",
@@ -45,6 +89,7 @@ export default function DashboardPage() {
         <StatusBanner
           sensorStatus={sensorStatus}
           variant={bannerVariant}
+          message={bannerMessage}
           className="shadow-sm"
         />
 
@@ -99,11 +144,18 @@ export default function DashboardPage() {
               Ver todos
             </Button>
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {criticalAlerts.map((alert) => (
-              <CriticalAlertCard key={alert.id} alert={alert} />
-            ))}
-          </div>
+          {criticalAlerts.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {criticalAlerts.map((alert) => (
+                <CriticalAlertCard key={alert.id} alert={alert} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Nenhum alerta crítico ativo"
+              description="Os sensores não registraram alertas críticos recentemente. Continue monitorando para reagir rapidamente a novas ocorrências."
+            />
+          )}
         </section>
 
         <section

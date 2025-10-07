@@ -46,6 +46,8 @@ export interface MonthlyAlertBreakdown {
 
 export type GatewayStatus = "online" | "degraded" | "offline";
 
+export type SensorsStatus = "OK" | "ISSUE";
+
 export interface DashboardOverview {
   farm: {
     id: string;
@@ -56,6 +58,7 @@ export interface DashboardOverview {
     lastSync: string;
     timezone: string;
   };
+  sensorsStatus: SensorsStatus;
   sensorStatus: {
     totalSensors: number;
     online: number;
