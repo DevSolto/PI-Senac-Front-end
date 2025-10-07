@@ -10,6 +10,7 @@ export const dashboardOverviewMock: DashboardOverview = {
     lastSync: "2024-05-27T14:30:00-03:00",
     timezone: "America/Sao_Paulo",
   },
+  sensorsStatus: "OK",
   sensorStatus: {
     totalSensors: 152,
     online: 140,

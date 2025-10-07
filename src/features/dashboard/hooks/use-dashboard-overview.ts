@@ -9,18 +9,25 @@ interface UseDashboardOverviewResult {
   isError: boolean;
   error: Error | null;
   refetch: () => Promise<DashboardOverview>;
+  refresh: () => Promise<DashboardOverview>;
 }
 
 export const useDashboardOverview = (): UseDashboardOverviewResult => {
-  const [data] = useState<DashboardOverview | null>(dashboardOverviewMock);
+  const [data, setData] = useState<DashboardOverview | null>(dashboardOverviewMock);
   const [isLoading] = useState(false);
   const [error] = useState<Error | null>(null);
 
   const isError = useMemo(() => error !== null, [error]);
 
   const refetch = useCallback(async () => {
-    return dashboardOverviewMock;
+    const nextData = dashboardOverviewMock;
+    setData(nextData);
+    return nextData;
   }, []);
+
+  const refresh = useCallback(() => {
+    return refetch();
+  }, [refetch]);
 
   return {
     data,
@@ -28,5 +35,6 @@ export const useDashboardOverview = (): UseDashboardOverviewResult => {
     isError,
     error,
     refetch,
+    refresh,
   };
 };

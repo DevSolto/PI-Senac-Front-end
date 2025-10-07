@@ -53,25 +53,38 @@ export function MonthlyAlertsCard({ alerts, className }: MonthlyAlertsCardProps)
         </div>
         <ul className="space-y-3">
           {alerts.map((month) => {
-            const total = Math.max(month.total, 1);
+            const declaredTotal = month.total;
+            const breakdownTotal = month.critical + month.warning + month.resolved;
+            const denominator = declaredTotal > 0 ? declaredTotal : breakdownTotal;
+
             const segments = [
               { label: "critical", value: month.critical, className: "bg-rose-500/70" },
               { label: "warning", value: month.warning, className: "bg-amber-500/70" },
               { label: "resolved", value: month.resolved, className: "bg-emerald-500/70" },
             ] as const;
 
+            const getSegmentWidth = (value: number) => {
+              if (denominator <= 0) {
+                return "0%";
+              }
+
+              const percentage = (value / denominator) * 100;
+              const clamped = Math.min(100, Math.max(0, percentage));
+              return `${clamped}%`;
+            };
+
             return (
               <li key={month.month} className="rounded-lg border border-border/60 bg-muted/30 p-3">
                 <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
                   <span>{month.month}</span>
-                  <span>{month.total} alertas</span>
+                  <span>{declaredTotal} alertas</span>
                 </div>
                 <div className="mt-2 flex h-2 w-full overflow-hidden rounded-full bg-background/60">
                   {segments.map((segment) => (
                     <span
                       key={segment.label}
                       className={cn("h-full", segment.className)}
-                      style={{ width: `${(segment.value / total) * 100}%` }}
+                      style={{ width: getSegmentWidth(segment.value) }}
                     />
                   ))}
                 </div>

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { AlertTriangle, CircleDot } from "lucide-react";
 import type { DashboardOverview } from "../types";
 
-export type StatusBannerVariant = "ok" | "warning";
+export type StatusBannerVariant = "ok" | "warning" | "danger";
 
 export interface StatusBannerProps {
   sensorStatus: DashboardOverview["sensorStatus"];
@@ -24,9 +24,16 @@ export function StatusBanner({
   const variantStyles: Record<StatusBannerVariant, string> = {
     ok: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
     warning: "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-100",
+    danger: "border-rose-500/60 bg-rose-500/10 text-rose-700 dark:text-rose-200",
   };
 
-  const Icon = variant === "warning" ? AlertTriangle : CircleDot;
+  const defaultMessages: Record<StatusBannerVariant, string> = {
+    ok: "Todos os sistemas estão operando dentro dos parâmetros esperados.",
+    warning: "Atenção: Verifique os sensores com anomalias detectadas.",
+    danger: "Falhas críticas detectadas em sensores monitorados.",
+  };
+
+  const Icon = variant === "ok" ? CircleDot : AlertTriangle;
 
   return (
     <Card
@@ -42,10 +49,7 @@ export function StatusBanner({
         </span>
         <div className="space-y-1">
           <p className="text-sm font-semibold leading-tight">
-            {message ??
-              (variant === "warning"
-                ? "Atenção: Verifique os sensores com anomalias detectadas."
-                : "Todos os sistemas estão operando dentro dos parâmetros esperados.")}
+            {message ?? defaultMessages[variant]}
           </p>
           <p className="text-xs text-current/80">
             Gateway {sensorStatus.gatewayStatus} · Sinal médio {sensorStatus.averageSignalQuality}% · {sensorStatus.online} sensores online
