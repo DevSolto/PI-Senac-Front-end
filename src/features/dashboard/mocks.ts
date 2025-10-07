@@ -21,17 +21,6 @@ export const dashboardOverviewMock: DashboardOverview = {
     gatewayStatus: "online",
   },
   metrics: {
-    monitoredSilos: {
-      label: "Silos monitorados",
-      value: 32,
-      trend: {
-        direction: "up",
-        value: 2,
-        valueType: "absolute",
-        comparedTo: "última semana",
-      },
-      description: "22 com status OK e 10 em atenção",
-    },
     activeAlerts: {
       label: "Alertas ativos",
       value: 7,

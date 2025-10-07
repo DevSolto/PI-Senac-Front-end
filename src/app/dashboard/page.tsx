@@ -75,7 +75,6 @@ export default function DashboardPage() {
   }, [sensorStatus.batteryCritical, sensorStatus.offline, sensorsStatus]);
 
   const metricToneMap: Partial<Record<keyof DashboardMetrics, MetricCardTone>> = {
-    monitoredSilos: "info",
     activeAlerts: "danger",
     silosOkPercentage: "success",
     averageTemperature: "warning",
@@ -85,17 +84,12 @@ export default function DashboardPage() {
     <div className="py-10">
       <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
         <DashboardHeader farm={farm} sensorStatus={sensorStatus} />
-        <StatusBanner
-          sensorStatus={sensorStatus}
-          variant={bannerVariant}
-          message={bannerMessage}
-          className="shadow-sm"
-        />
+
 
         <section aria-label="Indicadores principais" className="space-y-4">
           <header className="space-y-1">
             <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              Indicadores monitorados
+              Indicadores principais
             </p>
             <h2 className="text-2xl font-semibold text-foreground">Visão geral da operação</h2>
           </header>

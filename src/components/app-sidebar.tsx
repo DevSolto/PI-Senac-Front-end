@@ -111,7 +111,7 @@ export function AppSidebar() {
                           <span>{item.title}</span>
                         </span>
                       ) : (
-                        <Link href={item.href} className="flex items-center gap-2">
+                        <Link href={item.href as any} className="flex items-center gap-2">
                           <Icon className="size-4" aria-hidden="true" />
                           <span>{item.title}</span>
                         </Link>

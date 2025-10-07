@@ -52,24 +52,13 @@ export function StatusBanner({
           <Icon className="h-4 w-4" />
         </span>
         <div className="space-y-1">
-          <p className="text-sm font-semibold leading-tight">
+          <p className="text-xs font-medium leading-tight">
             {message ?? defaultMessages[variant]}
           </p>
           <p className="text-xs text-current/80">
             Gateway {sensorStatus.gatewayStatus} · Sinal médio {sensorStatus.averageSignalQuality}% · {sensorStatus.online} sensores online
           </p>
         </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-        <Badge variant="secondary" className="bg-background/40 text-current">
-          {sensorStatus.offline} offline
-        </Badge>
-        <Badge variant="secondary" className="bg-background/40 text-current">
-          {sensorStatus.maintenance} manutenção
-        </Badge>
-        <Badge variant="secondary" className="bg-background/40 text-current">
-          {sensorStatus.batteryCritical} bateria crítica
-        </Badge>
       </div>
     </Card>
   );

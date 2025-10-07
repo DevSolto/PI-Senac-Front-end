@@ -16,7 +16,6 @@ export interface DashboardMetric {
 }
 
 export interface DashboardMetrics {
-  monitoredSilos: DashboardMetric;
   activeAlerts: DashboardMetric;
   silosOkPercentage: DashboardMetric;
   averageTemperature: DashboardMetric;
