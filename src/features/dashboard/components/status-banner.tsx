@@ -1,0 +1,68 @@
+"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { AlertTriangle, CircleDot } from "lucide-react";
+import type { DashboardOverview } from "../types";
+
+export type StatusBannerVariant = "ok" | "warning";
+
+export interface StatusBannerProps {
+  sensorStatus: DashboardOverview["sensorStatus"];
+  variant?: StatusBannerVariant;
+  message?: string;
+  className?: string;
+}
+
+export function StatusBanner({
+  sensorStatus,
+  variant = "ok",
+  message,
+  className,
+}: StatusBannerProps) {
+  const variantStyles: Record<StatusBannerVariant, string> = {
+    ok: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+    warning: "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-100",
+  };
+
+  const Icon = variant === "warning" ? AlertTriangle : CircleDot;
+
+  return (
+    <Card
+      className={cn(
+        "flex flex-col gap-3 rounded-xl border px-4 py-3 transition-all sm:flex-row sm:items-center sm:justify-between",
+        variantStyles[variant],
+        className,
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 rounded-full border border-current/40 bg-background/40 p-1">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold leading-tight">
+            {message ??
+              (variant === "warning"
+                ? "Atenção: Verifique os sensores com anomalias detectadas."
+                : "Todos os sistemas estão operando dentro dos parâmetros esperados.")}
+          </p>
+          <p className="text-xs text-current/80">
+            Gateway {sensorStatus.gatewayStatus} · Sinal médio {sensorStatus.averageSignalQuality}% · {sensorStatus.online} sensores online
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
+        <Badge variant="secondary" className="bg-background/40 text-current">
+          {sensorStatus.offline} offline
+        </Badge>
+        <Badge variant="secondary" className="bg-background/40 text-current">
+          {sensorStatus.maintenance} manutenção
+        </Badge>
+        <Badge variant="secondary" className="bg-background/40 text-current">
+          {sensorStatus.batteryCritical} bateria crítica
+        </Badge>
+      </div>
+    </Card>
+  );
+}
