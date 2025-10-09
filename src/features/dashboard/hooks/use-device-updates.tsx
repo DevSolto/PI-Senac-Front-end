@@ -1,0 +1,516 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+import type { GatewayStatus } from "../types";
+
+export type DeviceUpdateType = "reading" | "alert" | "gateway" | "unknown";
+
+export interface DeviceSensorStatusSnapshot {
+  totalSensors?: number;
+  online?: number;
+  offline?: number;
+  maintenance?: number;
+  batteryCritical?: number;
+}
+
+export interface DeviceReadingSnapshot {
+  sensorStatus?: DeviceSensorStatusSnapshot;
+  averageSignalQuality?: number;
+  gatewayStatus?: GatewayStatus;
+}
+
+export interface DeviceGatewaySnapshot {
+  status?: GatewayStatus;
+  signalQuality?: number;
+}
+
+export interface DeviceAlertSnapshot {
+  id?: string;
+  severity?: string;
+  message?: string;
+  siloName?: string;
+  acknowledged?: boolean;
+}
+
+export interface NormalizedDeviceUpdate {
+  id: string;
+  deviceId: string;
+  timestamp: string;
+  type: DeviceUpdateType;
+  reading?: DeviceReadingSnapshot;
+  gateway?: DeviceGatewaySnapshot;
+  alert?: DeviceAlertSnapshot;
+  raw?: unknown;
+}
+
+interface DeviceReadingState extends DeviceReadingSnapshot {
+  timestamp: string;
+}
+
+interface DeviceGatewayState extends DeviceGatewaySnapshot {
+  timestamp: string;
+}
+
+interface DeviceAlertState extends DeviceAlertSnapshot {
+  timestamp: string;
+}
+
+interface DeviceUpdatesState {
+  updates: NormalizedDeviceUpdate[];
+  latestReading?: DeviceReadingState;
+  latestGateway?: DeviceGatewayState;
+  latestAlert?: DeviceAlertState;
+  lastEventTimestamp?: string;
+}
+
+interface UseDeviceUpdatesResult extends DeviceUpdatesState {
+  isStreaming: boolean;
+  error: Error | null;
+}
+
+const MAX_UPDATES_BUFFER = 50;
+
+const createEmptyState = (): DeviceUpdatesState => ({
+  updates: [],
+});
+
+const parseJSON = (value: string): unknown => {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+};
+
+const toNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizeSensorStatus = (value: unknown): DeviceSensorStatusSnapshot | undefined => {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const source = value as Record<string, unknown>;
+
+  const normalized: DeviceSensorStatusSnapshot = {
+    totalSensors:
+      toNumber(source.totalSensors) ??
+      toNumber(source.total) ??
+      toNumber(source.count) ??
+      toNumber(source?.sensorsTotal),
+    online:
+      toNumber(source.online) ??
+      toNumber(source.onlineSensors) ??
+      toNumber(source.active) ??
+      toNumber(source.connected),
+    offline:
+      toNumber(source.offline) ??
+      toNumber(source.disconnected) ??
+      toNumber(source.sensorsOffline),
+    maintenance:
+      toNumber(source.maintenance) ??
+      toNumber(source.maintenanceSensors) ??
+      toNumber(source.scheduled),
+    batteryCritical:
+      toNumber(source.batteryCritical) ??
+      toNumber(source.criticalBattery) ??
+      toNumber(source.lowBattery),
+  };
+
+  const hasAnyValue = Object.values(normalized).some((entry) => entry !== undefined);
+  return hasAnyValue ? normalized : undefined;
+};
+
+const toGatewayStatus = (value: string): GatewayStatus | undefined => {
+  const normalized = value.toLowerCase();
+
+  if (normalized === "online" || normalized === "degraded" || normalized === "offline") {
+    return normalized;
+  }
+
+  return undefined;
+};
+
+const normalizeGatewayStatus = (value: unknown): GatewayStatus | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (typeof value === "string") {
+    return toGatewayStatus(value);
+  }
+
+  if (typeof value === "object" && "status" in (value as Record<string, unknown>)) {
+    const status = (value as Record<string, unknown>).status;
+    return typeof status === "string" ? toGatewayStatus(status) : undefined;
+  }
+
+  return undefined;
+};
+
+const normalizeDeviceUpdateMessage = (
+  rawData: string,
+  fallbackDeviceId: string | null | undefined,
+  fallbackEventId?: string,
+): NormalizedDeviceUpdate => {
+  const parsed = parseJSON(rawData);
+  const payload =
+    parsed && typeof parsed === "object" && "data" in (parsed as Record<string, unknown>)
+      ? (parsed as Record<string, unknown>).data
+      : parsed;
+
+  const source = (payload as Record<string, unknown>) ?? {};
+  const typeValue =
+    source.eventType ??
+    source.event ??
+    source.type ??
+    source.kind ??
+    source.updateType ??
+    source.category ??
+    "reading";
+  const normalizedType =
+    typeof typeValue === "string"
+      ? (typeValue.toLowerCase() as DeviceUpdateType)
+      : "unknown";
+
+  const timestampValue =
+    source.timestamp ?? source.time ?? source.createdAt ?? source.emittedAt ?? Date.now();
+  const timestamp = (() => {
+    if (typeof timestampValue === "string") {
+      const parsedDate = new Date(timestampValue);
+      if (!Number.isNaN(parsedDate.getTime())) {
+        return parsedDate.toISOString();
+      }
+    }
+
+    if (typeof timestampValue === "number") {
+      return new Date(timestampValue).toISOString();
+    }
+
+    return new Date().toISOString();
+  })();
+
+  const deviceIdValue =
+    source.deviceId ?? source.device_id ?? source.id_device ?? fallbackDeviceId ?? "unknown-device";
+
+  const eventId =
+    source.id ??
+    source.eventId ??
+    source.messageId ??
+    source.updateId ??
+    fallbackEventId ??
+    `${deviceIdValue}-${timestamp}-${normalizedType}`;
+
+  const sensorStatus =
+    normalizeSensorStatus(source.sensorStatus) ??
+    normalizeSensorStatus(source.sensor_status) ??
+    normalizeSensorStatus((source.reading as Record<string, unknown> | undefined)?.sensorStatus) ??
+    normalizeSensorStatus((source.reading as Record<string, unknown> | undefined)?.sensor_status) ??
+    normalizeSensorStatus(source.sensors) ??
+    normalizeSensorStatus((source.payload as Record<string, unknown> | undefined)?.sensorStatus) ??
+    normalizeSensorStatus((source.payload as Record<string, unknown> | undefined)?.sensor_status) ??
+    normalizeSensorStatus(source.payload);
+
+  const averageSignalQuality =
+    toNumber(source.averageSignalQuality) ??
+    toNumber(source.average_signal_quality) ??
+    toNumber(source.signalQuality) ??
+    toNumber(source.signal) ??
+    toNumber(source.signal_strength) ??
+    toNumber((source.gateway as Record<string, unknown> | undefined)?.signalQuality) ??
+    toNumber((source.reading as Record<string, unknown> | undefined)?.signalQuality);
+
+  const gatewayStatus =
+    normalizeGatewayStatus(source.gatewayStatus) ??
+    normalizeGatewayStatus(source.gateway_status) ??
+    normalizeGatewayStatus(source.gateway);
+
+  const reading: DeviceReadingSnapshot | undefined = (() => {
+    if (sensorStatus || averageSignalQuality !== undefined || gatewayStatus) {
+      return {
+        sensorStatus,
+        averageSignalQuality,
+        gatewayStatus,
+      } satisfies DeviceReadingSnapshot;
+    }
+
+    return undefined;
+  })();
+
+  const gatewaySnapshot: DeviceGatewaySnapshot | undefined = (() => {
+    const status =
+      gatewayStatus ??
+      normalizeGatewayStatus(source.status) ??
+      normalizeGatewayStatus((source.gateway as Record<string, unknown> | undefined)?.status);
+
+    const signalQuality =
+      averageSignalQuality ??
+      toNumber((source.gateway as Record<string, unknown> | undefined)?.signalQuality);
+
+    if (status || signalQuality !== undefined) {
+      return {
+        status,
+        signalQuality,
+      } satisfies DeviceGatewaySnapshot;
+    }
+
+    return undefined;
+  })();
+
+  const alertSource =
+    (source.alert as Record<string, unknown> | undefined) ??
+    (source.payload as Record<string, unknown> | undefined)?.alert ??
+    (source.notification as Record<string, unknown> | undefined);
+
+  const alert: DeviceAlertSnapshot | undefined = (() => {
+    if (!alertSource) {
+      return undefined;
+    }
+
+    const message = alertSource.message ?? alertSource.description ?? source.message;
+    const severity = alertSource.severity ?? alertSource.level ?? source.severity;
+
+    if (!message && !severity && !alertSource.id) {
+      return undefined;
+    }
+
+    return {
+      id: (alertSource.id ?? alertSource.alertId ?? source.alertId ?? eventId) as string | undefined,
+      severity: typeof severity === "string" ? severity : undefined,
+      message: typeof message === "string" ? message : undefined,
+      siloName:
+        typeof alertSource.siloName === "string"
+          ? alertSource.siloName
+          : typeof alertSource.asset === "string"
+            ? alertSource.asset
+            : typeof source.siloName === "string"
+              ? source.siloName
+              : undefined,
+      acknowledged: Boolean(alertSource.acknowledged ?? alertSource.isAcknowledged ?? source.acknowledged),
+    } satisfies DeviceAlertSnapshot;
+  })();
+
+  let normalizedTypeWithFallback = normalizedType;
+  if (normalizedTypeWithFallback === "unknown") {
+    if (reading) {
+      normalizedTypeWithFallback = "reading";
+    } else if (alert) {
+      normalizedTypeWithFallback = "alert";
+    } else if (gatewaySnapshot) {
+      normalizedTypeWithFallback = "gateway";
+    }
+  }
+
+  return {
+    id: String(eventId),
+    deviceId: String(deviceIdValue),
+    timestamp,
+    type: normalizedTypeWithFallback,
+    reading,
+    gateway: gatewaySnapshot,
+    alert,
+    raw: source,
+  } satisfies NormalizedDeviceUpdate;
+};
+
+const mergeSensorStatus = (
+  previous: DeviceSensorStatusSnapshot | undefined,
+  incoming: DeviceSensorStatusSnapshot | undefined,
+): DeviceSensorStatusSnapshot | undefined => {
+  if (!previous) {
+    return incoming;
+  }
+
+  if (!incoming) {
+    return previous;
+  }
+
+  const merged: DeviceSensorStatusSnapshot = {
+    totalSensors: incoming.totalSensors ?? previous.totalSensors,
+    online: incoming.online ?? previous.online,
+    offline: incoming.offline ?? previous.offline,
+    maintenance: incoming.maintenance ?? previous.maintenance,
+    batteryCritical: incoming.batteryCritical ?? previous.batteryCritical,
+  };
+
+  const hasAnyValue = Object.values(merged).some((value) => value !== undefined);
+  return hasAnyValue ? merged : undefined;
+};
+
+const mergeReadingSnapshot = (
+  previous: DeviceReadingState | undefined,
+  incoming: DeviceReadingSnapshot | undefined,
+  timestamp: string,
+): DeviceReadingState | undefined => {
+  if (!incoming) {
+    return previous;
+  }
+
+  return {
+    sensorStatus: mergeSensorStatus(previous?.sensorStatus, incoming.sensorStatus) ?? incoming.sensorStatus,
+    averageSignalQuality: incoming.averageSignalQuality ?? previous?.averageSignalQuality,
+    gatewayStatus: incoming.gatewayStatus ?? previous?.gatewayStatus,
+    timestamp,
+  } satisfies DeviceReadingState;
+};
+
+const mergeGatewaySnapshot = (
+  previous: DeviceGatewayState | undefined,
+  incoming: DeviceGatewaySnapshot | undefined,
+  timestamp: string,
+): DeviceGatewayState | undefined => {
+  if (!incoming) {
+    return previous;
+  }
+
+  return {
+    status: incoming.status ?? previous?.status,
+    signalQuality: incoming.signalQuality ?? previous?.signalQuality,
+    timestamp,
+  } satisfies DeviceGatewayState;
+};
+
+const mergeAlertSnapshot = (
+  _previous: DeviceAlertState | undefined,
+  incoming: DeviceAlertSnapshot | undefined,
+  timestamp: string,
+): DeviceAlertState | undefined => {
+  if (!incoming) {
+    return _previous;
+  }
+
+  return {
+    ...incoming,
+    timestamp,
+  } satisfies DeviceAlertState;
+};
+
+const updateStateWith = (
+  previousState: DeviceUpdatesState,
+  update: NormalizedDeviceUpdate,
+): DeviceUpdatesState => {
+  const updates = [update, ...previousState.updates].slice(0, MAX_UPDATES_BUFFER);
+
+  return {
+    updates,
+    latestReading: mergeReadingSnapshot(previousState.latestReading, update.reading, update.timestamp),
+    latestGateway: mergeGatewaySnapshot(previousState.latestGateway, update.gateway, update.timestamp),
+    latestAlert: mergeAlertSnapshot(previousState.latestAlert, update.alert, update.timestamp),
+    lastEventTimestamp: update.timestamp,
+  } satisfies DeviceUpdatesState;
+};
+
+export const useDeviceUpdates = (deviceId: string | null | undefined): UseDeviceUpdatesResult => {
+  const [state, setState] = useState<DeviceUpdatesState>(() => createEmptyState());
+  const [error, setError] = useState<Error | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    setState(createEmptyState());
+    setError(null);
+
+    if (!deviceId || typeof window === "undefined" || typeof EventSource === "undefined") {
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+      setIsStreaming(false);
+      return;
+    }
+
+    const eventSource = new EventSource(`/devices/${deviceId}/updates`);
+    eventSourceRef.current = eventSource;
+    setIsStreaming(true);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const normalized = normalizeDeviceUpdateMessage(event.data, deviceId, event.lastEventId ?? undefined);
+        setState((previous) => updateStateWith(previous, normalized));
+      } catch (streamError) {
+        console.error("Falha ao processar atualização em tempo real", streamError);
+      }
+    };
+
+    eventSource.onerror = (event) => {
+      console.error("Falha na conexão de atualizações em tempo real", event);
+      setError(new Error("Falha na conexão de atualizações em tempo real."));
+      setIsStreaming(false);
+      eventSource.close();
+      eventSourceRef.current = null;
+    };
+
+    return () => {
+      eventSource.close();
+      eventSourceRef.current = null;
+      setIsStreaming(false);
+    };
+  }, [deviceId]);
+
+  return useMemo(
+    () => ({
+      ...state,
+      isStreaming,
+      error,
+    }),
+    [state, isStreaming, error],
+  );
+};
+
+interface DeviceUpdatesContextValue extends UseDeviceUpdatesResult {
+  deviceId: string | null;
+  setActiveDevice: (deviceId: string | null) => void;
+}
+
+const DeviceUpdatesContext = createContext<DeviceUpdatesContextValue | undefined>(undefined);
+
+export const DeviceUpdatesProvider = ({ children }: { children: ReactNode }) => {
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null);
+  const updatesState = useDeviceUpdates(activeDeviceId);
+
+  const setActiveDevice = useCallback((nextDeviceId: string | null) => {
+    setActiveDeviceId((previousDeviceId) => {
+      if (previousDeviceId === nextDeviceId) {
+        return previousDeviceId;
+      }
+
+      return nextDeviceId;
+    });
+  }, []);
+
+  const contextValue = useMemo<DeviceUpdatesContextValue>(
+    () => ({
+      ...updatesState,
+      deviceId: activeDeviceId,
+      setActiveDevice,
+    }),
+    [updatesState, activeDeviceId, setActiveDevice],
+  );
+
+  return <DeviceUpdatesContext.Provider value={contextValue}>{children}</DeviceUpdatesContext.Provider>;
+};
+
+export const useDeviceUpdatesContext = (): DeviceUpdatesContextValue => {
+  const context = useContext(DeviceUpdatesContext);
+
+  if (!context) {
+    throw new Error("useDeviceUpdatesContext deve ser utilizado dentro de um DeviceUpdatesProvider.");
+  }
+
+  return context;
+};
+
