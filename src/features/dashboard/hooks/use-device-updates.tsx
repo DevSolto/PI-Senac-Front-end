@@ -526,10 +526,26 @@ export const useDeviceUpdates = (deviceId: string | null | undefined): UseDevice
   const [error, setError] = useState<Error | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connectionStatsRef = useRef({
+    attempts: 0,
+    successes: 0,
+    failures: 0,
+    messages: 0,
+    lastMessageAt: null as string | null,
+  });
 
   useEffect(() => {
     setState(createEmptyState());
     setError(null);
+
+    connectionStatsRef.current = {
+      attempts: 0,
+      successes: 0,
+      failures: 0,
+      messages: 0,
+      lastMessageAt: null,
+    };
 
     if (!deviceId || typeof window === "undefined" || typeof EventSource === "undefined") {
       eventSourceRef.current?.close();
@@ -538,30 +554,114 @@ export const useDeviceUpdates = (deviceId: string | null | undefined): UseDevice
       return;
     }
 
-    const eventSource = new EventSource(`/devices/${deviceId}/updates`);
-    eventSourceRef.current = eventSource;
-    setIsStreaming(true);
+    let isDisposed = false;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const normalized = normalizeDeviceUpdateMessage(event.data, deviceId, event.lastEventId ?? undefined);
-        setState((previous) => updateStateWith(previous, normalized));
-      } catch (streamError) {
-        console.error("Falha ao processar atualização em tempo real", streamError);
-      }
-    };
-
-    eventSource.onerror = (event) => {
-      console.error("Falha na conexão de atualizações em tempo real", event);
-      setError(new Error("Falha na conexão de atualizações em tempo real."));
-      setIsStreaming(false);
-      eventSource.close();
+    const closeEventSource = () => {
+      eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
+
+    const scheduleReconnect = (reason: string, delayMs: number) => {
+      if (isDisposed) {
+        return;
+      }
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = null;
+        openConnection(reason);
+      }, delayMs);
+
+      console.info("[SSE] Nova tentativa de conexão agendada", {
+        deviceId,
+        reason,
+        delayMs,
+        nextAttempt: connectionStatsRef.current.attempts + 1,
+      });
+    };
+
+    const openConnection = (reason: string) => {
+      if (isDisposed) {
+        return;
+      }
+
+      closeEventSource();
+      connectionStatsRef.current.attempts += 1;
+      console.info("[SSE] Iniciando conexão com atualizações em tempo real", {
+        deviceId,
+        attempt: connectionStatsRef.current.attempts,
+        reason,
+      });
+
+      const eventSource = new EventSource(`/devices/${deviceId}/updates`);
+      eventSourceRef.current = eventSource;
+      setIsStreaming(false);
+
+      eventSource.onopen = () => {
+        connectionStatsRef.current.successes += 1;
+        setIsStreaming(true);
+        setError(null);
+        console.info("[SSE] Conexão estabelecida", {
+          deviceId,
+          attempt: connectionStatsRef.current.attempts,
+          successes: connectionStatsRef.current.successes,
+        });
+      };
+
+      eventSource.onmessage = (event) => {
+        connectionStatsRef.current.messages += 1;
+        connectionStatsRef.current.lastMessageAt = new Date().toISOString();
+
+        try {
+          const normalized = normalizeDeviceUpdateMessage(event.data, deviceId, event.lastEventId ?? undefined);
+          setState((previous) => updateStateWith(previous, normalized));
+        } catch (streamError) {
+          console.error("Falha ao processar atualização em tempo real", streamError);
+        }
+      };
+
+      eventSource.onerror = (event) => {
+        connectionStatsRef.current.failures += 1;
+        console.error("[SSE] Falha na conexão de atualizações em tempo real", {
+          deviceId,
+          event,
+          attempt: connectionStatsRef.current.attempts,
+          failures: connectionStatsRef.current.failures,
+          readyState: eventSource.readyState,
+          messages: connectionStatsRef.current.messages,
+          lastMessageAt: connectionStatsRef.current.lastMessageAt,
+        });
+
+        if (!isDisposed) {
+          setError(new Error("Falha na conexão de atualizações em tempo real."));
+          setIsStreaming(false);
+        }
+
+        closeEventSource();
+
+        const backoffMs = Math.min(30_000, 2_000 * connectionStatsRef.current.failures);
+        scheduleReconnect("erro", backoffMs || 2_000);
+      };
+    };
+
+    openConnection("inicial");
 
     return () => {
-      eventSource.close();
-      eventSourceRef.current = null;
+      isDisposed = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      console.info("[SSE] Encerrando conexão de atualizações", {
+        deviceId,
+        ...connectionStatsRef.current,
+      });
+
+      closeEventSource();
       setIsStreaming(false);
     };
   }, [deviceId]);

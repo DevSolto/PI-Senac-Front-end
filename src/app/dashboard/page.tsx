@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { MetricHistoryChart } from "@/components/charts/metric-history-chart";
@@ -20,11 +20,60 @@ interface DashboardPageProps {
   deviceId?: string | null;
 }
 
-function EmptyState({ title, description }: { title: string; description: string }) {
+function EmptyState({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center">
       <p className="text-sm font-semibold text-foreground">{title}</p>
       <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+      {children ? <div className="mt-4 flex justify-center">{children}</div> : null}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="py-10" aria-busy="true">
+      <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label="Carregando visão geral do dashboard"
+          className="space-y-6"
+        >
+          <span className="sr-only">Carregando visão geral do dashboard</span>
+          <Skeleton className="h-24 w-full rounded-2xl" data-testid="dashboard-loading-banner" aria-hidden />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton
+                key={`metric-${index}`}
+                className="h-32 w-full rounded-xl"
+                data-testid="dashboard-loading-metric"
+                aria-hidden
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton
+                key={`history-${index}`}
+                className="h-56 w-full rounded-2xl"
+                data-testid="dashboard-loading-history"
+                aria-hidden
+              />
+            ))}
+          </div>
+          <Skeleton className="h-52 w-full rounded-2xl" data-testid="dashboard-loading-alerts" aria-hidden />
+          <Skeleton className="h-64 w-full rounded-2xl" data-testid="dashboard-loading-monthly" aria-hidden />
+        </div>
+      </div>
     </div>
   );
 }
@@ -32,7 +81,7 @@ function EmptyState({ title, description }: { title: string; description: string
 export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageProps = {}) {
   const searchParams = useSearchParams();
   const deviceId = deviceIdProp ?? searchParams.get("deviceId");
-  const { data, isError, error, refresh, refetch } = useDashboardOverview({
+  const { data, isLoading, isError, error, refresh, refetch } = useDashboardOverview({
     deviceId,
     autoFetch: Boolean(deviceId),
   });
@@ -70,6 +119,12 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     console.info("Navegar para a lista completa de alertas críticos");
   }, []);
 
+  const handleRetryOverview = useCallback(() => {
+    refetch().catch((refetchError) => {
+      console.error("Falha ao tentar carregar novamente a visão geral", refetchError);
+    });
+  }, [refetch]);
+
   if (!deviceId) {
     return (
       <div className="py-10">
@@ -83,6 +138,10 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     );
   }
 
+  if (isLoading && !data) {
+    return <LoadingState />;
+  }
+
   if (isError && !data) {
     return (
       <div className="py-10">
@@ -90,20 +149,11 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
           <EmptyState
             title="Não foi possível carregar o dashboard"
             description={error?.message ?? "Tente novamente em instantes."}
-          />
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                refetch().catch((refetchError) => {
-                  console.error("Falha ao tentar carregar novamente a visão geral", refetchError);
-                });
-              }}
             >
-              Tentar novamente
-            </Button>
-          </div>
+              <Button type="button" variant="outline" onClick={handleRetryOverview}>
+                Tentar novamente
+              </Button>
+            </EmptyState>
         </div>
       </div>
     );
@@ -114,9 +164,13 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
       <div className="py-10">
         <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
           <EmptyState
-            title="Carregando dashboard"
-            description="Estamos buscando os dados mais recentes do dispositivo selecionado."
-          />
+            title="Dados indisponíveis no momento"
+            description="Não encontramos métricas recentes para este dispositivo. Aguarde alguns instantes e tente atualizar novamente."
+          >
+            <Button type="button" variant="outline" onClick={handleRetryOverview}>
+              Atualizar dados
+            </Button>
+          </EmptyState>
         </div>
       </div>
     );
@@ -174,7 +228,7 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     return "ok" as const;
   })();
 
-  const bannerMessage = (() => {
+  const bannerMessage = useMemo(() => {
     if (liveSensorStatus.gatewayStatus === "offline") {
       return "Gateway desconectado. Telemetria em tempo real indisponível.";
     }
@@ -198,7 +252,7 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     }
 
     return undefined;
-  })();
+  }, [criticalBatteries, liveSensorStatus.gatewayStatus, offlineSensors, sensorsStatus]);
 
   const metricToneMap: Partial<Record<keyof DashboardMetrics, MetricCardTone>> = {
     activeAlerts: "danger",

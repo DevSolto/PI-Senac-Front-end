@@ -58,21 +58,33 @@ type DashboardOverviewHookResult = {
   refresh: () => Promise<DashboardOverview>;
 };
 
-function createHookResult(data: DashboardOverview): DashboardOverviewHookResult {
+const createHookResult = (
+  overrides: Partial<DashboardOverviewHookResult> = {},
+  fallbackData: DashboardOverview = structuredClone(dashboardOverviewMock),
+): DashboardOverviewHookResult => {
+  const resolvedData = overrides.data === undefined ? fallbackData : overrides.data;
+  const refetchResult = overrides.refetch
+    ? overrides.refetch
+    : vi.fn().mockResolvedValue(resolvedData ?? fallbackData);
+  const refreshResult = overrides.refresh
+    ? overrides.refresh
+    : vi.fn().mockResolvedValue(resolvedData ?? fallbackData);
+
   return {
-    data,
+    data: resolvedData,
     isLoading: false,
     isError: false,
     error: null,
-    refetch: vi.fn().mockResolvedValue(data),
-    refresh: vi.fn().mockResolvedValue(data),
+    refetch: refetchResult,
+    refresh: refreshResult,
+    ...overrides,
   };
-}
+};
 
 describe("DashboardPage", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    mockUseDashboardOverview.mockReturnValue(createHookResult(structuredClone(dashboardOverviewMock)));
+    mockUseDashboardOverview.mockReturnValue(createHookResult());
     mockUseDeviceUpdatesContext.mockReturnValue({
       deviceId: "device-test",
       setActiveDevice: vi.fn(),
@@ -157,7 +169,7 @@ describe("DashboardPage", () => {
       criticalAlerts: [],
     };
 
-    mockUseDashboardOverview.mockReturnValueOnce(createHookResult(emptyOverview));
+    mockUseDashboardOverview.mockReturnValueOnce(createHookResult({ data: emptyOverview }));
     mockUseCriticalAlerts.mockReturnValueOnce(createCriticalAlertsHookResult([]));
 
     render(<DashboardPage />);
@@ -168,6 +180,58 @@ describe("DashboardPage", () => {
         "Os sensores não registraram alertas críticos recentemente. Continue monitorando para reagir rapidamente a novas ocorrências.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("apresenta skeletons de carregamento enquanto busca a visão geral", () => {
+    mockUseDashboardOverview.mockReturnValueOnce(
+      createHookResult({
+        data: null,
+        isLoading: true,
+      }),
+    );
+
+    render(<DashboardPage />);
+
+    expect(
+      screen.getByRole("status", { name: "Carregando visão geral do dashboard" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId("dashboard-loading-metric")).toHaveLength(4);
+  });
+
+  it("exibe mensagem amigável quando a API falha e permite tentar novamente", () => {
+    const refetchMock = vi.fn().mockResolvedValue(structuredClone(dashboardOverviewMock));
+
+    mockUseDashboardOverview.mockReturnValueOnce(
+      createHookResult({
+        data: null,
+        isError: true,
+        error: new Error("Erro de rede"),
+        refetch: refetchMock,
+      }),
+    );
+
+    render(<DashboardPage />);
+
+    expect(screen.getByText("Não foi possível carregar o dashboard")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+    expect(refetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("informa quando não há dados disponíveis e oferece atualização manual", () => {
+    const refetchMock = vi.fn().mockResolvedValue(structuredClone(dashboardOverviewMock));
+
+    mockUseDashboardOverview.mockReturnValueOnce(
+      createHookResult({
+        data: null,
+        refetch: refetchMock,
+      }),
+    );
+
+    render(<DashboardPage />);
+
+    expect(screen.getByText("Dados indisponíveis no momento")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar dados" }));
+    expect(refetchMock).toHaveBeenCalledTimes(1);
   });
 });
 const createCriticalAlertsHookResult = (alerts: CriticalAlert[]): UseCriticalAlertsResult => ({
