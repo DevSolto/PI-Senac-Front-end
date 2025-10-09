@@ -1,4 +1,13 @@
 import { DashboardOverview } from "./types";
+import type { DashboardOverviewService } from "./types";
+
+const clone = <T>(value: T): T => {
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+
+  return JSON.parse(JSON.stringify(value)) as T;
+};
 
 export const dashboardOverviewMock: DashboardOverview = {
   farm: {
@@ -136,3 +145,11 @@ export const dashboardOverviewMock: DashboardOverview = {
     },
   ],
 };
+
+export const createDashboardOverviewMockService = (
+  data: DashboardOverview = dashboardOverviewMock,
+): DashboardOverviewService => ({
+  async getOverview() {
+    return clone(data);
+  },
+});

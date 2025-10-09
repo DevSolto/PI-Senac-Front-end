@@ -71,3 +71,19 @@ export interface DashboardOverview {
   criticalAlerts: CriticalAlert[];
   monthlyAlertBreakdown: MonthlyAlertBreakdown[];
 }
+
+export type DeviceHistoryMetrics = Record<string, number | null>;
+
+export interface DeviceHistoryEntry {
+  timestamp: string;
+  metrics: DeviceHistoryMetrics;
+}
+
+export interface DeviceHistory {
+  deviceId: string;
+  entries: DeviceHistoryEntry[];
+}
+
+export interface DashboardOverviewService {
+  getOverview(deviceId: string): Promise<DashboardOverview>;
+}
