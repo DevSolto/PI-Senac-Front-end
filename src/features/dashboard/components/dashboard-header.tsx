@@ -11,6 +11,9 @@ import { StatusBanner, type StatusBannerVariant } from "./status-banner";
 export interface DashboardHeaderProps {
   farm: DashboardOverview["farm"];
   sensorStatus: DashboardOverview["sensorStatus"];
+  realtimeSensorStatus?: DashboardOverview["sensorStatus"];
+  statusBannerVariant?: StatusBannerVariant;
+  statusBannerMessage?: string;
   onMenuToggle?: () => void;
   className?: string;
 }
@@ -18,19 +21,25 @@ export interface DashboardHeaderProps {
 export function DashboardHeader({
   farm,
   sensorStatus,
+  realtimeSensorStatus,
+  statusBannerVariant,
+  statusBannerMessage,
   className,
 }: DashboardHeaderProps) {
-  const bannerVariant: StatusBannerVariant = (() => {
-    if (sensorStatus.gatewayStatus === "offline") {
-      return "danger";
-    }
+  const bannerSensorStatus = realtimeSensorStatus ?? sensorStatus;
+  const bannerVariant: StatusBannerVariant = statusBannerVariant
+    ? statusBannerVariant
+    : (() => {
+        if (bannerSensorStatus.gatewayStatus === "offline") {
+          return "danger";
+        }
 
-    if (sensorStatus.offline > 0 || sensorStatus.batteryCritical > 0) {
-      return "warning";
-    }
+        if (bannerSensorStatus.offline > 0 || bannerSensorStatus.batteryCritical > 0) {
+          return "warning";
+        }
 
-    return "ok";
-  })();
+        return "ok";
+      })();
 
   return (
     <Card
@@ -49,8 +58,9 @@ export function DashboardHeader({
           </div>
         </div>
         <StatusBanner
-          sensorStatus={sensorStatus}
+          sensorStatus={bannerSensorStatus}
           variant={bannerVariant}
+          message={statusBannerMessage}
           className="shadow-sm"
         />
       </CardHeader>

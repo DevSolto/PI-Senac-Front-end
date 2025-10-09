@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { MonthlyAlertsCard } from "@/features/dashboard/components/monthly-alert
 import { StatusBanner } from "@/features/dashboard/components/status-banner";
 import { CriticalAlertCard } from "@/features/dashboard/components/critical-alert-card";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
+import { useDeviceUpdatesContext } from "@/features/dashboard/hooks/use-device-updates";
 import type { DashboardMetrics } from "@/features/dashboard/types";
 
 interface DashboardPageProps {
@@ -32,6 +33,15 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     deviceId,
     autoFetch: Boolean(deviceId),
   });
+  const { setActiveDevice, latestReading, latestGateway } = useDeviceUpdatesContext();
+
+  useEffect(() => {
+    setActiveDevice(deviceId ?? null);
+
+    return () => {
+      setActiveDevice(null);
+    };
+  }, [deviceId, setActiveDevice]);
 
   useEffect(() => {
     if (!deviceId) {
@@ -112,29 +122,61 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
   const { farm, sensorStatus, sensorsStatus, metrics, criticalAlerts, monthlyAlertBreakdown } =
     data;
 
-  const { bannerVariant, bannerMessage } = useMemo(() => {
-    const hasSensorFailures = sensorsStatus !== "OK";
-    const hasOperationalWarnings = sensorStatus.offline > 0 || sensorStatus.batteryCritical > 0;
+  const streamSensorStatus = latestReading?.sensorStatus;
+  const gatewayStatus = latestReading?.gatewayStatus ?? latestGateway?.status ?? sensorStatus.gatewayStatus;
+  const averageSignalQuality =
+    latestReading?.averageSignalQuality ?? latestGateway?.signalQuality ?? sensorStatus.averageSignalQuality;
 
-    if (hasSensorFailures) {
-      return {
-        bannerVariant: "danger" as const,
-        bannerMessage: "Alguns sensores apresentam falhas",
-      };
+  const liveSensorStatus = {
+    totalSensors: streamSensorStatus?.totalSensors ?? sensorStatus.totalSensors,
+    online: streamSensorStatus?.online ?? sensorStatus.online,
+    offline: streamSensorStatus?.offline ?? sensorStatus.offline,
+    maintenance: streamSensorStatus?.maintenance ?? sensorStatus.maintenance,
+    batteryCritical: streamSensorStatus?.batteryCritical ?? sensorStatus.batteryCritical,
+    averageSignalQuality,
+    gatewayStatus,
+  } satisfies typeof sensorStatus;
+
+  const offlineSensors = liveSensorStatus.offline ?? 0;
+  const criticalBatteries = liveSensorStatus.batteryCritical ?? 0;
+
+  const bannerVariant = (() => {
+    if (liveSensorStatus.gatewayStatus === "offline" || sensorsStatus !== "OK") {
+      return "danger" as const;
     }
 
-    if (hasOperationalWarnings) {
-      return {
-        bannerVariant: "warning" as const,
-        bannerMessage: undefined,
-      };
+    if (liveSensorStatus.gatewayStatus === "degraded" || offlineSensors > 0 || criticalBatteries > 0) {
+      return "warning" as const;
     }
 
-    return {
-      bannerVariant: "ok" as const,
-      bannerMessage: undefined,
-    };
-  }, [sensorStatus.batteryCritical, sensorStatus.offline, sensorsStatus]);
+    return "ok" as const;
+  })();
+
+  const bannerMessage = (() => {
+    if (liveSensorStatus.gatewayStatus === "offline") {
+      return "Gateway desconectado. Telemetria em tempo real indisponível.";
+    }
+
+    if (sensorsStatus !== "OK") {
+      return "Alguns sensores apresentam falhas.";
+    }
+
+    if (liveSensorStatus.gatewayStatus === "degraded") {
+      return "Gateway em modo degradado. Monitorar estabilidade do sinal.";
+    }
+
+    if (offlineSensors > 0) {
+      return `${offlineSensors} ${offlineSensors === 1 ? "sensor offline" : "sensores offline"}.`;
+    }
+
+    if (criticalBatteries > 0) {
+      return `${criticalBatteries} ${
+        criticalBatteries === 1 ? "sensor com bateria crítica" : "sensores com bateria crítica"
+      }.`;
+    }
+
+    return undefined;
+  })();
 
   const metricToneMap: Partial<Record<keyof DashboardMetrics, MetricCardTone>> = {
     activeAlerts: "danger",
@@ -145,7 +187,13 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
   return (
     <div className="py-10">
       <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
-        <DashboardHeader farm={farm} sensorStatus={sensorStatus} />
+        <DashboardHeader
+          farm={farm}
+          sensorStatus={sensorStatus}
+          realtimeSensorStatus={liveSensorStatus}
+          statusBannerVariant={bannerVariant}
+          statusBannerMessage={bannerMessage}
+        />
 
 
         <section aria-label="Indicadores principais" className="space-y-4">

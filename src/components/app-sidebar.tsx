@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -25,6 +26,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { useDeviceUpdatesContext } from "@/features/dashboard/hooks/use-device-updates"
 
 const navigationItems = [
   {
@@ -66,6 +68,37 @@ const navigationItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { lastEventTimestamp } = useDeviceUpdatesContext()
+
+  const userTimeZone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone
+    } catch {
+      return undefined
+    }
+  }, [])
+
+  const formattedLastUpdate = useMemo(() => {
+    if (!lastEventTimestamp) {
+      return "Aguardando dados"
+    }
+
+    const date = new Date(lastEventTimestamp)
+
+    if (Number.isNaN(date.getTime())) {
+      return "Aguardando dados"
+    }
+
+    try {
+      return new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: userTimeZone,
+      }).format(date)
+    } catch {
+      return date.toLocaleString("pt-BR")
+    }
+  }, [lastEventTimestamp, userTimeZone])
 
   return (
     <Sidebar>
@@ -132,6 +165,9 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border px-4 py-3 text-xs text-sidebar-foreground/70">
         <p className="font-medium">Silo Monitor</p>
         <p className="text-[11px]">Última atualização em tempo real</p>
+        <p className="text-[11px]" aria-live="polite">
+          {formattedLastUpdate}
+        </p>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
