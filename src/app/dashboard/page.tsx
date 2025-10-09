@@ -10,7 +10,9 @@ import { MetricCard, type MetricCardTone } from "@/features/dashboard/components
 import { MonthlyAlertsCard } from "@/features/dashboard/components/monthly-alerts-card";
 import { StatusBanner } from "@/features/dashboard/components/status-banner";
 import { CriticalAlertCard } from "@/features/dashboard/components/critical-alert-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
+import { useCriticalAlerts } from "@/features/dashboard/hooks/use-critical-alerts";
 import { useDeviceUpdatesContext } from "@/features/dashboard/hooks/use-device-updates";
 import type { DashboardMetrics } from "@/features/dashboard/types";
 
@@ -125,11 +127,22 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     sensorStatus,
     sensorsStatus,
     metrics,
-    criticalAlerts,
+    criticalAlerts: initialCriticalAlerts,
     monthlyAlertBreakdown,
     monthlyAlertTotals,
     historyDatasets,
   } = data;
+
+  const {
+    alerts: criticalAlerts,
+    actionState: criticalAlertActionState,
+    isLoading: isLoadingCriticalAlerts,
+    acknowledgeAlert,
+    resolveAlert,
+  } = useCriticalAlerts({
+    deviceId,
+    initialAlerts: initialCriticalAlerts,
+  });
 
   const streamSensorStatus = latestReading?.sensorStatus;
   const gatewayStatus = latestReading?.gatewayStatus ?? latestGateway?.status ?? sensorStatus.gatewayStatus;
@@ -303,10 +316,22 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
               Ver todos
             </Button>
           </div>
-          {criticalAlerts.length > 0 ? (
+          {isLoadingCriticalAlerts && criticalAlerts.length === 0 ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {[0, 1].map((index) => (
+                <Skeleton key={index} className="h-48 w-full rounded-xl" aria-hidden />
+              ))}
+            </div>
+          ) : criticalAlerts.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {criticalAlerts.map((alert) => (
-                <CriticalAlertCard key={alert.id} alert={alert} />
+                <CriticalAlertCard
+                  key={alert.id}
+                  alert={alert}
+                  onAcknowledge={acknowledgeAlert}
+                  onResolve={resolveAlert}
+                  actionState={criticalAlertActionState[alert.id]}
+                />
               ))}
             </div>
           ) : (

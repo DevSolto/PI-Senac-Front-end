@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
-import type { GatewayStatus } from "../types";
+import type { CriticalAlertStatus, GatewayStatus } from "../types";
 
 export type DeviceUpdateType = "reading" | "alert" | "gateway" | "unknown";
 
@@ -40,6 +40,13 @@ export interface DeviceAlertSnapshot {
   message?: string;
   siloName?: string;
   acknowledged?: boolean;
+  status?: CriticalAlertStatus;
+  alertType?: string;
+  detectedAt?: string;
+  resolvedAt?: string;
+  durationMinutes?: number;
+  recommendedAction?: string;
+  description?: string;
 }
 
 export interface NormalizedDeviceUpdate {
@@ -99,6 +106,53 @@ const toNumber = (value: unknown): number | undefined => {
 
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const toIsoString = (value: unknown): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? undefined : value.toISOString();
+  }
+
+  if (typeof value === "number") {
+    return new Date(value).toISOString();
+  }
+
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return undefined;
+};
+
+const toCriticalAlertStatus = (value: unknown, acknowledged?: boolean): CriticalAlertStatus | undefined => {
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+
+    if (normalized === "resolved" || normalized === "resolve" || normalized === "closed") {
+      return "resolved";
+    }
+
+    if (normalized === "acknowledged" || normalized === "ack" || normalized === "acknowledge") {
+      return "acknowledged";
+    }
+
+    if (normalized === "active" || normalized === "open") {
+      return "active";
+    }
+  }
+
+  if (acknowledged) {
+    return "acknowledged";
+  }
+
+  return undefined;
 };
 
 const normalizeSensorStatus = (value: unknown): DeviceSensorStatusSnapshot | undefined => {
@@ -285,6 +339,50 @@ const normalizeDeviceUpdateMessage = (
 
     const message = alertSource.message ?? alertSource.description ?? source.message;
     const severity = alertSource.severity ?? alertSource.level ?? source.severity;
+    const status =
+      toCriticalAlertStatus(alertSource.status, Boolean(alertSource.acknowledged ?? source.acknowledged)) ??
+      toCriticalAlertStatus(source.status, Boolean(alertSource.acknowledged ?? source.acknowledged));
+    const detectedAt =
+      toIsoString(alertSource.detectedAt)
+        ?? toIsoString(alertSource.detected_at)
+        ?? toIsoString(source.detectedAt)
+        ?? toIsoString(source.detected_at);
+    const resolvedAt =
+      toIsoString(alertSource.resolvedAt)
+        ?? toIsoString(alertSource.resolved_at)
+        ?? toIsoString(source.resolvedAt)
+        ?? toIsoString(source.resolved_at);
+    const durationMinutes =
+      toNumber(alertSource.durationMinutes)
+        ?? toNumber(alertSource.duration_minutes)
+        ?? toNumber(source.durationMinutes)
+        ?? toNumber(source.duration_minutes);
+    const recommendedAction =
+      typeof alertSource.recommendedAction === "string"
+        ? alertSource.recommendedAction
+        : typeof alertSource.recommended_action === "string"
+          ? alertSource.recommended_action
+          : typeof source.recommendedAction === "string"
+            ? source.recommendedAction
+            : undefined;
+    const description =
+      typeof alertSource.description === "string"
+        ? alertSource.description
+        : typeof source.description === "string"
+          ? source.description
+          : typeof message === "string"
+            ? message
+            : undefined;
+    const alertType =
+      typeof alertSource.alertType === "string"
+        ? alertSource.alertType
+        : typeof alertSource.type === "string"
+          ? alertSource.type
+          : typeof source.alertType === "string"
+            ? source.alertType
+            : typeof source.eventType === "string"
+              ? source.eventType
+              : undefined;
 
     if (!message && !severity && !alertSource.id) {
       return undefined;
@@ -303,6 +401,13 @@ const normalizeDeviceUpdateMessage = (
               ? source.siloName
               : undefined,
       acknowledged: Boolean(alertSource.acknowledged ?? alertSource.isAcknowledged ?? source.acknowledged),
+      status,
+      alertType: typeof alertType === "string" ? alertType : undefined,
+      detectedAt,
+      resolvedAt,
+      durationMinutes: durationMinutes ?? undefined,
+      recommendedAction,
+      description,
     } satisfies DeviceAlertSnapshot;
   })();
 
