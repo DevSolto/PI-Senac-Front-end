@@ -44,7 +44,6 @@ const navigationItems = [
     title: "Monitoramento em tempo real",
     href: "/monitoramento",
     icon: Activity,
-    comingSoon: true,
   },
   {
     title: "Alertas e ocorrências",
