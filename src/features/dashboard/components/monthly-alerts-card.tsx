@@ -4,25 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PieChart } from "lucide-react";
-import type { MonthlyAlertBreakdown } from "../types";
+import type { MonthlyAlertBreakdown, MonthlyAlertTotals } from "../types";
 
 export interface MonthlyAlertsCardProps {
   alerts: MonthlyAlertBreakdown[];
+  totals: MonthlyAlertTotals;
   className?: string;
 }
 
-export function MonthlyAlertsCard({ alerts, className }: MonthlyAlertsCardProps) {
-  const totals = alerts.reduce(
-    (acc, month) => {
-      acc.total += month.total;
-      acc.critical += month.critical;
-      acc.warning += month.warning;
-      acc.resolved += month.resolved;
-      return acc;
-    },
-    { total: 0, critical: 0, warning: 0, resolved: 0 },
-  );
-
+export function MonthlyAlertsCard({ alerts, totals, className }: MonthlyAlertsCardProps) {
   return (
     <Card className={cn("h-full border bg-background backdrop-blur", className)}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">

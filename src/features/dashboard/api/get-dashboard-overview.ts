@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api/client";
 
 import { getDeviceHistory } from "./get-device-history";
 import type { GetDeviceHistoryOptions } from "./get-device-history";
+import { buildDeviceHistoryDatasets, computeMonthlyAlertTotals } from "../transformers/history";
 import type {
   CriticalAlert,
   DashboardMetric,
@@ -239,6 +240,9 @@ const normalizeDashboardOverview = (
   const sensorStatus = response?.sensor_status ?? response?.sensorStatus ?? {};
   const criticalAlerts = response?.critical_alerts ?? response?.criticalAlerts ?? [];
   const monthlyAlertBreakdown = response?.monthly_alert_breakdown ?? response?.monthlyAlertBreakdown ?? [];
+  const normalizedMonthlyAlertBreakdown = monthlyAlertBreakdown.map(normalizeMonthlyAlertBreakdown);
+  const historyDatasets = buildDeviceHistoryDatasets(history);
+  const monthlyAlertTotals = computeMonthlyAlertTotals(normalizedMonthlyAlertBreakdown);
 
   return {
     farm: {
@@ -271,7 +275,9 @@ const normalizeDashboardOverview = (
         : computeAverageTemperatureFromHistory(historyAverageTemperature),
     },
     criticalAlerts: criticalAlerts.map(normalizeCriticalAlert),
-    monthlyAlertBreakdown: monthlyAlertBreakdown.map(normalizeMonthlyAlertBreakdown),
+    monthlyAlertBreakdown: normalizedMonthlyAlertBreakdown,
+    monthlyAlertTotals,
+    historyDatasets,
   } satisfies DashboardOverview;
 };
 
