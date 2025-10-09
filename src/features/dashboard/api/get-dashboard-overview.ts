@@ -235,7 +235,7 @@ const normalizeDashboardOverview = (
         ? normalizeMetric(averageTemperatureMetric, defaultMetrics.averageTemperature)
         : computeAverageTemperatureFromHistory(historyAverageTemperature),
     },
-    criticalAlerts: criticalAlerts.map(normalizeCriticalAlert),
+    criticalAlerts: criticalAlerts.map((alert) => normalizeCriticalAlert(alert)),
     monthlyAlertBreakdown: normalizedMonthlyAlertBreakdown,
     monthlyAlertTotals,
     historyDatasets,

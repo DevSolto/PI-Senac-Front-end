@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { MetricCard, type MetricCardTone } from "@/features/dashboard/components/metric-card";
 import { MonthlyAlertsCard } from "@/features/dashboard/components/monthly-alerts-card";
-import { StatusBanner } from "@/features/dashboard/components/status-banner";
 import { CriticalAlertCard } from "@/features/dashboard/components/critical-alert-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";

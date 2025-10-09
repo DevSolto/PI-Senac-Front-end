@@ -8,10 +8,13 @@ const getEnvVar = (key: string, { required = false }: { required?: boolean } = {
   return value;
 };
 
-const apiBaseUrl = getEnvVar("NEXT_PUBLIC_API_BASE_URL", { required: true });
-const apiSseUrl = getEnvVar("NEXT_PUBLIC_API_SSE_URL");
+//const apiBaseUrl = getEnvVar("NEXT_PUBLIC_API_BASE_URL", { required: true });
+//const apiSseUrl = getEnvVar("NEXT_PUBLIC_API_SSE_URL");
 const apiKey = getEnvVar("NEXT_PUBLIC_API_KEY");
 const apiJwt = getEnvVar("NEXT_PUBLIC_API_JWT");
+
+const apiBaseUrl = 'http://localhost:3000/'
+const apiSseUrl = 'http://localhost:3000/events'
 
 const defaultTimeout = Number(getEnvVar("NEXT_PUBLIC_API_TIMEOUT_MS")) || 10000;
 
