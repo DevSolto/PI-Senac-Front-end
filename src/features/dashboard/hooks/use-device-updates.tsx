@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { appConfig } from "@/lib/config";
+
 import type { CriticalAlertStatus, GatewayStatus } from "../types";
 
 export type DeviceUpdateType = "reading" | "alert" | "gateway" | "unknown";
@@ -109,26 +111,53 @@ const toNumber = (value: unknown): number | undefined => {
 };
 
 const toIsoString = (value: unknown): string | undefined => {
-  if (!value) {
+  if (value === null || value === undefined) {
     return undefined;
   }
+
+  const toDateFromNumber = (input: number): Date | undefined => {
+    if (!Number.isFinite(input)) {
+      return undefined;
+    }
+
+    const milliseconds = input > 1_000_000_000_000 ? input : input * 1000;
+    const date = new Date(milliseconds);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  };
 
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? undefined : value.toISOString();
   }
 
   if (typeof value === "number") {
-    return new Date(value).toISOString();
+    const date = toDateFromNumber(value);
+    return date?.toISOString();
   }
 
   if (typeof value === "string") {
-    const parsed = new Date(value);
+    const trimmed = value.trim();
+    if (trimmed === "") {
+      return undefined;
+    }
+
+    const numeric = Number(trimmed);
+    const numericDate = toDateFromNumber(numeric);
+    if (numericDate) {
+      return numericDate.toISOString();
+    }
+
+    const parsed = new Date(trimmed);
     if (!Number.isNaN(parsed.getTime())) {
       return parsed.toISOString();
     }
   }
 
   return undefined;
+};
+
+const buildEventSourceUrl = (deviceId: string): string => {
+  const baseUrl = (appConfig.apiSseUrl ?? appConfig.apiBaseUrl).replace(/\/$/, "");
+  return `${baseUrl}/devices/${deviceId}/updates`;
 };
 
 const toCriticalAlertStatus = (value: unknown, acknowledged?: boolean): CriticalAlertStatus | undefined => {
@@ -245,20 +274,7 @@ const normalizeDeviceUpdateMessage = (
 
   const timestampValue =
     source.timestamp ?? source.time ?? source.createdAt ?? source.emittedAt ?? Date.now();
-  const timestamp = (() => {
-    if (typeof timestampValue === "string") {
-      const parsedDate = new Date(timestampValue);
-      if (!Number.isNaN(parsedDate.getTime())) {
-        return parsedDate.toISOString();
-      }
-    }
-
-    if (typeof timestampValue === "number") {
-      return new Date(timestampValue).toISOString();
-    }
-
-    return new Date().toISOString();
-  })();
+  const timestamp = toIsoString(timestampValue) ?? new Date().toISOString();
 
   const deviceIdValue =
     source.deviceId ?? source.device_id ?? source.id_device ?? fallbackDeviceId ?? "unknown-device";
@@ -596,7 +612,7 @@ export const useDeviceUpdates = (deviceId: string | null | undefined): UseDevice
         reason,
       });
 
-      const eventSource = new EventSource(`/devices/${deviceId}/updates`);
+      const eventSource = new EventSource(buildEventSourceUrl(deviceId));
       eventSourceRef.current = eventSource;
       setIsStreaming(false);
 
