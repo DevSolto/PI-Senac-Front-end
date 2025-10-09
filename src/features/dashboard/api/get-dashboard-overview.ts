@@ -2,9 +2,9 @@ import { apiClient } from "@/lib/api/client";
 
 import { getDeviceHistory } from "./get-device-history";
 import type { GetDeviceHistoryOptions } from "./get-device-history";
+import { normalizeCriticalAlert, type ApiCriticalAlert } from "../transformers/alerts";
 import { buildDeviceHistoryDatasets, computeMonthlyAlertTotals } from "../transformers/history";
 import type {
-  CriticalAlert,
   DashboardMetric,
   DashboardMetrics,
   DashboardOverview,
@@ -14,14 +14,6 @@ import type {
   MonthlyAlertBreakdown,
   SensorsStatus,
 } from "../types";
-
-const generateFallbackId = (): string => {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return Math.random().toString(36).slice(2);
-};
 
 interface ApiMetricTrend {
   direction?: string;
@@ -64,23 +56,6 @@ interface ApiSensorStatus {
   averageSignalQuality?: number;
   gateway_status?: GatewayStatus;
   gatewayStatus?: GatewayStatus;
-}
-
-interface ApiCriticalAlert {
-  id?: string;
-  silo_name?: string;
-  siloName?: string;
-  alert_type?: string;
-  alertType?: string;
-  severity?: CriticalAlert["severity"];
-  detected_at?: string;
-  detectedAt?: string;
-  duration_minutes?: number;
-  durationMinutes?: number;
-  status?: CriticalAlert["status"];
-  description?: string;
-  recommended_action?: string;
-  recommendedAction?: string;
 }
 
 interface ApiMonthlyAlertBreakdown {
@@ -141,20 +116,6 @@ const normalizeMetric = (metric: ApiMetric | undefined, fallback: DashboardMetri
     trend: normalizeMetricTrend(metric?.trend ?? fallback.trend),
     description: metric?.description ?? fallback.description,
   } satisfies DashboardMetric;
-};
-
-const normalizeCriticalAlert = (alert: ApiCriticalAlert): CriticalAlert => {
-  return {
-    id: alert.id ?? generateFallbackId(),
-    siloName: alert.siloName ?? alert.silo_name ?? "—",
-    alertType: alert.alertType ?? alert.alert_type ?? "Alerta",
-    severity: alert.severity ?? "warning",
-    detectedAt: alert.detectedAt ?? alert.detected_at ?? new Date().toISOString(),
-    durationMinutes: alert.durationMinutes ?? alert.duration_minutes ?? 0,
-    status: alert.status ?? "active",
-    description: alert.description ?? "", 
-    recommendedAction: alert.recommendedAction ?? alert.recommended_action ?? "",
-  } satisfies CriticalAlert;
 };
 
 const normalizeMonthlyAlertBreakdown = (entry: ApiMonthlyAlertBreakdown): MonthlyAlertBreakdown => {

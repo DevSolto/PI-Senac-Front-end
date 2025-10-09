@@ -144,6 +144,38 @@ export const dashboardOverviewMock: DashboardOverview = {
       resolved: 44,
     },
   ],
+  monthlyAlertTotals: {
+    total: 244,
+    critical: 69,
+    warning: 110,
+    resolved: 216,
+  },
+  historyDatasets: {
+    temperature: [
+      { timestamp: "2024-05-27T00:00:00-03:00", value: 27.2 },
+      { timestamp: "2024-05-27T04:00:00-03:00", value: 27.9 },
+      { timestamp: "2024-05-27T08:00:00-03:00", value: 28.4 },
+      { timestamp: "2024-05-27T12:00:00-03:00", value: 29.1 },
+      { timestamp: "2024-05-27T16:00:00-03:00", value: 28.6 },
+      { timestamp: "2024-05-27T20:00:00-03:00", value: 27.8 },
+    ],
+    humidity: [
+      { timestamp: "2024-05-27T00:00:00-03:00", value: 64 },
+      { timestamp: "2024-05-27T04:00:00-03:00", value: 62 },
+      { timestamp: "2024-05-27T08:00:00-03:00", value: 67 },
+      { timestamp: "2024-05-27T12:00:00-03:00", value: 70 },
+      { timestamp: "2024-05-27T16:00:00-03:00", value: 68 },
+      { timestamp: "2024-05-27T20:00:00-03:00", value: 65 },
+    ],
+    co2: [
+      { timestamp: "2024-05-27T00:00:00-03:00", value: 420 },
+      { timestamp: "2024-05-27T04:00:00-03:00", value: 415 },
+      { timestamp: "2024-05-27T08:00:00-03:00", value: 430 },
+      { timestamp: "2024-05-27T12:00:00-03:00", value: 438 },
+      { timestamp: "2024-05-27T16:00:00-03:00", value: 432 },
+      { timestamp: "2024-05-27T20:00:00-03:00", value: 425 },
+    ],
+  },
 };
 
 export const createDashboardOverviewMockService = (

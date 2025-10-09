@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
+import type { AlertActionState } from "../hooks/use-critical-alerts";
 import type { CriticalAlert } from "../types";
 
 export interface CriticalAlertCardProps {
@@ -12,6 +13,7 @@ export interface CriticalAlertCardProps {
   onAcknowledge?: (alert: CriticalAlert) => void;
   onResolve?: (alert: CriticalAlert) => void;
   className?: string;
+  actionState?: AlertActionState;
 }
 
 export function CriticalAlertCard({
@@ -19,6 +21,7 @@ export function CriticalAlertCard({
   onAcknowledge,
   onResolve,
   className,
+  actionState,
 }: CriticalAlertCardProps) {
   const severityClasses: Record<CriticalAlert["severity"], string> = {
     critical: "border-rose-500/50 bg-rose-500/10",
@@ -30,6 +33,11 @@ export function CriticalAlertCard({
     acknowledged: "Reconhecido",
     resolved: "Resolvido",
   };
+
+  const isAcknowledged = alert.status === "acknowledged" || alert.status === "resolved";
+  const isResolved = alert.status === "resolved";
+  const isAcknowledging = Boolean(actionState?.acknowledging);
+  const isResolving = Boolean(actionState?.resolving);
 
   return (
     <Card className={cn("h-full border backdrop-blur", severityClasses[alert.severity], className)}>
@@ -64,8 +72,10 @@ export function CriticalAlertCard({
               variant="outline"
               onClick={() => onAcknowledge(alert)}
               aria-label={`Registrar reconhecimento para ${alert.siloName}`}
+              disabled={isAcknowledging || isAcknowledged}
+              aria-busy={isAcknowledging}
             >
-              Registrar reconhecimento
+              {isAcknowledging ? "Registrando..." : isAcknowledged ? "Reconhecido" : "Registrar reconhecimento"}
             </Button>
           )}
           {onResolve && (
@@ -73,11 +83,27 @@ export function CriticalAlertCard({
               size="sm"
               onClick={() => onResolve(alert)}
               aria-label={`Marcar como resolvido o alerta de ${alert.siloName}`}
+              disabled={isResolving || isResolved}
+              aria-busy={isResolving}
             >
-              Marcar como resolvido
+              {isResolving ? "Marcando..." : isResolved ? "Resolvido" : "Marcar como resolvido"}
             </Button>
           )}
         </div>
+        {actionState?.feedback && (
+          <p
+            role="status"
+            aria-live="polite"
+            className={cn(
+              "text-xs font-medium",
+              actionState.feedback.status === "success"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400",
+            )}
+          >
+            {actionState.feedback.message}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

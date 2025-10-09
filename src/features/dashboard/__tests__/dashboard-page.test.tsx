@@ -2,7 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import DashboardPage from "@/app/dashboard/page";
 import { dashboardOverviewMock } from "@/features/dashboard/mocks";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
+import { useCriticalAlerts } from "@/features/dashboard/hooks/use-critical-alerts";
+import { useDeviceUpdatesContext } from "@/features/dashboard/hooks/use-device-updates";
 import type { DashboardOverview } from "@/features/dashboard/types";
+import type { UseCriticalAlertsResult } from "@/features/dashboard/hooks/use-critical-alerts";
+import type { CriticalAlert } from "@/features/dashboard/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/config", () => ({
@@ -16,11 +20,34 @@ vi.mock("@/lib/config", () => ({
 }));
 
 vi.mock("@/features/dashboard/hooks/use-dashboard-overview");
+vi.mock("@/features/dashboard/hooks/use-critical-alerts");
+vi.mock("@/features/dashboard/hooks/use-device-updates", async () => {
+  const actual = await vi.importActual<typeof import("@/features/dashboard/hooks/use-device-updates")>(
+    "@/features/dashboard/hooks/use-device-updates",
+  );
+
+  return {
+    ...actual,
+    useDeviceUpdatesContext: vi.fn(() => ({
+      deviceId: null,
+      setActiveDevice: vi.fn(),
+      updates: [],
+      latestReading: undefined,
+      latestGateway: undefined,
+      latestAlert: undefined,
+      lastEventTimestamp: undefined,
+      isStreaming: false,
+      error: null,
+    })),
+  };
+});
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("deviceId=device-test"),
 }));
 
 const mockUseDashboardOverview = vi.mocked(useDashboardOverview);
+const mockUseCriticalAlerts = vi.mocked(useCriticalAlerts);
+const mockUseDeviceUpdatesContext = vi.mocked(useDeviceUpdatesContext);
 
 type DashboardOverviewHookResult = {
   data: DashboardOverview | null;
@@ -46,6 +73,20 @@ describe("DashboardPage", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockUseDashboardOverview.mockReturnValue(createHookResult(structuredClone(dashboardOverviewMock)));
+    mockUseDeviceUpdatesContext.mockReturnValue({
+      deviceId: "device-test",
+      setActiveDevice: vi.fn(),
+      updates: [],
+      latestReading: undefined,
+      latestGateway: undefined,
+      latestAlert: undefined,
+      lastEventTimestamp: undefined,
+      isStreaming: false,
+      error: null,
+    });
+    mockUseCriticalAlerts.mockReturnValue(
+      createCriticalAlertsHookResult(structuredClone(dashboardOverviewMock.criticalAlerts)),
+    );
   });
 
   afterEach(() => {
@@ -84,7 +125,7 @@ describe("DashboardPage", () => {
 
     const banner = screen.getByRole("status");
     expect(banner).toHaveAttribute("aria-live", "polite");
-    expect(banner).toHaveTextContent("Atenção: Verifique os sensores com anomalias detectadas.");
+    expect(banner).toHaveTextContent("6 sensores offline.");
     expect(banner).toHaveTextContent("6 offline");
     expect(banner).toHaveTextContent("6 manutenção");
     expect(banner).toHaveTextContent("4 bateria crítica");
@@ -95,7 +136,9 @@ describe("DashboardPage", () => {
 
     render(<DashboardPage />);
 
-    dashboardOverviewMock.criticalAlerts.forEach((alert) => {
+    const criticalAlerts = structuredClone(dashboardOverviewMock.criticalAlerts);
+
+    criticalAlerts.forEach((alert) => {
       expect(screen.getByText(alert.alertType)).toBeInTheDocument();
       expect(screen.getByText(alert.description)).toBeInTheDocument();
     });
@@ -115,6 +158,7 @@ describe("DashboardPage", () => {
     };
 
     mockUseDashboardOverview.mockReturnValueOnce(createHookResult(emptyOverview));
+    mockUseCriticalAlerts.mockReturnValueOnce(createCriticalAlertsHookResult([]));
 
     render(<DashboardPage />);
 
@@ -126,3 +170,13 @@ describe("DashboardPage", () => {
     ).toBeInTheDocument();
   });
 });
+const createCriticalAlertsHookResult = (alerts: CriticalAlert[]): UseCriticalAlertsResult => ({
+  alerts,
+  actionState: {},
+  isLoading: false,
+  error: null,
+  acknowledgeAlert: vi.fn().mockResolvedValue(undefined),
+  resolveAlert: vi.fn().mockResolvedValue(undefined),
+  refetch: vi.fn().mockResolvedValue(alerts),
+});
+
