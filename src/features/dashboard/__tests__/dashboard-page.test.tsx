@@ -1,12 +1,24 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import DashboardPage from "@/app/dashboard/page";
 import { dashboardOverviewMock } from "@/features/dashboard/mocks";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
 import type { DashboardOverview } from "@/features/dashboard/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/config", () => ({
+  appConfig: {
+    apiBaseUrl: "https://api.example.com",
+    apiSseUrl: "https://api.example.com/events",
+    apiKey: undefined,
+    apiJwt: undefined,
+    apiRequestTimeoutMs: 10_000,
+  },
+}));
+
 vi.mock("@/features/dashboard/hooks/use-dashboard-overview");
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams("deviceId=device-test"),
+}));
 
 const mockUseDashboardOverview = vi.mocked(useDashboardOverview);
 
@@ -42,22 +54,27 @@ describe("DashboardPage", () => {
   });
 
   it("renders KPI metrics with accessible controls", async () => {
-    const user = userEvent.setup();
     const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 
     render(<DashboardPage />);
 
-    Object.values(dashboardOverviewMock.metrics).forEach((metric) => {
+    const metricEntries = Object.entries(dashboardOverviewMock.metrics) as [
+      keyof DashboardOverview["metrics"],
+      (typeof dashboardOverviewMock.metrics)[keyof DashboardOverview["metrics"]],
+    ][];
+
+    metricEntries.forEach(([, metric]) => {
       expect(screen.getByRole("button", { name: `Ver detalhes da métrica ${metric.label}` })).toBeInTheDocument();
     });
 
-    const monitoredSilosButton = screen.getByRole("button", {
-      name: `Ver detalhes da métrica ${dashboardOverviewMock.metrics.monitoredSilos.label}`,
-    });
+    const [firstMetricKey, firstMetric] = metricEntries[0];
 
-    await user.click(monitoredSilosButton);
+    fireEvent.click(screen.getByRole("button", { name: `Ver detalhes da métrica ${firstMetric.label}` }));
 
-    expect(consoleSpy).toHaveBeenCalledWith("Selecionar métrica para detalhamento futuro:", "monitoredSilos");
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Selecionar métrica para detalhamento futuro:",
+      firstMetricKey,
+    );
 
     consoleSpy.mockRestore();
   });
@@ -74,7 +91,6 @@ describe("DashboardPage", () => {
   });
 
   it("exibe os alertas críticos e permite navegar para a lista completa", async () => {
-    const user = userEvent.setup();
     const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 
     render(<DashboardPage />);
@@ -85,7 +101,7 @@ describe("DashboardPage", () => {
     });
 
     const viewAllButton = screen.getByRole("button", { name: "Ver todos os alertas críticos" });
-    await user.click(viewAllButton);
+    fireEvent.click(viewAllButton);
 
     expect(consoleSpy).toHaveBeenCalledWith("Navegar para a lista completa de alertas críticos");
 

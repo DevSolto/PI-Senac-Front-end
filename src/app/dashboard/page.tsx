@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
@@ -11,6 +12,10 @@ import { CriticalAlertCard } from "@/features/dashboard/components/critical-aler
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
 import type { DashboardMetrics } from "@/features/dashboard/types";
 
+interface DashboardPageProps {
+  deviceId?: string | null;
+}
+
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center">
@@ -20,20 +25,29 @@ function EmptyState({ title, description }: { title: string; description: string
   );
 }
 
-export default function DashboardPage() {
-  const { data, refresh } = useDashboardOverview();
+export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageProps = {}) {
+  const searchParams = useSearchParams();
+  const deviceId = deviceIdProp ?? searchParams.get("deviceId");
+  const { data, isError, error, refresh, refetch } = useDashboardOverview({
+    deviceId,
+    autoFetch: Boolean(deviceId),
+  });
 
   useEffect(() => {
+    if (!deviceId) {
+      return undefined;
+    }
+
     const intervalId = window.setInterval(() => {
-      refresh().catch((error) => {
-        console.error("Falha ao atualizar a visão geral do dashboard", error);
+      refresh().catch((refreshError) => {
+        console.error("Falha ao atualizar a visão geral do dashboard", refreshError);
       });
     }, 60_000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [refresh]);
+  }, [deviceId, refresh]);
 
   const handleMetricSelect = useCallback((metricKey: keyof DashboardMetrics) => {
     console.info("Selecionar métrica para detalhamento futuro:", metricKey);
@@ -43,8 +57,56 @@ export default function DashboardPage() {
     console.info("Navegar para a lista completa de alertas críticos");
   }, []);
 
+  if (!deviceId) {
+    return (
+      <div className="py-10">
+        <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
+          <EmptyState
+            title="Selecione um dispositivo"
+            description="Escolha um silo para visualizar a visão geral de operação."
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError && !data) {
+    return (
+      <div className="py-10">
+        <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
+          <EmptyState
+            title="Não foi possível carregar o dashboard"
+            description={error?.message ?? "Tente novamente em instantes."}
+          />
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                refetch().catch((refetchError) => {
+                  console.error("Falha ao tentar carregar novamente a visão geral", refetchError);
+                });
+              }}
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!data) {
-    return null;
+    return (
+      <div className="py-10">
+        <div className="container mx-auto flex w-full flex-col gap-6 px-4 sm:px-6 lg:px-8">
+          <EmptyState
+            title="Carregando dashboard"
+            description="Estamos buscando os dados mais recentes do dispositivo selecionado."
+          />
+        </div>
+      </div>
+    );
   }
 
   const { farm, sensorStatus, sensorsStatus, metrics, criticalAlerts, monthlyAlertBreakdown } =

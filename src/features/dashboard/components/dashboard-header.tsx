@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Menu, Sparkles } from "lucide-react";
 import type { DashboardOverview } from "../types";
-import { StatusBanner } from "./status-banner";
+import { StatusBanner, type StatusBannerVariant } from "./status-banner";
 
 export interface DashboardHeaderProps {
   farm: DashboardOverview["farm"];
@@ -20,6 +20,18 @@ export function DashboardHeader({
   sensorStatus,
   className,
 }: DashboardHeaderProps) {
+  const bannerVariant: StatusBannerVariant = (() => {
+    if (sensorStatus.gatewayStatus === "offline") {
+      return "danger";
+    }
+
+    if (sensorStatus.offline > 0 || sensorStatus.batteryCritical > 0) {
+      return "warning";
+    }
+
+    return "ok";
+  })();
+
   return (
     <Card
       className={cn(
@@ -38,6 +50,7 @@ export function DashboardHeader({
         </div>
         <StatusBanner
           sensorStatus={sensorStatus}
+          variant={bannerVariant}
           className="shadow-sm"
         />
       </CardHeader>

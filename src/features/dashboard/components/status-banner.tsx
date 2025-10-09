@@ -58,6 +58,26 @@ export function StatusBanner({
           <p className="text-xs text-current/80">
             Gateway {sensorStatus.gatewayStatus} · Sinal médio {sensorStatus.averageSignalQuality}% · {sensorStatus.online} sensores online
           </p>
+          <div className="flex flex-wrap gap-2 pt-1 text-[11px] uppercase tracking-wide">
+            <Badge
+              variant="outline"
+              className="border-current/40 bg-background/40 font-medium text-current"
+            >
+              {sensorStatus.offline} offline
+            </Badge>
+            <Badge
+              variant="outline"
+              className="border-current/40 bg-background/40 font-medium text-current"
+            >
+              {sensorStatus.maintenance} manutenção
+            </Badge>
+            <Badge
+              variant="outline"
+              className="border-current/40 bg-background/40 font-medium text-current"
+            >
+              {sensorStatus.batteryCritical} bateria crítica
+            </Badge>
+          </div>
         </div>
       </div>
     </Card>
