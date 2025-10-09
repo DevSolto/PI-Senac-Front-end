@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { MetricHistoryChart } from "@/components/charts/metric-history-chart";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/features/dashboard/components/dashboard-header";
 import { MetricCard, type MetricCardTone } from "@/features/dashboard/components/metric-card";
@@ -119,8 +120,16 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
     );
   }
 
-  const { farm, sensorStatus, sensorsStatus, metrics, criticalAlerts, monthlyAlertBreakdown } =
-    data;
+  const {
+    farm,
+    sensorStatus,
+    sensorsStatus,
+    metrics,
+    criticalAlerts,
+    monthlyAlertBreakdown,
+    monthlyAlertTotals,
+    historyDatasets,
+  } = data;
 
   const streamSensorStatus = latestReading?.sensorStatus;
   const gatewayStatus = latestReading?.gatewayStatus ?? latestGateway?.status ?? sensorStatus.gatewayStatus;
@@ -231,6 +240,47 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
           </div>
         </section>
 
+        <section aria-label="Histórico de leituras" className="space-y-4">
+          <header className="space-y-1">
+            <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+              Histórico de leituras
+            </p>
+            <h2 className="text-2xl font-semibold text-foreground">Tendências dos sensores ambientais</h2>
+          </header>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <MetricHistoryChart
+              title="Temperatura"
+              description="Série temporal com base nas leituras históricas."
+              unit="°C"
+              data={historyDatasets.temperature}
+              chartHeight={170}
+              chartClassName="text-amber-500 dark:text-amber-400"
+              chartWrapperClassName="h-44"
+              emptyState="Ainda não há leituras suficientes de temperatura."
+            />
+            <MetricHistoryChart
+              title="Umidade"
+              description="Evolução recente da umidade relativa registrada."
+              unit="%"
+              data={historyDatasets.humidity}
+              chartHeight={170}
+              chartClassName="text-sky-500 dark:text-sky-400"
+              chartWrapperClassName="h-44"
+              emptyState="Ainda não há leituras suficientes de umidade."
+            />
+            <MetricHistoryChart
+              title="CO₂"
+              description="Concentração em partes por milhão ao longo do tempo."
+              unit="ppm"
+              data={historyDatasets.co2}
+              chartHeight={170}
+              chartClassName="text-emerald-500 dark:text-emerald-400"
+              chartWrapperClassName="h-44"
+              emptyState="Ainda não há leituras suficientes de CO₂."
+            />
+          </div>
+        </section>
+
         <section
           aria-labelledby="critical-alerts-heading"
           className="space-y-4 rounded-2xl border border-border/60 bg-background p-6 shadow-sm"
@@ -280,7 +330,7 @@ export default function DashboardPage({ deviceId: deviceIdProp }: DashboardPageP
             </h2>
           </div>
           <div className="mt-6">
-            <MonthlyAlertsCard alerts={monthlyAlertBreakdown} />
+            <MonthlyAlertsCard alerts={monthlyAlertBreakdown} totals={monthlyAlertTotals} />
           </div>
         </section>
       </div>

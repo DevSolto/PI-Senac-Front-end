@@ -1,3 +1,5 @@
+import type { TimeSeriesDataPoint } from "@/lib/charts/types";
+
 export type MetricTrendDirection = "up" | "down" | "stable";
 
 export interface MetricTrend {
@@ -43,6 +45,19 @@ export interface MonthlyAlertBreakdown {
   resolved: number;
 }
 
+export interface MonthlyAlertTotals {
+  total: number;
+  critical: number;
+  warning: number;
+  resolved: number;
+}
+
+export interface DeviceHistoryDatasets {
+  temperature: TimeSeriesDataPoint[];
+  humidity: TimeSeriesDataPoint[];
+  co2: TimeSeriesDataPoint[];
+}
+
 export type GatewayStatus = "online" | "degraded" | "offline";
 
 export type SensorsStatus = "OK" | "ISSUE";
@@ -70,6 +85,8 @@ export interface DashboardOverview {
   metrics: DashboardMetrics;
   criticalAlerts: CriticalAlert[];
   monthlyAlertBreakdown: MonthlyAlertBreakdown[];
+  monthlyAlertTotals: MonthlyAlertTotals;
+  historyDatasets: DeviceHistoryDatasets;
 }
 
 export type DeviceHistoryMetrics = Record<string, number | null>;
