@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 
-import { cn } from '../../components/ui/utils';
+import { cn } from '@/components/ui/utils';
 import { navigationItems } from '../routes';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
@@ -20,8 +20,7 @@ export const MainLayout = () => {
   }, []);
 
   const currentItem = navigationItems.find((item) => item.id === activeTab) ?? navigationItems[0];
-  const ActiveComponent =
-    isMobile && currentItem?.mobileComponent ? currentItem.mobileComponent : currentItem?.component;
+  const ActiveComponent = currentItem?.component;
 
   const criticalAlerts = 3;
   const totalAlerts = 7;

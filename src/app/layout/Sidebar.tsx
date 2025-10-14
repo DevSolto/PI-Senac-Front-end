@@ -1,8 +1,8 @@
 import { Leaf, Moon, Sun, X } from 'lucide-react';
 
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { cn } from '../../components/ui/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/components/ui/utils';
 import type { NavigationItem } from '../routes';
 import { navigationItems } from '../routes';
 import { useMobile } from '../hooks/useMobile';

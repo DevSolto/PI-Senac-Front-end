@@ -1,22 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-import { OverviewDashboard } from '../components/OverviewDashboard';
-import { FieldMap } from '../components/FieldMap';
-import { FieldManagement } from '../components/FieldManagement';
-import { SatelliteMonitor } from '../components/SatelliteMonitor';
-import { FleetManagement } from '../components/FleetManagement';
-import { AgriWeatherAI } from '../components/AgriWeatherAI';
-import { AgroPestAI } from '../components/AgroPestAI';
-import { EconomicDashboard } from '../components/EconomicDashboard';
-import { TaskManagement } from '../components/TaskManagement';
-import { HardwareStatus } from '../components/HardwareStatus';
-import { AlertsPage } from '../components/AlertsPage';
-import { Analytics } from '../components/Analytics';
-import { MessagesReports } from '../components/MessagesReports';
-import { Integrations } from '../components/Integrations';
-import { MobileOverview } from '../components/MobileOverview';
-import { MobileFieldMap } from '../components/MobileFieldMap';
+import { OverviewPage } from '@/features/overview/pages/OverviewPage';
+import { FieldMap } from '@/features/field/pages/FieldMap';
+import { FieldManagement } from '@/features/field/pages/FieldManagement';
+import { SatelliteMonitor } from '@/features/satellite/pages/SatelliteMonitor';
+import { FleetManagement } from '@/features/fleet/pages/FleetManagement';
+import { AgriWeatherAI } from '@/features/weather/pages/AgriWeatherAI';
+import { AgroPestAI } from '@/features/pest/pages/AgroPestAI';
+import { EconomicDashboard } from '@/features/finance/pages/EconomicDashboard';
+import { TaskManagement } from '@/features/operations/pages/TaskManagement';
+import { HardwareStatus } from '@/features/hardware/pages/HardwareStatus';
+import { AlertsPage } from '@/features/alerts/pages/AlertsPage';
+import { Analytics } from '@/features/analytics/pages/Analytics';
+import { MessagesReports } from '@/features/reports/pages/MessagesReports';
+import { Integrations } from '@/features/integrations/pages/Integrations';
 import {
   Home,
   Map,
@@ -39,7 +37,6 @@ export interface NavigationItem {
   label: string;
   icon: LucideIcon;
   component: ComponentType;
-  mobileComponent?: ComponentType;
   primary?: boolean;
 }
 
@@ -48,8 +45,7 @@ export const navigationItems: NavigationItem[] = [
     id: 'overview',
     label: 'Overview',
     icon: Home,
-    component: OverviewDashboard,
-    mobileComponent: MobileOverview,
+    component: OverviewPage,
     primary: true,
   },
   {
@@ -57,7 +53,6 @@ export const navigationItems: NavigationItem[] = [
     label: 'Field Map',
     icon: Map,
     component: FieldMap,
-    mobileComponent: MobileFieldMap,
     primary: true,
   },
   {

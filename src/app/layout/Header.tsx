@@ -1,6 +1,6 @@
 import { AlertTriangle, Leaf, Menu, Moon, Sun } from 'lucide-react';
 
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import { useMobile } from '../hooks/useMobile';
 import { useSidebar } from '../hooks/useSidebar';
 import { useTheme } from '../hooks/useTheme';
