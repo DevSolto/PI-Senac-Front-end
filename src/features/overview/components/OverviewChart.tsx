@@ -16,39 +16,18 @@ import {
 } from 'recharts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface CropHealthData {
-  name: string;
-  healthy: number;
-  moderate: number;
-  critical: number;
-}
-
-interface FieldStatusData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface YieldForecastData {
-  name: string;
-  current: number;
-  forecast: number;
-  target: number;
-}
-
-interface WeatherData {
-  name: string;
-  temp: number;
-  humidity: number;
-  precipitation: number;
-}
+import type {
+  CropHealthMetric,
+  FieldStatusMetric,
+  WeatherMetric,
+  YieldForecast,
+} from '@/shared/types';
 
 interface OverviewChartProps {
-  cropHealthData: CropHealthData[];
-  fieldStatusData: FieldStatusData[];
-  yieldForecastData: YieldForecastData[];
-  weatherData: WeatherData[];
+  cropHealthData: CropHealthMetric[];
+  fieldStatusData: FieldStatusMetric[];
+  yieldForecastData: YieldForecast[];
+  weatherData: WeatherMetric[];
 }
 
 export const OverviewChart = ({
@@ -69,7 +48,7 @@ export const OverviewChart = ({
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={cropHealthData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
                 <Area type="monotone" dataKey="healthy" stackId="1" stroke="#16a34a" fill="#16a34a" />
@@ -95,10 +74,10 @@ export const OverviewChart = ({
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}%`}
+                  label={({ label, value }) => `${label}: ${value}%`}
                 >
                   {fieldStatusData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
+                    <Cell key={entry.label} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -118,7 +97,7 @@ export const OverviewChart = ({
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={yieldForecastData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="current" fill="#ea580c" name="Current" />
@@ -138,14 +117,14 @@ export const OverviewChart = ({
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={weatherData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="label" />
                 <YAxis yAxisId="left" />
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip />
                 <Line
                   yAxisId="left"
                   type="monotone"
-                  dataKey="temp"
+                  dataKey="temperature"
                   stroke="#ea580c"
                   strokeWidth={2}
                   name="Temperature (°F)"

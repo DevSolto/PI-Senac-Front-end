@@ -2,15 +2,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const revenueData = [
-  { crop: 'Corn', revenue: 850000, cost: 520000, profit: 330000 },
-  { crop: 'Soybeans', revenue: 620000, cost: 380000, profit: 240000 },
-  { crop: 'Wheat', revenue: 420000, cost: 290000, profit: 130000 },
-  { crop: 'Cotton', revenue: 380000, cost: 250000, profit: 130000 },
-];
+import type { FinanceData } from '@/shared/types';
+import { revenueData } from '@/shared/utils/mocks';
 
 export function EconomicDashboard() {
+  const profitabilityData: FinanceData[] = revenueData;
+
   return (
     <div className="space-y-6">
       <div>
@@ -84,7 +81,7 @@ export function EconomicDashboard() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenueData}>
+            <BarChart data={profitabilityData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="crop" />
               <YAxis />

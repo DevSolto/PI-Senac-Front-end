@@ -4,18 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Map, Layers, MapPin, Satellite, Droplets, Thermometer,
   Wind, AlertTriangle, Eye, EyeOff, Filter, ZoomIn, ZoomOut
 } from 'lucide-react';
-
-const fieldData = [
-  { id: 'F001', name: 'North Corn Field', area: 125, crop: 'Corn', health: 92, alerts: 0, x: 20, y: 15, width: 30, height: 20, color: '#16a34a' },
-  { id: 'F002', name: 'South Soybean', area: 89, crop: 'Soybeans', health: 87, alerts: 1, x: 55, y: 25, width: 25, height: 25, color: '#eab308' },
-  { id: 'F003', name: 'East Wheat Block', area: 156, crop: 'Wheat', health: 78, alerts: 2, x: 15, y: 50, width: 35, height: 18, color: '#ea580c' },
-  { id: 'F004', name: 'West Cotton', area: 67, crop: 'Cotton', health: 95, alerts: 0, x: 60, y: 55, width: 22, height: 15, color: '#16a34a' },
-  { id: 'F005', name: 'Central Research', area: 43, crop: 'Mixed', health: 89, alerts: 1, x: 40, y: 35, width: 15, height: 12, color: '#3b82f6' },
-];
+import type { Field } from '@/shared/types';
+import { fieldData, weatherStations } from '@/shared/utils/mocks';
 
 const layerOptions = [
   { id: 'satellite', label: 'Satellite Imagery', icon: Satellite, active: true },
@@ -26,14 +20,8 @@ const layerOptions = [
   { id: 'alerts', label: 'Alert Zones', icon: AlertTriangle, active: true },
 ];
 
-const weatherStations = [
-  { id: 'WS001', name: 'North Station', x: 25, y: 20, temp: 74, humidity: 68 },
-  { id: 'WS002', name: 'South Station', x: 70, y: 65, temp: 76, humidity: 72 },
-  { id: 'WS003', name: 'Central Station', x: 45, y: 40, temp: 75, humidity: 70 },
-];
-
 export function FieldMap() {
-  const [selectedField, setSelectedField] = useState(null);
+  const [selectedField, setSelectedField] = useState<Field | null>(null);
   const [layers, setLayers] = useState(layerOptions);
   const [mapView, setMapView] = useState('satellite'); // satellite, ndvi, thermal
 
@@ -150,7 +138,7 @@ export function FieldMap() {
                     <div className="relative">
                       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-1 rounded shadow text-xs whitespace-nowrap">
-                        {station.temp}°F
+                        {station.temperature}°F
                       </div>
                     </div>
                   </div>
