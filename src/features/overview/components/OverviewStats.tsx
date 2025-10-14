@@ -1,33 +1,8 @@
-import type { ComponentProps } from 'react';
-import type { LucideIcon } from 'lucide-react';
-
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/components/ui/utils';
-
-export interface KeyMetric {
-  title: string;
-  value: string;
-  icon: LucideIcon;
-  iconClassName?: string;
-  trend?: {
-    label: string;
-    icon?: LucideIcon;
-    className?: string;
-  };
-  progress?: number;
-  description?: string;
-  descriptionClassName?: string;
-  badges?: Array<{ label: string; variant?: ComponentProps<typeof Badge>['variant']; className?: string }>;
-}
-
-export interface QuickStat {
-  icon: LucideIcon;
-  iconClassName?: string;
-  value: string;
-  label: string;
-}
+import type { KeyMetric, QuickStat } from '@/shared/types';
 
 interface OverviewStatsProps {
   keyMetrics: KeyMetric[];

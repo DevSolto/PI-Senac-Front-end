@@ -1,29 +1,14 @@
-import type { ComponentProps } from 'react';
-import type { LucideIcon } from 'lucide-react';
-
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/components/ui/utils';
-
-export type AlertSeverity = 'critical' | 'warning' | 'info';
-
-export interface OverviewAlert {
-  id: string;
-  icon: LucideIcon;
-  title: string;
-  location?: string;
-  description: string;
-  timestamp: string;
-  severity: AlertSeverity;
-  badgeLabel: string;
-}
+import type { Alert as AlertData, AlertSeverity } from '@/shared/types';
 
 interface AlertsSummaryProps {
-  alerts: OverviewAlert[];
+  alerts: AlertData[];
 }
 
-const severityStyles: Record<AlertSeverity, { border: string; badgeVariant?: ComponentProps<typeof Badge>['variant']; badgeClass?: string }> = {
+const severityStyles: Record<AlertSeverity, { border: string; badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline'; badgeClass?: string }> = {
   critical: { border: 'border-l-red-500', badgeVariant: 'destructive' },
   warning: { border: 'border-l-yellow-500', badgeVariant: 'secondary' },
   info: { border: 'border-l-green-500', badgeClass: 'bg-agro-green text-white' },
@@ -42,7 +27,7 @@ export const AlertsSummary = ({ alerts }: AlertsSummaryProps) => {
             const styles = severityStyles[severity];
             return (
               <Alert key={id} className={cn('border-l-4', styles.border)}>
-                <Icon className="h-4 w-4" />
+                {Icon ? <Icon className="h-4 w-4" /> : null}
                 <AlertDescription>
                   <div className="flex justify-between items-start">
                     <div>
@@ -51,9 +36,11 @@ export const AlertsSummary = ({ alerts }: AlertsSummaryProps) => {
                       <p className="text-sm text-muted-foreground mt-1">{description}</p>
                     </div>
                     <div className="text-right space-y-1">
-                      <Badge variant={styles.badgeVariant} className={styles.badgeClass}>
-                        {badgeLabel}
-                      </Badge>
+                      {badgeLabel ? (
+                        <Badge variant={styles.badgeVariant} className={styles.badgeClass}>
+                          {badgeLabel}
+                        </Badge>
+                      ) : null}
                       <p className="text-xs text-muted-foreground">{timestamp}</p>
                     </div>
                   </div>

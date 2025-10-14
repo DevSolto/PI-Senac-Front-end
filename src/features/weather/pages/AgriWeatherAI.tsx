@@ -1,19 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CloudRain, Sun, Wind, Droplets, Thermometer, Eye } from 'lucide-react';
+import { CloudRain, Wind, Droplets, Thermometer } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const weatherData = [
-  { day: 'Mon', temp: 74, rain: 0, humidity: 65, wind: 8 },
-  { day: 'Tue', temp: 76, rain: 0.2, humidity: 70, wind: 12 },
-  { day: 'Wed', temp: 73, rain: 0, humidity: 68, wind: 6 },
-  { day: 'Thu', temp: 78, rain: 0.1, humidity: 72, wind: 10 },
-  { day: 'Fri', temp: 77, rain: 0, humidity: 69, wind: 8 },
-  { day: 'Sat', temp: 75, rain: 0.3, humidity: 74, wind: 14 },
-  { day: 'Sun', temp: 79, rain: 0, humidity: 66, wind: 7 },
-];
+import type { WeatherMetric } from '@/shared/types';
+import { weatherForecastData } from '@/shared/utils/mocks';
 
 export function AgriWeatherAI() {
+  const forecastData: WeatherMetric[] = weatherForecastData;
+
   return (
     <div className="space-y-6">
       <div>
@@ -81,12 +75,12 @@ export function AgriWeatherAI() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={weatherData}>
+            <LineChart data={forecastData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="temp" stroke="#ea580c" name="Temperature (°F)" />
+              <Line type="monotone" dataKey="temperature" stroke="#ea580c" name="Temperature (°F)" />
               <Line type="monotone" dataKey="humidity" stroke="#3b82f6" name="Humidity (%)" />
             </LineChart>
           </ResponsiveContainer>
