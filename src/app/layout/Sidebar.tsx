@@ -67,8 +67,8 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
                 <Leaf className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-semibold text-sidebar-foreground">AgroSense AI</h1>
-                <p className="text-xs text-muted-foreground">Smart Agriculture</p>
+                <h1 className="font-semibold text-sidebar-foreground">PI Senac</h1>
+                <p className="text-xs text-muted-foreground">Projeto Integrador</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={closeSidebar} className="p-2">
@@ -100,8 +100,8 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
             <Leaf className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-semibold text-sidebar-foreground">AgroSense AI</h1>
-            <p className="text-xs text-muted-foreground">Smart Agriculture</p>
+            <h1 className="font-semibold text-sidebar-foreground">PI Senac</h1>
+            <p className="text-xs text-muted-foreground">Projeto Integrador</p>
           </div>
         </div>
       </div>

@@ -1,11 +1,29 @@
+# PI Senac Front-end
 
-  # AgroSense AI Dashboard Platform (Community)
+Aplicação front-end desenvolvida para o Projeto Integrador do Senac. O objetivo é oferecer uma base em React com Vite e TypeScript pronta para receber os módulos que serão construídos ao longo do projeto.
 
-  This is a code bundle for AgroSense AI Dashboard Platform (Community). The original project is available at https://www.figma.com/design/hmx5h7bTTCBB3sPvz6fiBw/AgroSense-AI-Dashboard-Platform--Community-.
+## Pré-requisitos
+- Node.js 20+
+- PNPM ou NPM
 
-  ## Running the code
+## Instalação
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+2. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+3. Acesse a aplicação em `http://localhost:5173` (ou a porta indicada no terminal).
 
-  Run `npm i` to install the dependencies.
+## Build de produção
+Gere a versão otimizada executando:
+```bash
+npm run build
+```
 
-  Run `npm run dev` to start the development server.
-  
+## Estrutura básica
+- `index.html`: ponto de entrada do Vite.
+- `src/`: código-fonte da aplicação React.
+- `vite.config.ts`: configuração do Vite.

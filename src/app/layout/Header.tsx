@@ -30,7 +30,7 @@ export const Header = ({ totalAlerts, criticalAlerts }: HeaderProps) => {
             <Leaf className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-semibold">AgroSense AI</h1>
+            <h1 className="font-semibold">PI Senac</h1>
           </div>
         </div>
       </div>
