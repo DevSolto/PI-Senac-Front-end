@@ -5,3 +5,5 @@ export * from './users';
 export * from './users.types';
 export * from './silos';
 export * from './silos.types';
+export * from './data-process';
+export * from './data-process.types';
