@@ -3,3 +3,5 @@ export * from './auth';
 export * from './auth.types';
 export * from './users';
 export * from './users.types';
+export * from './silos';
+export * from './silos.types';
