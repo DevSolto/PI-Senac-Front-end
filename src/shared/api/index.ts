@@ -3,6 +3,8 @@ export * from './alerts.types';
 export * from './health';
 export * from './auth';
 export * from './auth.types';
+export * from './companies';
+export * from './companies.types';
 export * from './users';
 export * from './users.types';
 export * from './silos';
