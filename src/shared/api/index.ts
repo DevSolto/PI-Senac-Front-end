@@ -1,3 +1,5 @@
+export * from './alerts';
+export * from './alerts.types';
 export * from './health';
 export * from './auth';
 export * from './auth.types';
