@@ -1,35 +1,19 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-import { OverviewPage } from '@/features/overview/pages/OverviewPage';
-import { FieldMap } from '@/features/field/pages/FieldMap';
-import { FieldManagement } from '@/features/field/pages/FieldManagement';
-import { SatelliteMonitor } from '@/features/satellite/pages/SatelliteMonitor';
-import { FleetManagement } from '@/features/fleet/pages/FleetManagement';
-import { AgriWeatherAI } from '@/features/weather/pages/AgriWeatherAI';
-import { AgroPestAI } from '@/features/pest/pages/AgroPestAI';
-import { EconomicDashboard } from '@/features/finance/pages/EconomicDashboard';
-import { TaskManagement } from '@/features/operations/pages/TaskManagement';
-import { HardwareStatus } from '@/features/hardware/pages/HardwareStatus';
 import { AlertsPage } from '@/features/alerts/pages/AlertsPage';
-import { Analytics } from '@/features/analytics/pages/Analytics';
-import { MessagesReports } from '@/features/reports/pages/MessagesReports';
-import { Integrations } from '@/features/integrations/pages/Integrations';
+import { SilosPage } from '@/features/silos/pages/SilosPage';
+import { DevicesPage } from '@/features/devices/pages/DevicesPage';
+import { DataProcessPage } from '@/features/data-process/pages/DataProcessPage';
+import { UsersPage } from '@/features/users/pages/UsersPage';
+import { HealthStatusPage } from '@/features/health/pages/HealthStatusPage';
 import {
-  Home,
-  Map,
-  Layers,
-  Satellite,
-  Truck,
-  CloudRain,
-  Bug,
-  DollarSign,
-  CheckSquare,
-  Cpu,
+  Activity,
   AlertTriangle,
   BarChart3,
-  MessageSquare,
-  Settings,
+  Cpu,
+  Warehouse,
+  Users as UsersIcon,
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -42,91 +26,42 @@ export interface NavigationItem {
 
 export const navigationItems: NavigationItem[] = [
   {
-    id: 'overview',
-    label: 'Overview',
-    icon: Home,
-    component: OverviewPage,
-    primary: true,
-  },
-  {
-    id: 'field-map',
-    label: 'Field Map',
-    icon: Map,
-    component: FieldMap,
-    primary: true,
-  },
-  {
     id: 'alerts',
-    label: 'Alerts',
+    label: 'Alertas',
     icon: AlertTriangle,
     component: AlertsPage,
     primary: true,
   },
   {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    component: Analytics,
+    id: 'silos',
+    label: 'Silos',
+    icon: Warehouse,
+    component: SilosPage,
     primary: true,
   },
   {
-    id: 'field-management',
-    label: 'Field Management',
-    icon: Layers,
-    component: FieldManagement,
-  },
-  {
-    id: 'satellite',
-    label: 'Satellites',
-    icon: Satellite,
-    component: SatelliteMonitor,
-  },
-  {
-    id: 'fleet',
-    label: 'Fleet',
-    icon: Truck,
-    component: FleetManagement,
-  },
-  {
-    id: 'weather',
-    label: 'Weather AI',
-    icon: CloudRain,
-    component: AgriWeatherAI,
-  },
-  {
-    id: 'pest',
-    label: 'Pest AI',
-    icon: Bug,
-    component: AgroPestAI,
-  },
-  {
-    id: 'economic',
-    label: 'Economics',
-    icon: DollarSign,
-    component: EconomicDashboard,
-  },
-  {
-    id: 'tasks',
-    label: 'Tasks',
-    icon: CheckSquare,
-    component: TaskManagement,
-  },
-  {
-    id: 'hardware',
-    label: 'Hardware',
+    id: 'devices',
+    label: 'Dispositivos',
     icon: Cpu,
-    component: HardwareStatus,
+    component: DevicesPage,
+    primary: true,
   },
   {
-    id: 'messages',
-    label: 'Reports',
-    icon: MessageSquare,
-    component: MessagesReports,
+    id: 'data-process',
+    label: 'Processamentos',
+    icon: BarChart3,
+    component: DataProcessPage,
   },
   {
-    id: 'integrations',
-    label: 'Integrations',
-    icon: Settings,
-    component: Integrations,
+    id: 'users',
+    label: 'Usuários',
+    icon: UsersIcon,
+    component: UsersPage,
+  },
+  {
+    id: 'health',
+    label: 'Status',
+    icon: Activity,
+    component: HealthStatusPage,
   },
 ];
