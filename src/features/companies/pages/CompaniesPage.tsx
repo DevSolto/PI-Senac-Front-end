@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CompanyCard, CompanyCardSkeleton } from '../components/CompanyCard';
 import { listCompanies } from '@/shared/api/companies';
 import type { Company } from '@/shared/api/companies.types';
+import { CreateCompanyDialog } from '../components/CreateCompanyDialog';
 
 const SKELETON_ITEMS = 6;
 
@@ -91,6 +92,10 @@ export const CompaniesPage = () => {
   }, []);
 
   const showEmptyState = !loading && !error && companies.length === 0;
+
+  const handleCompanyCreated = useCallback((company: Company) => {
+    setCompanies((previous) => [...previous, company]);
+  }, []);
 
   return (
     <div className="space-y-6">

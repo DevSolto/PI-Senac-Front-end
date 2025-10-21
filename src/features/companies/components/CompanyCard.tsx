@@ -1,5 +1,6 @@
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -8,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Company } from '@/shared/api/companies.types';
+import { Button } from '@/components/ui/button';
 
 import { CompanyHighlights } from './CompanyHighlights';
 
@@ -20,7 +22,7 @@ export function CompanyCard({ company, showId = false }: CompanyCardProps) {
   return (
     <Card data-company-id={company.id}>
       <CardHeader className="gap-2">
-        <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
           <CardTitle className="text-xl font-semibold leading-tight">
             {company.name}
           </CardTitle>
@@ -30,6 +32,19 @@ export function CompanyCard({ company, showId = false }: CompanyCardProps) {
             </Badge>
           ) : null}
         </div>
+        <CardAction className="self-start">
+          {/* TODO: Substituir por navegação para a página de detalhes da companhia */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled
+            aria-disabled={true}
+            title="Visualização detalhada disponível em breve"
+          >
+            Ver detalhes
+          </Button>
+        </CardAction>
         <CardDescription className="font-mono text-xs uppercase tracking-wide">
           CNPJ {company.CNPJ}
         </CardDescription>
