@@ -21,6 +21,8 @@ export interface JsonRequestOptions {
 
 export type ResponseInterceptor = (response: Response) => Promise<Response> | Response;
 
+export type JsonMethodOptions = Omit<JsonRequestOptions, 'method' | 'path' | 'body'>;
+
 export class HttpError extends Error {
   public readonly status: number;
   public readonly statusText: string;
@@ -159,6 +161,19 @@ async function jsonRequest<T = unknown>({
   return request<T>(path, requestInit);
 }
 
+async function post<T = unknown>(
+  path: string,
+  body?: unknown,
+  options: JsonMethodOptions = {},
+): Promise<T> {
+  return jsonRequest<T>({
+    method: 'POST',
+    path,
+    body,
+    ...options,
+  });
+}
+
 export function setAuthToken(token: string | null): void {
   authToken = token;
 }
@@ -185,4 +200,5 @@ export function addResponseInterceptor(interceptor: ResponseInterceptor): () => 
 export const apiClient = {
   request,
   json: jsonRequest,
+  post,
 };
