@@ -7,3 +7,5 @@ export * from './silos';
 export * from './silos.types';
 export * from './data-process';
 export * from './data-process.types';
+export * from './devices';
+export * from './devices.types';
