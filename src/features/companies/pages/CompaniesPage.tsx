@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { CompanyCard, CompanyCardSkeleton } from '../components/CompanyCard';
 import { listCompanies } from '@/shared/api/companies';
 import type { Company } from '@/shared/api/companies.types';
+import { CreateCompanyDialog } from '../components/CreateCompanyDialog';
 
 const SKELETON_ITEMS = 6;
 
@@ -46,13 +47,21 @@ export const CompaniesPage = () => {
 
   const showEmptyState = !loading && !error && companies.length === 0;
 
+  const handleCompanyCreated = useCallback((company: Company) => {
+    setCompanies((previous) => [...previous, company]);
+  }, []);
+
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold">Companhias</h1>
-        <p className="text-muted-foreground">
-          Visualize e acompanhe as empresas cadastradas e seus principais indicadores.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Companhias</h1>
+          <p className="text-muted-foreground">
+            Visualize e acompanhe as empresas cadastradas e seus principais indicadores.
+          </p>
+        </div>
+
+        <CreateCompanyDialog onCompanyCreated={handleCompanyCreated} />
       </div>
 
       {error ? (
