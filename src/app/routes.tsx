@@ -7,11 +7,13 @@ import { DevicesPage } from '@/features/devices/pages/DevicesPage';
 import { DataProcessPage } from '@/features/data-process/pages/DataProcessPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { HealthStatusPage } from '@/features/health/pages/HealthStatusPage';
+import { CompaniesPage } from '@/features/companies/pages/CompaniesPage';
 import {
   Activity,
   AlertTriangle,
   BarChart3,
   Cpu,
+  Building,
   Warehouse,
   Users as UsersIcon,
 } from 'lucide-react';
@@ -44,6 +46,13 @@ export const navigationItems: NavigationItem[] = [
     label: 'Dispositivos',
     icon: Cpu,
     component: DevicesPage,
+    primary: true,
+  },
+  {
+    id: 'companies',
+    label: 'Companhias',
+    icon: Building,
+    component: CompaniesPage,
     primary: true,
   },
   {
