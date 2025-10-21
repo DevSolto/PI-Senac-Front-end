@@ -87,7 +87,7 @@ export function CreateCompanyDialog({ onCompanyCreated }: CreateCompanyDialogPro
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" className="h-9">
+        <Button size="sm" className="h-9" onClick={() => setOpen(true)}>
           <Plus className="mr-2 h-4 w-4" aria-hidden />
           Nova empresa
         </Button>
