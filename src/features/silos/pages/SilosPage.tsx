@@ -56,6 +56,11 @@ export const SilosPage = () => {
                       Cadastre novos silos para acompanhar suas condições e históricos nesta página.
                     </CardDescription>
                   </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Utilize o botão <span className="font-semibold">Novo silo</span> para iniciar um cadastro e acompanhar seus ambientes.
+                    </p>
+                  </CardContent>
                 </Card>
               )
             : (
