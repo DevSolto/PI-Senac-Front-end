@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { UsersTable } from '../components/UsersTable';
 import { CreateUserDialog } from '../components/CreateUserDialog';
 
+import { Badge } from '@/components/ui/badge';
 import { listUsers } from '@/shared/api/users';
 import type { User } from '@/shared/api/users.types';
 
@@ -25,6 +26,7 @@ export const UsersPage = () => {
     setError(null);
 
     try {
+      // TODO: permitir filtrar por empresa utilizando ListUsersParams quando o filtro estiver disponível na UI.
       const response = await listUsers();
 
       if (!isMounted.current) {
@@ -50,19 +52,34 @@ export const UsersPage = () => {
 
   const isLoading = status === 'loading';
   const hasError = status === 'error';
+  const isReady = status === 'ready';
+  const totalUsers = users.length;
 
   const handleUserCreated = useCallback(
     (createdUser: User) => {
-      setUsers((prevUsers) => [createdUser, ...prevUsers]);
+      setUsers(prevUsers => {
+        const withoutDuplicatedUser = prevUsers.filter(user => user.id !== createdUser.id);
+
+        return [createdUser, ...withoutDuplicatedUser];
+      });
+      setStatus('ready');
+      setError(null);
     },
     [],
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Usuários</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold">Usuários</h1>
+            {isReady ? (
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm font-medium">
+                {totalUsers} {totalUsers === 1 ? 'usuário' : 'usuários'}
+              </Badge>
+            ) : null}
+          </div>
           <p className="text-muted-foreground">
             Administre as contas vinculadas às empresas cadastradas.
           </p>
