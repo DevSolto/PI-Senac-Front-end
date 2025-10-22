@@ -9,19 +9,11 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  CalendarDays,
-  Droplets,
-  Factory,
-  History,
-  Leaf,
-  LucideIcon,
-  Power,
-  ThermometerSun,
-  Wind,
-} from 'lucide-react';
+import { CalendarDays, Factory, History, Leaf, Power, type LucideIcon } from 'lucide-react';
 
 import type { Silo } from '@/shared/api/silos.types';
+
+import { SiloHighlights } from './SiloHighlights';
 
 interface SiloCardProps {
   silo: Silo;
@@ -66,45 +58,31 @@ export function SiloCard({ silo }: SiloCardProps) {
         </CardAction>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <Badge variant="secondary" className="flex items-center gap-1">
             <Leaf className="h-3.5 w-3.5" aria-hidden />
             <span>{silo.grain}</span>
           </Badge>
 
-          <Badge
-            variant={silo.inUse ? 'default' : 'outline'}
-            className="flex items-center gap-1"
-          >
+          <Badge variant={silo.inUse ? 'default' : 'outline'} className="flex items-center gap-1">
             <Power className="h-3.5 w-3.5" aria-hidden />
             <span>{silo.inUse ? 'Em operação' : 'Disponível'}</span>
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-          <MetricRange
-            icon={ThermometerSun}
-            label="Temperatura"
-            min={silo.minTemperature}
-            max={silo.maxTemperature}
-            unit="°C"
-          />
-          <MetricRange
-            icon={Droplets}
-            label="Umidade"
-            min={silo.minHumidity}
-            max={silo.maxHumidity}
-            unit="%"
-          />
-          <MetricRange
-            icon={Wind}
-            label="Qualidade do ar"
-            min={silo.minAirQuality}
-            max={silo.maxAirQuality}
-          />
-          <MetricValue icon={History} label="Atualizado em" value={silo.updatedAt} />
-          <MetricValue icon={CalendarDays} label="Criado em" value={silo.createdAt} />
+        <SiloHighlights
+          minTemperature={silo.minTemperature}
+          maxTemperature={silo.maxTemperature}
+          minHumidity={silo.minHumidity}
+          maxHumidity={silo.maxHumidity}
+          minAirQuality={silo.minAirQuality}
+          maxAirQuality={silo.maxAirQuality}
+        />
+
+        <div className="grid gap-3 text-xs text-muted-foreground sm:grid-cols-2">
+          <TimeMeta icon={CalendarDays} label="Criado em" value={silo.createdAt} />
+          <TimeMeta icon={History} label="Atualizado em" value={silo.updatedAt} />
         </div>
       </CardContent>
     </Card>
@@ -119,92 +97,47 @@ export function SiloCardSkeleton() {
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-4 w-5/6" />
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <div className="flex flex-wrap gap-3">
           <Skeleton className="h-6 w-24" />
           <Skeleton className="h-6 w-28" />
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={`silo-skeleton-metric-${index}`} className="space-y-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={`silo-skeleton-threshold-${index}`} className="space-y-2 rounded-lg border border-dashed p-3">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-4 w-20" />
             </div>
           ))}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-28" />
         </div>
       </CardContent>
     </Card>
   );
 }
 
-interface MetricRangeProps {
-  icon: LucideIcon;
-  label: string;
-  min?: number | null;
-  max?: number | null;
-  unit?: string;
-}
-
-function MetricRange({ icon: Icon, label, min, max, unit }: MetricRangeProps) {
-  return (
-    <div className="rounded-lg border border-dashed p-3">
-      <p className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" aria-hidden />
-        {label}
-      </p>
-      <p className="text-sm font-semibold">
-        {formatRange(min, max, unit)}
-      </p>
-    </div>
-  );
-}
-
-interface MetricValueProps {
+interface TimeMetaProps {
   icon: LucideIcon;
   label: string;
   value: string;
 }
 
-function MetricValue({ icon: Icon, label, value }: MetricValueProps) {
+function TimeMeta({ icon: Icon, label, value }: TimeMetaProps) {
   const date = new Date(value);
   const isValid = !Number.isNaN(date.getTime());
 
   return (
-    <div className="rounded-lg border border-dashed p-3">
-      <p className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" aria-hidden />
-        {label}
-      </p>
-      <p className="text-sm font-semibold">
+    <span className="flex items-center gap-1 text-[11px] uppercase tracking-wide">
+      <Icon className="h-3.5 w-3.5" aria-hidden />
+      <span className="font-medium">{label}</span>
+      <time dateTime={isValid ? date.toISOString() : undefined}>
         {isValid ? formatDate(date) : 'Data indisponível'}
-      </p>
-    </div>
+      </time>
+    </span>
   );
-}
-
-function formatRange(min?: number | null, max?: number | null, unit?: string) {
-  const hasMin = typeof min === 'number';
-  const hasMax = typeof max === 'number';
-
-  if (!hasMin && !hasMax) {
-    return 'Não informado';
-  }
-
-  if (hasMin && hasMax) {
-    return `${formatNumber(min)} - ${formatNumber(max)}${unit ? ` ${unit}` : ''}`;
-  }
-
-  if (hasMin) {
-    return `≥ ${formatNumber(min)}${unit ? ` ${unit}` : ''}`;
-  }
-
-  return `≤ ${formatNumber(max as number)}${unit ? ` ${unit}` : ''}`;
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    maximumFractionDigits: 2,
-  }).format(value);
 }
 
 function formatDate(value: Date) {
