@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { UsersTable } from '../components/UsersTable';
+import { CreateUserDialog } from '../components/CreateUserDialog';
 
 import { listUsers } from '@/shared/api/users';
 import type { User } from '@/shared/api/users.types';
@@ -50,6 +51,13 @@ export const UsersPage = () => {
   const isLoading = status === 'loading';
   const hasError = status === 'error';
 
+  const handleUserCreated = useCallback(
+    (createdUser: User) => {
+      setUsers((prevUsers) => [createdUser, ...prevUsers]);
+    },
+    [],
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -59,6 +67,8 @@ export const UsersPage = () => {
             Administre as contas vinculadas às empresas cadastradas.
           </p>
         </div>
+
+        <CreateUserDialog onUserCreated={handleUserCreated} />
       </div>
 
       <UsersTable
