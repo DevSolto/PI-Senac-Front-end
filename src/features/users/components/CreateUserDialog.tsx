@@ -195,7 +195,13 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
             <FormField
               control={form.control}
               name="password"
-              rules={{ required: 'Informe a senha temporária.' }}
+              rules={{
+                required: 'Informe a senha temporária.',
+                minLength: {
+                  value: 8,
+                  message: 'A senha deve ter pelo menos 8 caracteres.',
+                },
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Senha</FormLabel>
