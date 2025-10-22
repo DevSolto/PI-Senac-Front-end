@@ -31,12 +31,11 @@ export function useSilos(): UseSilosResult {
 
     try {
       const response = await listSilos();
-      if (!isMounted.current) {
-        return;
-      }
 
-      setSilos(response);
-      setStatus('ready');
+      if (isMounted.current) {
+        setSilos(response);
+        setStatus('ready');
+      }
     } catch (err) {
       if (!isMounted.current) {
         return;
