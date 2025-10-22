@@ -364,6 +364,18 @@ function NumericField({ control, name, label, placeholder }: NumericFieldProps) 
     <FormField
       control={control}
       name={name}
+      rules={{
+        validate: value => {
+          if (!value.trim()) {
+            return true;
+          }
+
+          const normalizedValue = normalizeNumberInput(value);
+          return (
+            !Number.isNaN(Number(normalizedValue)) || 'Informe um número válido.'
+          );
+        },
+      }}
       render={({ field }) => (
         <FormItem>
           <FormLabel>{label}</FormLabel>
@@ -388,10 +400,15 @@ function parseNumber(value: string) {
     return undefined;
   }
 
-  const parsed = Number(value);
+  const normalizedValue = normalizeNumberInput(value);
+  const parsed = Number(normalizedValue);
   if (Number.isNaN(parsed)) {
     return undefined;
   }
 
   return parsed;
+}
+
+function normalizeNumberInput(value: string) {
+  return value.replace(',', '.');
 }
