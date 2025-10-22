@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -41,53 +41,68 @@ export function CreateCompanyDialog({ onCompanyCreated }: CreateCompanyDialogPro
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<CreateCompanyFormValues>({
-    defaultValues: {
+  const defaultValues = useMemo<CreateCompanyFormValues>(
+    () => ({
       name: '',
       CNPJ: '',
       description: '',
       address: '',
-    },
+    }),
+    [],
+  );
+
+  const form = useForm<CreateCompanyFormValues>({
+    defaultValues,
   });
 
-  const handleSubmit = async (values: CreateCompanyFormValues) => {
-    setIsSubmitting(true);
+  const resetForm = useCallback(() => {
+    form.reset({ ...defaultValues });
+  }, [defaultValues, form]);
 
-    try {
-      const payload: CreateCompanyDto = {
-        name: values.name.trim(),
-        CNPJ: values.CNPJ.trim(),
-        description: values.description.trim() || undefined,
-        address: values.address.trim() || undefined,
-      };
+  const handleSubmit = useCallback(
+    async (values: CreateCompanyFormValues) => {
+      setIsSubmitting(true);
 
-      const createdCompany = await createCompany(payload);
+      try {
+        const payload: CreateCompanyDto = {
+          name: values.name.trim(),
+          CNPJ: values.CNPJ.trim(),
+          description: values.description.trim() || undefined,
+          address: values.address.trim() || undefined,
+        };
 
-      onCompanyCreated?.(createdCompany);
-      toast.success('Empresa criada com sucesso!');
+        const createdCompany = await createCompany(payload);
 
-      form.reset();
-      setOpen(false);
-    } catch (error) {
-      console.error('Erro ao criar empresa', error);
-      toast.error('Não foi possível criar a empresa. Verifique os dados e tente novamente.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        onCompanyCreated?.(createdCompany);
+        toast.success('Empresa criada com sucesso!');
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      form.reset();
-    }
+        resetForm();
+        setOpen(false);
+      } catch (error) {
+        console.error('Erro ao criar empresa', error);
+        toast.error('Não foi possível criar a empresa. Verifique os dados e tente novamente.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [onCompanyCreated, resetForm],
+  );
 
-    setOpen(nextOpen);
-  };
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        resetForm();
+      }
+
+      setOpen(nextOpen);
+    },
+    [resetForm],
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" className="h-9" onClick={() => setOpen(true)}>
+        <Button size="sm" className="h-9">
           <Plus className="mr-2 h-4 w-4" aria-hidden />
           Nova empresa
         </Button>
