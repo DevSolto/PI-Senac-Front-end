@@ -15,29 +15,6 @@ import { deleteCookie, getCookie, setCookie } from '@/shared/utils/cookies';
 
 const AUTH_TOKEN_COOKIE_KEY = 'auth_token';
 
-interface JwtPayload {
-  id?: number | string;
-  sub?: number | string;
-  role: 'admin' | 'user';
-  [key: string]: unknown;
-}
-
-function extractUserId(payload: JwtPayload): number | null {
-  const rawId = payload.id ?? payload.sub;
-
-  if (rawId === undefined || rawId === null) {
-    return null;
-  }
-
-  const numericId = typeof rawId === 'string' ? Number.parseInt(rawId, 10) : rawId;
-
-  if (!Number.isFinite(numericId)) {
-    return null;
-  }
-
-  return numericId;
-}
-
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
 interface LoginOptions {
@@ -61,48 +38,6 @@ interface AuthProviderProps {
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
-}
-
-function decodeBase64Url(value: string): string {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-
-  if (typeof globalThis.atob === 'function') {
-    return globalThis.atob(padded);
-  }
-
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(padded, 'base64').toString('utf-8');
-  }
-
-  throw new Error('Base64 decoding is not supported in this environment.');
-}
-
-function decodeJwtPayload(token: string): JwtPayload | null {
-  try {
-    const [, payload] = token.split('.');
-
-    if (!payload) {
-      return null;
-    }
-
-    const decodedPayload = decodeBase64Url(payload);
-    const parsedPayload = JSON.parse(decodedPayload) as JwtPayload;
-
-    const userId = extractUserId(parsedPayload);
-
-    if (userId === null) {
-      return null;
-    }
-
-    return {
-      ...parsedPayload,
-      id: userId,
-    };
-  } catch (error) {
-    console.error('[AuthProvider] Failed to decode JWT payload', error);
-    return null;
-  }
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
@@ -149,30 +84,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const hydrateFromToken = useCallback(
     async (accessToken: string) => {
-      setStatus('loading');
-      persistToken(accessToken);
+      const normalizedToken = accessToken?.trim();
 
-      try {
-        const payload = decodeJwtPayload(accessToken);
-
-        if (!payload) {
-          throw new Error('Token de acesso inválido.');
-        }
-
-        const userId = extractUserId(payload);
-
-        if (userId === null) {
-          throw new Error('Token de acesso inválido.');
-        }
-
-        setUser(null);
-        setStatus('authenticated');
-      } catch (error) {
+      if (!normalizedToken) {
         clearStoredToken();
         setUser(null);
         setStatus('unauthenticated');
-        throw error;
+        throw new Error('Token de acesso inválido.');
       }
+
+      setStatus('loading');
+      persistToken(normalizedToken);
+      setUser(null);
+      setStatus('authenticated');
     },
     [clearStoredToken, persistToken],
   );
