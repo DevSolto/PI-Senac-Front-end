@@ -17,9 +17,26 @@ import { deleteCookie, getCookie, setCookie } from '@/shared/utils/cookies';
 const AUTH_TOKEN_COOKIE_KEY = 'auth_token';
 
 interface JwtPayload {
-  id: number;
+  id?: number | string;
+  sub?: number | string;
   role: 'admin' | 'user';
   [key: string]: unknown;
+}
+
+function extractUserId(payload: JwtPayload): number | null {
+  const rawId = payload.id ?? payload.sub;
+
+  if (rawId === undefined || rawId === null) {
+    return null;
+  }
+
+  const numericId = typeof rawId === 'string' ? Number.parseInt(rawId, 10) : rawId;
+
+  if (!Number.isFinite(numericId)) {
+    return null;
+  }
+
+  return numericId;
 }
 
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
@@ -73,11 +90,16 @@ function decodeJwtPayload(token: string): JwtPayload | null {
     const decodedPayload = decodeBase64Url(payload);
     const parsedPayload = JSON.parse(decodedPayload) as JwtPayload;
 
-    if (typeof parsedPayload.id !== 'number') {
+    const userId = extractUserId(parsedPayload);
+
+    if (userId === null) {
       return null;
     }
 
-    return parsedPayload;
+    return {
+      ...parsedPayload,
+      id: userId,
+    };
   } catch (error) {
     console.error('[AuthProvider] Failed to decode JWT payload', error);
     return null;
@@ -138,7 +160,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           throw new Error('Token de acesso inválido.');
         }
 
-        const currentUser = await getUser(payload.id);
+        const userId = extractUserId(payload);
+
+        if (userId === null) {
+          throw new Error('Token de acesso inválido.');
+        }
+
+        const currentUser = await getUser(userId);
         setUser(currentUser);
         setStatus('authenticated');
       } catch (error) {
@@ -211,7 +239,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return;
     }
 
-    getUser(payload.id)
+    const userId = extractUserId(payload);
+
+    if (userId === null) {
+      clearStoredToken();
+      setUser(null);
+      setStatus('unauthenticated');
+      return;
+    }
+
+    getUser(userId)
       .then((currentUser) => {
         setUser(currentUser);
         setStatus('authenticated');
