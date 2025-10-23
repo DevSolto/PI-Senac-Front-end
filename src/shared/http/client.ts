@@ -124,15 +124,44 @@ async function request<T = unknown>(path: string, init: RequestInit = {}): Promi
     headers,
   };
 
-  const response = await fetch(buildUrl(path), requestInit);
+  const method = (requestInit.method ?? 'GET').toUpperCase();
+  const url = buildUrl(path);
+  const startedAt = Date.now();
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, requestInit);
+  } catch (error) {
+    console.error('[apiClient] Falha ao realizar requisição', {
+      method,
+      url,
+      error,
+    });
+    throw error;
+  }
+
   const processedResponse = await applyResponseInterceptors(response);
   const data = await parseResponseBody(processedResponse);
+  const duration = Date.now() - startedAt;
+
+  const logPayload = {
+    method,
+    url: processedResponse.url || url,
+    status: processedResponse.status,
+    statusText: processedResponse.statusText,
+    ok: processedResponse.ok,
+    duration,
+    data,
+  };
 
   if (!processedResponse.ok) {
+    console.warn('[apiClient] Resposta de API com erro', logPayload);
     const message = extractErrorMessage(data, processedResponse.statusText);
     throw new HttpError(message, processedResponse.status, processedResponse.statusText, data);
   }
 
+  console.info('[apiClient] Resposta de API recebida', logPayload);
   return data as T;
 }
 
