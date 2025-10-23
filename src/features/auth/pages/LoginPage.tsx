@@ -60,6 +60,18 @@ export const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const logFlowEvent = useCallback(
+    (event: string, details?: Record<string, unknown>) => {
+      if (details) {
+        console.info('[LoginPage]', event, details);
+        return;
+      }
+
+      console.info('[LoginPage]', event);
+    },
+    [],
+  );
+
   const defaultValues = useMemo<LoginFormValues>(
     () => ({ ...DEFAULT_FORM_VALUES }),
     [],
@@ -85,6 +97,7 @@ export const LoginPage = () => {
 
   const handleSuccessLogin = useCallback(
     async (payload: LoginPayload, token: string) => {
+      logFlowEvent('login:success', { email: payload.email });
       await authLogin(payload, { accessToken: token });
       toast.success('Autenticação realizada com sucesso!');
       form.reset({ ...DEFAULT_FORM_VALUES, email: payload.email });
@@ -92,17 +105,26 @@ export const LoginPage = () => {
       setMfaSetupData(null);
       navigate('/');
     },
-    [authLogin, form, navigate],
+    [authLogin, form, logFlowEvent, navigate],
   );
 
   const handleLoginResponse = useCallback(
     async (payload: LoginPayload, response: LoginResponse) => {
+      logFlowEvent('login:handleResponse', {
+        email: payload.email,
+        hasAccessToken: 'access_token' in response && Boolean(response.access_token),
+        mfaRequired: 'mfaRequired' in response ? response.mfaRequired : undefined,
+        mfaSetupRequired:
+          'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined,
+      });
+
       if ('access_token' in response && response.access_token) {
         await handleSuccessLogin(payload, response.access_token);
         return;
       }
 
       if ('mfaRequired' in response && response.mfaRequired) {
+        logFlowEvent('login:mfaRequired', { email: payload.email });
         setMfaState('required');
         setMfaSetupData(null);
         toast.info('Confirmação em duas etapas necessária', {
@@ -114,6 +136,11 @@ export const LoginPage = () => {
       }
 
       if ('mfaSetupRequired' in response && response.mfaSetupRequired) {
+        logFlowEvent('login:mfaSetupRequired', {
+          email: payload.email,
+          hasQrCode: Boolean(response.qrCodeDataUrl),
+          hasOtpAuthUrl: Boolean(response.otpauth_url),
+        });
         setMfaState('setup');
         setMfaSetupData({
           message: response.message,
@@ -127,7 +154,7 @@ export const LoginPage = () => {
         focusMfaField();
       }
     },
-    [focusMfaField, handleSuccessLogin],
+    [focusMfaField, handleSuccessLogin, logFlowEvent],
   );
 
   const onSubmit = useCallback(
@@ -143,22 +170,47 @@ export const LoginPage = () => {
         ...(sanitizedMfaCode ? { mfaCode: sanitizedMfaCode } : {}),
       };
 
+      logFlowEvent('submit:start', {
+        email: trimmedEmail,
+        mfaState,
+        hasMfaCode: Boolean(sanitizedMfaCode),
+      });
+
       try {
         if (mfaState === 'setup') {
+          logFlowEvent('submit:enableMfa', {
+            email: trimmedEmail,
+            hasMfaCode: Boolean(sanitizedMfaCode),
+          });
           const enableResponse = await enableMfa({
             email: trimmedEmail,
             mfaCode: sanitizedMfaCode,
           });
 
+          logFlowEvent('submit:enableMfa:success', {
+            email: trimmedEmail,
+            hasAccessToken: Boolean(enableResponse.access_token),
+          });
           toast.success(enableResponse.message || 'MFA habilitada com sucesso!');
           await handleSuccessLogin(payload, enableResponse.access_token);
           return;
         }
 
         const response = await loginRequest(payload);
+        logFlowEvent('submit:loginRequest:success', {
+          email: trimmedEmail,
+          responseKeys: Object.keys(response),
+        });
         await handleLoginResponse(payload, response);
       } catch (error) {
-        console.error('Erro ao realizar login', error);
+        const parsedError =
+          error instanceof Error ? error.message : 'Erro desconhecido ao realizar login';
+        logFlowEvent('submit:error', {
+          email: trimmedEmail,
+          mfaState,
+          error: parsedError,
+        });
+        console.error('[LoginPage] submit:error', error);
         const message =
           error instanceof HttpError
             ? error.message
@@ -167,9 +219,14 @@ export const LoginPage = () => {
         toast.error(message);
       } finally {
         setIsSubmitting(false);
+        logFlowEvent('submit:finished', {
+          email: trimmedEmail,
+          mfaState,
+          isSetupFlow: mfaState === 'setup',
+        });
       }
     },
-    [handleLoginResponse, handleSuccessLogin, mfaState],
+    [handleLoginResponse, handleSuccessLogin, logFlowEvent, mfaState],
   );
 
   const mfaInstructions = useMemo(() => {
