@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { RealtimeMockProvider } from '@/contexts/RealtimeMockProvider';
+
 import { AuthProvider } from './providers/AuthProvider';
 import { MobileProvider } from './providers/MobileProvider';
 import { SidebarProvider } from './providers/SidebarProvider';
@@ -16,7 +18,9 @@ const App = ({ children }: AppProps) => {
       <ThemeProvider>
         <MobileProvider>
           <SidebarProvider>
-            {children}
+            <RealtimeMockProvider>
+              {children}
+            </RealtimeMockProvider>
             <Toaster richColors closeButton />
           </SidebarProvider>
         </MobileProvider>
