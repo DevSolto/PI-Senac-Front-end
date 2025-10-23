@@ -1,136 +1,173 @@
-import { useMemo, useState } from 'react';
-import { Pause, Play, TrendingUp, Waves, Activity, BarChart3 } from 'lucide-react';
+import { useMemo } from 'react';
+import { Pause, Play } from 'lucide-react';
 
 import { MainLayout } from '@/app/layout/MainLayout';
+import { SummaryCard } from '@/components/dashboard/SummaryCard';
+import { AirQualityChart } from '@/components/charts/AirQualityChart';
+import { HumidityChart } from '@/components/charts/HumidityChart';
+import { StdDevChart } from '@/components/charts/StdDevChart';
+import { TemperatureChart } from '@/components/charts/TemperatureChart';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { useRealtimeSeries } from '@/hooks/useRealtimeSeries';
 
-const formatPercentage = (value: number) => `${value.toFixed(0)}%`;
+const formatPercentage = (value: number) => `${Math.round(value)}%`;
+
+function computeMovingAverages(values: number[], pointsPerDay: number, days: number) {
+  const windowSize = Math.max(1, Math.round(pointsPerDay * days));
+  const currentSlice = values.slice(-windowSize);
+  const previousSlice = values.slice(-windowSize * 2, -windowSize);
+
+  const currentAverage =
+    currentSlice.length > 0
+      ? currentSlice.reduce((acc, value) => acc + value, 0) / currentSlice.length
+      : 0;
+
+  const previousAverage =
+    previousSlice.length > 0
+      ? previousSlice.reduce((acc, value) => acc + value, 0) / previousSlice.length
+      : currentAverage;
+
+  return { currentAverage, previousAverage };
+}
 
 export const DashboardPage = () => {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [seed, setSeed] = useState('2024');
-  const [noiseLevel, setNoiseLevel] = useState(25);
-  const [correlation, setCorrelation] = useState(62);
+  const { temperature, humidity, aqi, comfort, controls } = useRealtimeSeries();
 
-  const cards = useMemo(
-    () => [
-      {
-        id: 'production',
-        title: 'Produtividade Simulada',
-        value: '24,7 t/ha',
-        description: 'Baseado em 120 hectares monitorados',
-        icon: BarChart3,
-      },
-      {
-        id: 'health',
-        title: 'Saúde das Culturas',
-        value: formatPercentage(86),
-        description: 'Índice agregado a partir dos sensores',
-        icon: Activity,
-      },
-      {
-        id: 'anomalies',
-        title: 'Anomalias Detectadas',
-        value: '12 eventos',
-        description: 'Atualizado a cada 15 minutos',
-        icon: Waves,
-      },
-      {
-        id: 'forecast',
-        title: 'Tendência de Safra',
-        value: formatPercentage(18),
-        description: 'Perspectiva das próximas 12 semanas',
-        icon: TrendingUp,
-      },
-    ],
-    [],
+  const sevenDayTemperature = useMemo(
+    () => computeMovingAverages(temperature.points.map((point) => point.value), controls.pointsPerDay, 7),
+    [controls.pointsPerDay, temperature.points],
   );
+
+  const sevenDayHumidity = useMemo(
+    () => computeMovingAverages(humidity.points.map((point) => point.value), controls.pointsPerDay, 7),
+    [controls.pointsPerDay, humidity.points],
+  );
+
+  const sevenDayAqi = useMemo(
+    () => computeMovingAverages(aqi.points.map((point) => point.value), controls.pointsPerDay, 7),
+    [aqi.points, controls.pointsPerDay],
+  );
+
+  const sevenDayComfort = useMemo(
+    () => computeMovingAverages(comfort.points.map((point) => point.value), controls.pointsPerDay, 7),
+    [comfort.points, controls.pointsPerDay],
+  );
+
+  const noiseValue = controls.noise;
+  const correlationValue = controls.correlation;
+
+  const summaryCards = [
+    {
+      id: 'temperature',
+      title: 'Temperatura média',
+      unit: '°C',
+      decimals: 1,
+      ...sevenDayTemperature,
+    },
+    {
+      id: 'humidity',
+      title: 'Umidade média',
+      unit: '%',
+      decimals: 1,
+      ...sevenDayHumidity,
+    },
+    {
+      id: 'aqi',
+      title: 'Qualidade do ar (AQI)',
+      unit: 'AQI',
+      invertTrend: true,
+      decimals: 0,
+      ...sevenDayAqi,
+    },
+    {
+      id: 'comfort',
+      title: 'Índice de conforto',
+      unit: '°C',
+      decimals: 1,
+      ...sevenDayComfort,
+    },
+  ] as const;
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard de Simulações</h1>
-            <p className="text-muted-foreground">
-              Acompanhe a execução das simulações e ajuste os parâmetros em tempo real.
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight">Painel de monitoramento</h1>
+            <p className="text-muted-foreground">Acompanhe a evolução em tempo real dos indicadores ambientais.</p>
           </div>
 
           <div className="flex flex-wrap items-end gap-4">
-            <Button onClick={() => setIsPlaying((state) => !state)} className="flex items-center gap-2">
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {isPlaying ? 'Pausar execução' : 'Iniciar execução'}
+            <Button onClick={controls.toggle} className="flex items-center gap-2">
+              {controls.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {controls.isPlaying ? 'Pausar simulação' : 'Iniciar simulação'}
             </Button>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="simulation-seed">Seed</Label>
               <Input
                 id="simulation-seed"
-                value={seed}
-                onChange={(event) => setSeed(event.target.value)}
-                inputMode="numeric"
-                className="w-28"
+                value={controls.seed}
+                onChange={(event) => controls.setSeed(event.target.value)}
+                className="w-32"
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label id="noise-label">Ruído</Label>
-              <div className="flex items-center gap-3">
-                <div className="w-40">
-                  <Slider
-                    aria-labelledby="noise-label"
-                    value={[noiseLevel]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => setNoiseLevel(value[0] ?? 0)}
-                  />
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">{formatPercentage(noiseLevel)}</span>
-              </div>
-            </div>
+            <Card className="border-border/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Ruído</CardTitle>
+                <CardDescription>Amplitude das oscilações</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <Slider
+                  value={[noiseValue]}
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  onValueChange={(value) => controls.setNoise(value[0] ?? 0)}
+                />
+                <span className="text-sm font-medium text-muted-foreground">
+                  {formatPercentage((noiseValue / 5) * 100)}
+                </span>
+              </CardContent>
+            </Card>
 
-            <div className="flex flex-col gap-2">
-              <Label id="correlation-label">Correlação</Label>
-              <div className="flex items-center gap-3">
-                <div className="w-40">
-                  <Slider
-                    aria-labelledby="correlation-label"
-                    value={[correlation]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => setCorrelation(value[0] ?? 0)}
-                  />
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">{formatPercentage(correlation)}</span>
-              </div>
-            </div>
+            <Card className="border-border/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Correlação</CardTitle>
+                <CardDescription>Impacto cruzado entre séries</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <Slider
+                  value={[correlationValue]}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  onValueChange={(value) => controls.setCorrelation(value[0] ?? 0)}
+                />
+                <span className="text-sm font-medium text-muted-foreground">
+                  {formatPercentage(correlationValue * 100)}
+                </span>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {cards.map((card) => {
-            const Icon = card.icon;
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map((card) => (
+            <SummaryCard key={card.id} {...card} />
+          ))}
+        </div>
 
-            return (
-              <Card key={card.id} className="border-border/60">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-base font-medium">{card.title}</CardTitle>
-                  <Icon className="h-5 w-5 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">{card.value}</div>
-                  <p className="text-sm text-muted-foreground mt-1">{card.description}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid gap-6 xl:grid-cols-2">
+          <TemperatureChart series={temperature} />
+          <HumidityChart humidity={humidity} temperature={temperature} />
+          <AirQualityChart series={aqi} />
+          <StdDevChart temperature={temperature} humidity={humidity} aqi={aqi} />
         </div>
       </div>
     </MainLayout>
