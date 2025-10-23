@@ -144,8 +144,10 @@ export const LoginPage = () => {
   const handleLoginResponse = useCallback(
     async (payload: LoginPayload, response: LoginResponse) => {
       const hasAccessToken = 'access_token' in response && Boolean(response.access_token);
-      const hasMfaSetupFlag = 'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined;
-      const hasMfaRequiredFlag = 'mfaRequired' in response ? response.mfaRequired : undefined;
+      const hasMfaSetupFlag =
+        'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined;
+      const hasMfaRequiredFlag =
+        'mfaRequired' in response ? response.mfaRequired : undefined;
       const responseMessage = 'message' in response ? response.message : undefined;
       const isMfaRequiredResponse =
         Boolean(hasMfaRequiredFlag) || responseMessage === 'MFA code required';
@@ -168,8 +170,11 @@ export const LoginPage = () => {
         logFlowEvent('login:mfaRequired', { email: payload.email });
         setMfaState('required');
         setMfaSetupData(null);
-        setMfaHint(response.hint ?? response.message ?? null);
-        setMfaRecoveryHint(response.recoveryHint ?? null);
+        const responseHint = 'hint' in response ? response.hint : undefined;
+        const responseRecoveryHint =
+          'recoveryHint' in response ? response.recoveryHint : undefined;
+        setMfaHint(responseHint ?? responseMessage ?? null);
+        setMfaRecoveryHint(responseRecoveryHint ?? null);
         setPendingEmail(payload.email);
         toast.info('Confirmação em duas etapas necessária', {
           description:
