@@ -8,7 +8,7 @@ import { HumidityChart } from '@/components/charts/HumidityChart';
 import { StdDevChart } from '@/components/charts/StdDevChart';
 import { TemperatureChart } from '@/components/charts/TemperatureChart';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -59,6 +59,27 @@ export const DashboardPage = () => {
 
   const noiseValue = controls.noise;
   const correlationValue = controls.correlation;
+
+  const diagnostics = [
+    {
+      id: 'temperature-volatility',
+      title: 'Oscilações fora do ideal',
+      description:
+        'Picos de temperatura média semanal sugerem sensores descalibrados, exigindo revisão do plano de manutenção.',
+    },
+    {
+      id: 'humidity-trend',
+      title: 'Tendência de umidade ascendente',
+      description:
+        'Umidade segue em alta mesmo após reduzir o ruído da simulação, indicando possível infiltração em silos críticos.',
+    },
+    {
+      id: 'air-quality-drop',
+      title: 'Queda na qualidade do ar',
+      description:
+        'Índice AQI consistente acima do limiar desejado aponta necessidade de revisar ventilação e filtros.',
+    },
+  ] as const;
 
   const summaryCards = [
     {
@@ -160,6 +181,22 @@ export const DashboardPage = () => {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map((card) => (
             <SummaryCard key={card.id} {...card} />
+          ))}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {diagnostics.map((item) => (
+            <Card key={item.id} className="border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+                <CardDescription>{item.description}</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button variant="secondary" className="w-full md:w-auto">
+                  Exibir tarefa
+                </Button>
+              </CardFooter>
+            </Card>
           ))}
         </div>
 
