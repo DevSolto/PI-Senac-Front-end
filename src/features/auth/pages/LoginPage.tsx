@@ -201,11 +201,13 @@ export const LoginPage = () => {
       });
 
       try {
-        if (mfaState === 'setup') {
+        if (mfaState === 'setup' || mfaState === 'required') {
           logFlowEvent('submit:enableMfa', {
             email: trimmedEmail,
             hasMfaCode: Boolean(sanitizedMfaCode),
+            mfaState,
           });
+
           const enableResponse = await enableMfa({
             email: trimmedEmail,
             mfaCode: sanitizedMfaCode,
@@ -214,8 +216,16 @@ export const LoginPage = () => {
           logFlowEvent('submit:enableMfa:success', {
             email: trimmedEmail,
             hasAccessToken: Boolean(enableResponse.access_token),
+            mfaState,
           });
-          toast.success(enableResponse.message || 'MFA habilitada com sucesso!');
+
+          const successMessage =
+            enableResponse.message ||
+            (mfaState === 'setup'
+              ? 'MFA habilitada com sucesso!'
+              : 'Código validado com sucesso!');
+
+          toast.success(successMessage);
           await handleSuccessLogin(payload, enableResponse.access_token);
           return;
         }
