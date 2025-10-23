@@ -40,6 +40,12 @@ interface LoginFormValues {
 
 type MfaState = 'none' | 'required' | 'setup';
 
+interface MfaSetupData {
+  message?: string;
+  otpauthUrl: string;
+  qrCodeDataUrl: string;
+}
+
 const DEFAULT_FORM_VALUES: LoginFormValues = {
   email: '',
   password: '',
@@ -50,6 +56,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const [mfaState, setMfaState] = useState<MfaState>('none');
+  const [mfaSetupData, setMfaSetupData] = useState<MfaSetupData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -65,6 +72,7 @@ export const LoginPage = () => {
   useEffect(() => {
     if (mfaState === 'none') {
       form.setValue('mfaCode', '');
+      setMfaSetupData(null);
     }
   }, [form, mfaState]);
 
@@ -81,6 +89,7 @@ export const LoginPage = () => {
       toast.success('Autenticação realizada com sucesso!');
       form.reset({ ...DEFAULT_FORM_VALUES, email: payload.email });
       setMfaState('none');
+      setMfaSetupData(null);
       navigate('/');
     },
     [authLogin, form, navigate],
@@ -95,6 +104,7 @@ export const LoginPage = () => {
 
       if ('mfaRequired' in response && response.mfaRequired) {
         setMfaState('required');
+        setMfaSetupData(null);
         toast.info('Confirmação em duas etapas necessária', {
           description:
             'Informe o código gerado pelo seu aplicativo autenticador para finalizar o acesso.',
@@ -105,6 +115,11 @@ export const LoginPage = () => {
 
       if ('mfaSetupRequired' in response && response.mfaSetupRequired) {
         setMfaState('setup');
+        setMfaSetupData({
+          message: response.message,
+          otpauthUrl: response.otpauth_url,
+          qrCodeDataUrl: response.qrCodeDataUrl,
+        });
         toast.info('Configure a autenticação em duas etapas', {
           description:
             'Digite o primeiro código gerado pelo aplicativo autenticador para concluir a ativação.',
@@ -255,7 +270,31 @@ export const LoginPage = () => {
                     {mfaInstructions && (
                       <p className="text-sm text-muted-foreground">{mfaInstructions}</p>
                     )}
+                    {mfaState === 'setup' && mfaSetupData?.message && (
+                      <p className="text-xs text-muted-foreground">{mfaSetupData.message}</p>
+                    )}
                   </div>
+
+                  {mfaState === 'setup' && mfaSetupData && (
+                    <div className="space-y-2 rounded-md bg-muted/40 p-3 text-center">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Escaneie o QR Code abaixo no seu aplicativo autenticador
+                      </p>
+                      <div className="flex justify-center">
+                        <img
+                          src={mfaSetupData.qrCodeDataUrl}
+                          alt="QR Code para configurar MFA"
+                          className="h-44 w-44 rounded-md border border-border bg-background p-2 shadow-sm"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Se preferir, adicione manualmente usando este endereço:
+                      </p>
+                      <code className="block break-all rounded bg-background px-2 py-1 text-xs text-foreground">
+                        {mfaSetupData.otpauthUrl}
+                      </code>
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}

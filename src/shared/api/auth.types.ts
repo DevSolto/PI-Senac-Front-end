@@ -10,6 +10,9 @@ export interface LoginMfaRequiredResponse {
 
 export interface LoginMfaSetupRequiredResponse {
   mfaSetupRequired: true;
+  message?: string;
+  otpauth_url: string;
+  qrCodeDataUrl: string;
 }
 
 export interface LoginSuccessResponse {
