@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -9,7 +9,11 @@ import { Sidebar } from './Sidebar';
 import { useMobile } from '../hooks/useMobile';
 import { useSidebar } from '../hooks/useSidebar';
 
-export const MainLayout = () => {
+interface MainLayoutProps {
+  children?: ReactNode;
+}
+
+export const MainLayout = ({ children }: MainLayoutProps) => {
   const { isMobile } = useMobile();
   const { activeTab, setActiveTab, openSidebar } = useSidebar();
   const location = useLocation();
@@ -66,6 +70,8 @@ export const MainLayout = () => {
     [activeTab, location.pathname, navigate, setActiveTab],
   );
 
+  const content = children ?? <Outlet />;
+
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-background text-foreground">
@@ -73,9 +79,7 @@ export const MainLayout = () => {
         <Sidebar primaryTabs={primaryTabs} secondaryTabs={secondaryTabs} totalAlerts={totalAlerts} />
 
         <main className="flex-1 overflow-auto pb-20">
-          <div className="p-4">
-            <Outlet />
-          </div>
+          <div className="p-4">{content}</div>
         </main>
 
         <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border">
@@ -125,9 +129,7 @@ export const MainLayout = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header totalAlerts={totalAlerts} criticalAlerts={criticalAlerts} />
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
-        </main>
+        <main className="flex-1 overflow-auto p-6">{content}</main>
       </div>
     </div>
   );
