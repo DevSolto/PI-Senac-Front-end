@@ -12,6 +12,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Form,
   FormControl,
   FormDescription,
@@ -28,8 +36,12 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { useAuth } from '@/app/hooks/useAuth';
-import { enableMfa, login as loginRequest } from '@/shared/api/auth';
-import type { LoginPayload, LoginResponse } from '@/shared/api/auth.types';
+import { enableMfa, login as loginRequest, resetMfa } from '@/shared/api/auth';
+import type {
+  LoginPayload,
+  LoginResponse,
+  ResetMfaPayload,
+} from '@/shared/api/auth.types';
 import { HttpError } from '@/shared/http';
 
 interface LoginFormValues {
@@ -46,6 +58,10 @@ interface MfaSetupData {
   qrCodeDataUrl: string;
 }
 
+interface ResetMfaFormValues {
+  password: string;
+}
+
 const DEFAULT_FORM_VALUES: LoginFormValues = {
   email: '',
   password: '',
@@ -57,9 +73,14 @@ export const LoginPage = () => {
   const { login: authLogin } = useAuth();
   const [mfaState, setMfaState] = useState<MfaState>('none');
   const [mfaSetupData, setMfaSetupData] = useState<MfaSetupData | null>(null);
+  const [mfaHint, setMfaHint] = useState<string | null>(null);
+  const [mfaRecoveryHint, setMfaRecoveryHint] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const [resetErrorMessage, setResetErrorMessage] = useState<string | null>(null);
 
   const logFlowEvent = useCallback(
     (event: string, details?: Record<string, unknown>) => {
@@ -82,13 +103,22 @@ export const LoginPage = () => {
     defaultValues,
   });
 
+  const resetForm = useForm<ResetMfaFormValues>({
+    defaultValues: { password: '' },
+  });
+
   useEffect(() => {
     if (mfaState === 'none') {
       form.setValue('mfaCode', '');
       setMfaSetupData(null);
       setPendingEmail(null);
+      setMfaHint(null);
+      setMfaRecoveryHint(null);
+      setIsResetDialogOpen(false);
+      setResetErrorMessage(null);
+      resetForm.reset();
     }
-  }, [form, mfaState]);
+  }, [form, mfaState, resetForm]);
 
   const focusMfaField = useCallback(() => {
     form.setValue('mfaCode', '');
@@ -135,6 +165,8 @@ export const LoginPage = () => {
         logFlowEvent('login:mfaRequired', { email: payload.email });
         setMfaState('required');
         setMfaSetupData(null);
+        setMfaHint(response.hint ?? response.message ?? null);
+        setMfaRecoveryHint(response.recoveryHint ?? null);
         setPendingEmail(payload.email);
         toast.info('Confirmação em duas etapas necessária', {
           description:
@@ -156,6 +188,8 @@ export const LoginPage = () => {
           otpauthUrl: response.otpauth_url,
           qrCodeDataUrl: response.qrCodeDataUrl,
         });
+        setMfaHint(null);
+        setMfaRecoveryHint(null);
         setPendingEmail(payload.email);
         toast.info('Configure a autenticação em duas etapas', {
           description:
@@ -176,6 +210,8 @@ export const LoginPage = () => {
           otpauthUrl: response.otpauth_url,
           qrCodeDataUrl: response.qrCodeDataUrl,
         });
+        setMfaHint(null);
+        setMfaRecoveryHint(null);
         setPendingEmail(payload.email);
         toast.info('Configure a autenticação em duas etapas', {
           description:
@@ -281,11 +317,20 @@ export const LoginPage = () => {
     const currentEmail = pendingEmail ?? form.getValues('email').trim();
     logFlowEvent('mfa:cancel', { email: currentEmail, mfaState });
     setMfaState('none');
-  }, [form, logFlowEvent, mfaState, pendingEmail]);
+    setMfaSetupData(null);
+    setMfaHint(null);
+    setMfaRecoveryHint(null);
+    setIsResetDialogOpen(false);
+    setResetErrorMessage(null);
+    resetForm.reset();
+  }, [form, logFlowEvent, mfaState, pendingEmail, resetForm]);
 
   const mfaInstructions = useMemo(() => {
     if (mfaState === 'required') {
-      return 'Abra o aplicativo autenticador cadastrado e digite o código de 6 dígitos exibido.';
+      return (
+        mfaHint ??
+        'Abra o aplicativo autenticador cadastrado e digite o código de 6 dígitos exibido.'
+      );
     }
 
     if (mfaState === 'setup') {
@@ -293,7 +338,7 @@ export const LoginPage = () => {
     }
 
     return null;
-  }, [mfaState]);
+  }, [mfaHint, mfaState]);
 
   const submitLabel = useMemo(() => {
     if (mfaState === 'setup') {
@@ -308,6 +353,93 @@ export const LoginPage = () => {
   }, [isSubmitting, mfaState]);
 
   const isMfaStep = mfaState !== 'none';
+
+  const handleResetDialogOpenChange = useCallback(
+    (open: boolean) => {
+      const currentEmail = pendingEmail ?? form.getValues('email').trim();
+      logFlowEvent(`mfaReset:dialog:${open ? 'open' : 'close'}`, {
+        email: currentEmail,
+        mfaState,
+      });
+      setIsResetDialogOpen(open);
+      if (!open) {
+        setResetErrorMessage(null);
+        setIsResetSubmitting(false);
+        resetForm.reset();
+      }
+    },
+    [form, logFlowEvent, mfaState, pendingEmail, resetForm],
+  );
+
+  const onResetSubmit = useCallback(
+    async (values: ResetMfaFormValues) => {
+      setResetErrorMessage(null);
+      setIsResetSubmitting(true);
+
+      const email = pendingEmail ?? form.getValues('email').trim();
+
+      if (!email) {
+        const message = 'Informe o e-mail corporativo antes de solicitar o reset do MFA.';
+        setResetErrorMessage(message);
+        toast.error(message);
+        setIsResetSubmitting(false);
+        return;
+      }
+
+      const payload: ResetMfaPayload = {
+        email,
+        password: values.password,
+      };
+
+      logFlowEvent('mfaReset:submit:start', {
+        email,
+        hasPassword: Boolean(values.password),
+      });
+
+      try {
+        const response = await resetMfa(payload);
+
+        logFlowEvent('mfaReset:submit:success', {
+          email,
+          hasQrCode: Boolean(response.qrCodeDataUrl),
+        });
+
+        const successMessage =
+          response.message || 'Novo QR Code gerado. Configure novamente a autenticação.';
+
+        toast.success(successMessage);
+        setMfaState('setup');
+        setMfaSetupData({
+          message: response.message,
+          otpauthUrl: response.otpauth_url,
+          qrCodeDataUrl: response.qrCodeDataUrl,
+        });
+        setMfaHint(null);
+        setMfaRecoveryHint(null);
+        setPendingEmail(email);
+        handleResetDialogOpenChange(false);
+        focusMfaField();
+      } catch (error) {
+        const parsedError =
+          error instanceof HttpError
+            ? error.message
+            : 'Não foi possível reiniciar o MFA. Verifique a senha e tente novamente.';
+
+        logFlowEvent('mfaReset:submit:error', {
+          email,
+          error: parsedError,
+        });
+
+        setResetErrorMessage(parsedError);
+        toast.error(parsedError);
+      } finally {
+        setIsResetSubmitting(false);
+      }
+    },
+    [focusMfaField, form, handleResetDialogOpenChange, logFlowEvent, pendingEmail],
+  );
+
+  const handleResetMfaSubmit = resetForm.handleSubmit(onResetSubmit);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
@@ -386,6 +518,9 @@ export const LoginPage = () => {
                     {mfaState === 'setup' && mfaSetupData?.message && (
                       <p className="text-xs text-muted-foreground">{mfaSetupData.message}</p>
                     )}
+                    {mfaState === 'required' && mfaRecoveryHint && (
+                      <p className="text-xs text-muted-foreground">{mfaRecoveryHint}</p>
+                    )}
                     {pendingEmail && (
                       <p className="text-xs text-muted-foreground">
                         Código referente ao usuário{' '}
@@ -419,15 +554,28 @@ export const LoginPage = () => {
                     <p className="text-xs text-muted-foreground">
                       Digite o código numérico exibido no aplicativo autenticador.
                     </p>
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="h-auto px-0 text-xs"
-                      onClick={handleCancelMfa}
-                      disabled={isSubmitting}
-                    >
-                      Usar outra conta
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {mfaState === 'required' && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="h-auto px-0 text-xs"
+                          onClick={() => handleResetDialogOpenChange(true)}
+                          disabled={isSubmitting || isResetSubmitting}
+                        >
+                          Perdi o app autenticador
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="h-auto px-0 text-xs"
+                        onClick={handleCancelMfa}
+                        disabled={isSubmitting}
+                      >
+                        Usar outra conta
+                      </Button>
+                    </div>
                   </div>
 
                   <FormField
@@ -499,6 +647,75 @@ export const LoginPage = () => {
           </Form>
         </CardContent>
       </Card>
+
+      <Dialog open={isResetDialogOpen} onOpenChange={handleResetDialogOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Perdeu o aplicativo autenticador?</DialogTitle>
+            <DialogDescription>
+              Confirme sua senha para gerar um novo QR Code de autenticação em duas etapas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Um novo código será exibido e você precisará escaneá-lo antes de tentar o login
+              novamente.
+            </p>
+            {pendingEmail && (
+              <p className="text-xs text-muted-foreground">
+                Solicitação vinculada ao usuário{' '}
+                <span className="font-medium text-foreground">{pendingEmail}</span>.
+              </p>
+            )}
+          </div>
+
+          <Form {...resetForm}>
+            <form onSubmit={handleResetMfaSubmit} className="space-y-4">
+              <FormField
+                control={resetForm.control}
+                name="password"
+                rules={{ required: 'Informe a senha atual para confirmar a ação.' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        autoComplete="current-password"
+                        placeholder="Digite sua senha"
+                        disabled={isResetSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {resetErrorMessage && (
+                <p className="text-sm text-destructive" role="alert">
+                  {resetErrorMessage}
+                </p>
+              )}
+
+              <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleResetDialogOpenChange(false)}
+                  disabled={isResetSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isResetSubmitting}>
+                  {isResetSubmitting ? 'Gerando...' : 'Gerar novo QR Code'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
