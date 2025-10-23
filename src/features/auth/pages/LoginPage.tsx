@@ -146,12 +146,15 @@ export const LoginPage = () => {
       const hasAccessToken = 'access_token' in response && Boolean(response.access_token);
       const hasMfaSetupFlag = 'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined;
       const hasMfaRequiredFlag = 'mfaRequired' in response ? response.mfaRequired : undefined;
+      const responseMessage = 'message' in response ? response.message : undefined;
+      const isMfaRequiredResponse =
+        Boolean(hasMfaRequiredFlag) || responseMessage === 'MFA code required';
       const hasQrCode = 'qrCodeDataUrl' in response && Boolean(response.qrCodeDataUrl);
 
       logFlowEvent('login:handleResponse', {
         email: payload.email,
         hasAccessToken,
-        mfaRequired: hasMfaRequiredFlag,
+        mfaRequired: isMfaRequiredResponse,
         mfaSetupRequired: hasMfaSetupFlag,
         hasQrCode,
       });
@@ -161,7 +164,7 @@ export const LoginPage = () => {
         return;
       }
 
-      if ('mfaRequired' in response && response.mfaRequired) {
+      if (isMfaRequiredResponse) {
         logFlowEvent('login:mfaRequired', { email: payload.email });
         setMfaState('required');
         setMfaSetupData(null);
@@ -247,33 +250,67 @@ export const LoginPage = () => {
 
       try {
         if (mfaState === 'setup' || mfaState === 'required') {
-          logFlowEvent('submit:enableMfa', {
+          if (!emailForRequest) {
+            const message =
+              'Não foi possível identificar o e-mail da tentativa de acesso. Tente novamente realizar o login.';
+            setErrorMessage(message);
+            toast.error(message);
+            return;
+          }
+
+          if (!sanitizedMfaCode) {
+            const message =
+              'Informe o código de 6 dígitos do autenticador para validar o acesso.';
+            setErrorMessage(message);
+            toast.error(message);
+            focusMfaField();
+            return;
+          }
+
+          if (mfaState === 'setup') {
+            logFlowEvent('submit:enableMfa', {
+              email: trimmedEmail,
+              emailInRequest: emailForRequest,
+              hasMfaCode: Boolean(sanitizedMfaCode),
+              mfaState,
+            });
+
+            const enableResponse = await enableMfa({
+              email: emailForRequest,
+              mfaCode: sanitizedMfaCode,
+            });
+
+            logFlowEvent('submit:enableMfa:success', {
+              email: trimmedEmail,
+              emailInRequest: emailForRequest,
+              hasAccessToken: Boolean(enableResponse.access_token),
+              mfaState,
+            });
+
+            const successMessage =
+              enableResponse.message || 'MFA habilitada com sucesso!';
+
+            toast.success(successMessage);
+            await handleSuccessLogin(payload, enableResponse.access_token);
+            return;
+          }
+
+          logFlowEvent('submit:loginWithMfa', {
             email: trimmedEmail,
             emailInRequest: emailForRequest,
             hasMfaCode: Boolean(sanitizedMfaCode),
             mfaState,
           });
 
-          const enableResponse = await enableMfa({
-            email: emailForRequest,
-            mfaCode: sanitizedMfaCode,
-          });
+          const responseWithMfa = await loginRequest(payload);
 
-          logFlowEvent('submit:enableMfa:success', {
+          logFlowEvent('submit:loginWithMfa:success', {
             email: trimmedEmail,
             emailInRequest: emailForRequest,
-            hasAccessToken: Boolean(enableResponse.access_token),
-            mfaState,
+            responseKeys: Object.keys(responseWithMfa),
           });
 
-          const successMessage =
-            enableResponse.message ||
-            (mfaState === 'setup'
-              ? 'MFA habilitada com sucesso!'
-              : 'Código validado com sucesso!');
-
-          toast.success(successMessage);
-          await handleSuccessLogin(payload, enableResponse.access_token);
+          await handleLoginResponse(payload, responseWithMfa);
           return;
         }
 
