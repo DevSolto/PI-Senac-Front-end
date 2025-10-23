@@ -34,7 +34,7 @@ function computeMovingAverages(values: number[], pointsPerDay: number, days: num
 }
 
 export const DashboardPage = () => {
-  const { temperature, humidity, aqi, comfort, controls } = useRealtimeSeries();
+  const { temperature, humidity, aqi, controls } = useRealtimeSeries();
 
   const sevenDayTemperature = useMemo(
     () => computeMovingAverages(temperature.points.map((point) => point.value), controls.pointsPerDay, 7),
@@ -49,11 +49,6 @@ export const DashboardPage = () => {
   const sevenDayAqi = useMemo(
     () => computeMovingAverages(aqi.points.map((point) => point.value), controls.pointsPerDay, 7),
     [aqi.points, controls.pointsPerDay],
-  );
-
-  const sevenDayComfort = useMemo(
-    () => computeMovingAverages(comfort.points.map((point) => point.value), controls.pointsPerDay, 7),
-    [comfort.points, controls.pointsPerDay],
   );
 
   const noiseValue = controls.noise;
@@ -102,13 +97,6 @@ export const DashboardPage = () => {
       invertTrend: true,
       decimals: 0,
       ...sevenDayAqi,
-    },
-    {
-      id: 'comfort',
-      title: 'Índice de conforto',
-      unit: '°C',
-      decimals: 1,
-      ...sevenDayComfort,
     },
   ] as const;
 

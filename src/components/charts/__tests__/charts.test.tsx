@@ -58,7 +58,7 @@ describe('smoke tests dos componentes de gráficos', () => {
 
   it('renderiza HumidityChart com dados combinados', () => {
     render(<HumidityChart humidity={humidity} temperature={temperature} />);
-    expect(screen.getByText('Umidade relativa & conforto térmico')).toBeInTheDocument();
+    expect(screen.getByText('Umidade relativa & temperatura média')).toBeInTheDocument();
   });
 
   it('renderiza AirQualityChart com séries de AQI', () => {
