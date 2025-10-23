@@ -6,6 +6,9 @@ export interface LoginPayload {
 
 export interface LoginMfaRequiredResponse {
   mfaRequired: true;
+  message?: string;
+  hint?: string;
+  recoveryHint?: string;
 }
 
 export interface LoginMfaSetupRequiredResponse {
@@ -32,4 +35,15 @@ export interface EnableMfaPayload {
 export interface EnableMfaResponse {
   message: string;
   access_token: string;
+}
+
+export interface ResetMfaPayload {
+  email: string;
+  password: string;
+}
+
+export interface ResetMfaResponse {
+  message: string;
+  otpauth_url: string;
+  qrCodeDataUrl: string;
 }
