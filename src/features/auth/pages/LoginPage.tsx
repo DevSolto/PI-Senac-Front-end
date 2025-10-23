@@ -250,6 +250,23 @@ export const LoginPage = () => {
 
       try {
         if (mfaState === 'setup' || mfaState === 'required') {
+          if (!emailForRequest) {
+            const message =
+              'Não foi possível identificar o e-mail da tentativa de acesso. Tente novamente realizar o login.';
+            setErrorMessage(message);
+            toast.error(message);
+            return;
+          }
+
+          if (!sanitizedMfaCode) {
+            const message =
+              'Informe o código de 6 dígitos do autenticador para validar o acesso.';
+            setErrorMessage(message);
+            toast.error(message);
+            focusMfaField();
+            return;
+          }
+
           logFlowEvent('submit:enableMfa', {
             email: trimmedEmail,
             emailInRequest: emailForRequest,
