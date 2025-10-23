@@ -11,7 +11,9 @@ import type {
 
 const DEVICES_ENDPOINT = '/devices';
 const DEVICE_UPDATES_RETRY_DELAY = 5000;
-const ENV_API_URL = (import.meta.env.VITE_API_URL ?? '') as string;
+const ENV_API_URL = (
+  import.meta.env.VITE_API_URL ?? import.meta.env.API_URL ?? 'http://localhost:3000'
+) as string;
 
 type DeviceCommandResponse = {
   message: string;
