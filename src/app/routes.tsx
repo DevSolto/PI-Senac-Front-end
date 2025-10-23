@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ComponentType } from 'react';
+import type { ReactNode } from 'react';
 
 import { AlertsPage } from '@/features/alerts/pages/AlertsPage';
 import { SilosPage } from '@/features/silos/pages/SilosPage';
@@ -22,7 +22,8 @@ export interface NavigationItem {
   id: string;
   label: string;
   icon: LucideIcon;
-  component: ComponentType;
+  path: string;
+  element: ReactNode;
   primary?: boolean;
 }
 
@@ -31,46 +32,53 @@ export const navigationItems: NavigationItem[] = [
     id: 'alerts',
     label: 'Alertas',
     icon: AlertTriangle,
-    component: AlertsPage,
+    path: '/alerts',
+    element: <AlertsPage />,
     primary: true,
   },
   {
     id: 'silos',
     label: 'Silos',
     icon: Warehouse,
-    component: SilosPage,
+    path: '/silos',
+    element: <SilosPage />,
     primary: true,
   },
   {
     id: 'devices',
     label: 'Dispositivos',
     icon: Cpu,
-    component: DevicesPage,
+    path: '/devices',
+    element: <DevicesPage />,
     primary: true,
   },
   {
     id: 'companies',
     label: 'Companhias',
     icon: Building,
-    component: CompaniesPage,
+    path: '/companies',
+    element: <CompaniesPage />,
     primary: true,
   },
   {
     id: 'data-process',
     label: 'Processamentos',
     icon: BarChart3,
-    component: DataProcessPage,
+    path: '/data-process',
+    element: <DataProcessPage />,
   },
   {
     id: 'users',
     label: 'Usuários',
     icon: UsersIcon,
-    component: UsersPage,
+    path: '/users',
+    element: <UsersPage />,
   },
   {
     id: 'health',
     label: 'Status',
     icon: Activity,
-    component: HealthStatusPage,
+    path: '/health',
+    element: <HealthStatusPage />,
   },
 ];

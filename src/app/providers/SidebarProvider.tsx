@@ -1,6 +1,7 @@
 import { createContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useMobile } from '../hooks/useMobile';
+import { navigationItems } from '../routes';
 
 interface SidebarContextValue {
   activeTab: string;
@@ -14,7 +15,7 @@ interface SidebarContextValue {
 export const SidebarContext = createContext<SidebarContextValue | undefined>(undefined);
 
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(navigationItems[0]?.id ?? '');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isMobile } = useMobile();
 
