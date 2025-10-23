@@ -10,7 +10,6 @@ import {
 import { login as loginRequest } from '@/shared/api/auth';
 import type { LoginPayload, LoginResponse } from '@/shared/api/auth.types';
 import type { User } from '@/shared/api/users.types';
-import { getUser } from '@/shared/api/users';
 import { apiClient, clearAuthToken, setAuthToken } from '@/shared/http';
 import { deleteCookie, getCookie, setCookie } from '@/shared/utils/cookies';
 
@@ -166,8 +165,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           throw new Error('Token de acesso inválido.');
         }
 
-        const currentUser = await getUser(userId);
-        setUser(currentUser);
+        setUser(null);
         setStatus('authenticated');
       } catch (error) {
         clearStoredToken();
@@ -226,37 +224,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return;
     }
 
-    setStatus('loading');
-    setTokenState(storedToken);
-    setAuthToken(storedToken);
-
-    const payload = decodeJwtPayload(storedToken);
-
-    if (!payload) {
-      clearStoredToken();
-      setUser(null);
-      setStatus('unauthenticated');
-      return;
-    }
-
-    const userId = extractUserId(payload);
-
-    if (userId === null) {
-      clearStoredToken();
-      setUser(null);
-      setStatus('unauthenticated');
-      return;
-    }
-
-    getUser(userId)
-      .then((currentUser) => {
-        setUser(currentUser);
-        setStatus('authenticated');
-      })
-      .catch(() => {
-        logout();
-      });
-  }, [clearStoredToken, logout]);
+    hydrateFromToken(storedToken).catch(() => {
+      logout();
+    });
+  }, [clearStoredToken, hydrateFromToken, logout]);
 
   useEffect(() => {
     const removeInterceptor = apiClient.addResponseInterceptor((response) => {
