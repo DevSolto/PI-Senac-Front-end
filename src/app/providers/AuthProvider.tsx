@@ -19,11 +19,15 @@ const AUTH_TOKEN_STORAGE_KEY = 'auth_token';
 
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
+interface LoginOptions {
+  accessToken?: string;
+}
+
 export interface AuthContextValue {
   user: User | null;
   token: string | null;
   status: AuthStatus;
-  login: (payload: LoginPayload) => Promise<LoginResponse>;
+  login: (payload: LoginPayload, options?: LoginOptions) => Promise<LoginResponse>;
   logout: () => void;
   requireMfa: () => void;
 }
@@ -80,26 +84,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     redirectToLogin();
   }, [clearStoredToken, redirectToLogin]);
 
+  const hydrateFromToken = useCallback(
+    async (accessToken: string) => {
+      setStatus('loading');
+      persistToken(accessToken);
+
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        setStatus('authenticated');
+      } catch (error) {
+        clearStoredToken();
+        setUser(null);
+        setStatus('unauthenticated');
+        throw error;
+      }
+    },
+    [clearStoredToken, persistToken],
+  );
+
   const login = useCallback(
-    async (payload: LoginPayload): Promise<LoginResponse> => {
+    async (
+      payload: LoginPayload,
+      options: LoginOptions = {},
+    ): Promise<LoginResponse> => {
       setStatus('loading');
 
       try {
+        if (options.accessToken) {
+          await hydrateFromToken(options.accessToken);
+          return { access_token: options.accessToken };
+        }
+
         const response = await loginRequest(payload);
 
         if ('access_token' in response && response.access_token) {
-          persistToken(response.access_token);
-
-          try {
-            const currentUser = await getCurrentUser();
-            setUser(currentUser);
-            setStatus('authenticated');
-          } catch (error) {
-            clearStoredToken();
-            setUser(null);
-            setStatus('unauthenticated');
-            throw error;
-          }
+          await hydrateFromToken(response.access_token);
         } else {
           requireMfa();
         }
@@ -112,7 +132,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw error;
       }
     },
-    [clearStoredToken, persistToken, requireMfa],
+    [clearStoredToken, hydrateFromToken, requireMfa],
   );
 
   useEffect(() => {
