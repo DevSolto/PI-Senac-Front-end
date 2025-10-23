@@ -109,11 +109,6 @@ export const useRealtimeSeries = () => {
     [dateFormatter, series.humidity, windowSize],
   );
 
-  const comfort = useMemo(
-    () => formatSeries(series.comfort, windowSize, { unit: '°C', decimals: 1, min: -20, max: 50 }, dateFormatter),
-    [dateFormatter, series.comfort, windowSize],
-  );
-
   const aqi = useMemo<AqiSeries>(() => {
     const formatted = formatSeries(series.aqi, windowSize, { unit: 'AQI', decimals: 0, min: 0 }, dateFormatter);
     const latestValue = formatted.latest?.value ?? null;
@@ -129,7 +124,6 @@ export const useRealtimeSeries = () => {
   return {
     temperature,
     humidity,
-    comfort,
     aqi,
     controls: {
       isPlaying: context.isPlaying,

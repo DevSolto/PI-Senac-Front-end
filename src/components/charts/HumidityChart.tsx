@@ -47,7 +47,7 @@ export const HumidityChart = ({ humidity, temperature, className }: HumidityChar
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Umidade relativa & conforto térmico</CardTitle>
+        <CardTitle>Umidade relativa & temperatura média</CardTitle>
         <CardDescription>
           Média atual: <span className="font-medium text-foreground">{humidity.latest?.formattedValue ?? '—'}</span>
         </CardDescription>

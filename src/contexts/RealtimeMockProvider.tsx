@@ -10,12 +10,7 @@ import {
 } from 'react';
 
 import { createPrng, type Prng } from '@/lib/mock/prng';
-import {
-  advanceEnvironmentSeries,
-  generateEnvironmentSeries,
-  getWindowSize,
-  type TimeSeries,
-} from '@/lib/mock/timeSeries';
+import { advanceEnvironmentSeries, generateEnvironmentSeries, type SeriesCollection } from '@/lib/mock/timeSeries';
 
 const WINDOW_DAYS = 30;
 const POINTS_PER_DAY = 24;
@@ -23,13 +18,6 @@ const DEFAULT_SEED = 'environment-seed';
 const DEFAULT_NOISE = 0.4;
 const DEFAULT_CORRELATION = 0.3;
 const DEFAULT_INTERVAL = 5000;
-
-interface ComfortSeriesState {
-  temperature: TimeSeries;
-  humidity: TimeSeries;
-  aqi: TimeSeries;
-  comfort: TimeSeries;
-}
 
 export interface RealtimeSeriesControls {
   isPlaying: boolean;
@@ -49,50 +37,17 @@ export interface RealtimeSeriesControls {
 }
 
 export interface RealtimeSeriesContextValue extends RealtimeSeriesControls {
-  series: ComfortSeriesState;
+  series: SeriesCollection;
 }
 
 const RealtimeSeriesContext = createContext<RealtimeSeriesContextValue | undefined>(undefined);
-
-function computeComfortIndex(temperature: number, humidity: number): number {
-  const relativeHumidity = Math.min(Math.max(humidity, 0), 100) / 100;
-  const comfort = temperature - 0.55 * (1 - relativeHumidity) * (temperature - 14.5);
-  return Number(comfort.toFixed(2));
-}
-
-function buildComfortSeries(temperature: TimeSeries, humidity: TimeSeries): TimeSeries {
-  if (temperature.length === 0) {
-    return [];
-  }
-
-  return temperature.map((point, index) => {
-    const humidityPoint = humidity[Math.min(index, humidity.length - 1)] ?? humidity[humidity.length - 1];
-    return {
-      timestamp: point.timestamp,
-      value: computeComfortIndex(point.value, humidityPoint?.value ?? 60),
-    };
-  });
-}
-
-function appendComfortSeries(
-  current: TimeSeries,
-  timestamp: number,
-  temperature: number,
-  humidity: number,
-  windowSize: number,
-): TimeSeries {
-  const nextValue = computeComfortIndex(temperature, humidity);
-  const next = current.length >= windowSize ? current.slice(1) : current.slice();
-  next.push({ timestamp, value: nextValue });
-  return next;
-}
 
 function createInitialSeries(
   prng: Prng,
   noise: number,
   correlation: number,
-): ComfortSeriesState {
-  const base = generateEnvironmentSeries({
+): SeriesCollection {
+  return generateEnvironmentSeries({
     prng,
     windowDays: WINDOW_DAYS,
     pointsPerDay: POINTS_PER_DAY,
@@ -100,11 +55,6 @@ function createInitialSeries(
     correlation,
     startTimestamp: Date.now(),
   });
-
-  return {
-    ...base,
-    comfort: buildComfortSeries(base.temperature, base.humidity),
-  };
 }
 
 function validatePositive(value: number, fallback: number): number {
@@ -136,12 +86,7 @@ export const RealtimeMockProvider = ({ children }: RealtimeMockProviderProps) =>
   const prngRef = useRef<Prng>(createPrng(seed));
   const optionsRef = useRef({ noise: DEFAULT_NOISE, correlation: DEFAULT_CORRELATION });
 
-  const windowSize = useMemo(
-    () => getWindowSize(WINDOW_DAYS, POINTS_PER_DAY),
-    [],
-  );
-
-  const [series, setSeries] = useState<ComfortSeriesState>(() =>
+  const [series, setSeries] = useState<SeriesCollection>(() =>
     createInitialSeries(prngRef.current, noise, correlation),
   );
 
@@ -165,42 +110,20 @@ export const RealtimeMockProvider = ({ children }: RealtimeMockProviderProps) =>
     }
 
     const interval = window.setInterval(() => {
-      setSeries((current) => {
-        const nextBase = advanceEnvironmentSeries(
-          {
-            temperature: current.temperature,
-            humidity: current.humidity,
-            aqi: current.aqi,
-          },
-          prngRef.current,
-          {
-            windowDays: WINDOW_DAYS,
-            pointsPerDay: POINTS_PER_DAY,
-            noise: optionsRef.current.noise,
-            correlation: optionsRef.current.correlation,
-          },
-        );
-
-        const lastTemperature = nextBase.temperature[nextBase.temperature.length - 1];
-        const lastHumidity = nextBase.humidity[nextBase.humidity.length - 1];
-
-        return {
-          ...nextBase,
-          comfort: appendComfortSeries(
-            current.comfort,
-            lastTemperature.timestamp,
-            lastTemperature.value,
-            lastHumidity.value,
-            windowSize,
-          ),
-        };
-      });
+      setSeries((current) =>
+        advanceEnvironmentSeries(current, prngRef.current, {
+          windowDays: WINDOW_DAYS,
+          pointsPerDay: POINTS_PER_DAY,
+          noise: optionsRef.current.noise,
+          correlation: optionsRef.current.correlation,
+        }),
+      );
     }, validatePositive(updateInterval, DEFAULT_INTERVAL));
 
     return () => {
       window.clearInterval(interval);
     };
-  }, [isPlaying, updateInterval, windowSize]);
+  }, [isPlaying, updateInterval]);
 
   const controls = useMemo<RealtimeSeriesControls>(
     () => ({
