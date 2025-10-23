@@ -5,7 +5,7 @@ import { MainLayout } from './layout/MainLayout';
 import { navigationItems } from './routes';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 
-const defaultPrivatePath = navigationItems[0]?.path ?? '/alerts';
+const defaultPrivatePath = navigationItems[0]?.path ?? '/dashboard';
 
 const normalizePath = (path: string) => (path.startsWith('/') ? path.slice(1) : path);
 

@@ -8,6 +8,7 @@ import { DataProcessPage } from '@/features/data-process/pages/DataProcessPage';
 import { UsersPage } from '@/features/users/pages/UsersPage';
 import { HealthStatusPage } from '@/features/health/pages/HealthStatusPage';
 import { CompaniesPage } from '@/features/companies/pages/CompaniesPage';
+import { DashboardPage } from '@/pages/Dashboard';
 import {
   Activity,
   AlertTriangle,
@@ -16,6 +17,7 @@ import {
   Building,
   Warehouse,
   Users as UsersIcon,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export interface NavigationItem {
@@ -28,6 +30,14 @@ export interface NavigationItem {
 }
 
 export const navigationItems: NavigationItem[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    path: '/dashboard',
+    element: <DashboardPage />,
+    primary: true,
+  },
   {
     id: 'alerts',
     label: 'Alertas',
