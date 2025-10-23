@@ -203,4 +203,5 @@ export const apiClient = {
   request,
   json: jsonRequest,
   post,
+  addResponseInterceptor,
 };
