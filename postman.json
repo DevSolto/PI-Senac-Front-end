@@ -1,0 +1,630 @@
+{
+    "info": {
+        "_postman_id": "984e38fb-520d-4a68-bddc-692acb3ea09f",
+        "name": "@SILO-PI",
+        "description": "FLUXO INICIAL\n\n1. CRIAR A COMPANY NA ROTA PUBLICA (MELHORAR ISSO DPS)\n    \n2. CRIAR PRIMEIRO USUARIO COM ID DA COMPANY. FAZER NA ROTA PUBLICA (MELHORAR ISSO DPS)\n    \n3. PRIMEIRO LOGIN - RECEBE QR CODE\n    \n4. CONFIGURA QR CODE\n    \n5. VALIDAR CODIGO MFA NA ROTA /auth/mfa/enable - email + codigo vai retornar o token\n    \n\nna raiz PS C:\\\\Users\\\\Pos\\\\PI-Senac-BACKEND tem uma pagina simples chamada qrcode.htlm pra visualizar.\n\nFLUXO SILO-DEVICES\n\n1. COM O TOKEN EM MAOS CRIAR O SILO\n    \n2. CADASTRAR A PLACA (ID DELA É 0C4EA065A598)\n    \n3. LISTAR PLACAS CADASTRADAS\n    \n4. LISTAR PLACAS ONLINE (PRECISA DA PLACA EM MAOS)\n    \n5. ENIVAR COMANDO \"start\"/\"stop\" PARA A PLACA\n    \n6. SSE EM TEMPO REAL PASSANDO NO ENDPOINT [http://localhost:3000/devices/0C4EA065A598/updates](http://localhost:3000/devices/0C4EA065A598/updates)",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "49416533",
+        "_collection_link": "https://dev-cognvox.postman.co/workspace/API-BECK-NEST~f6a716a3-ad5f-49ad-b0f7-4434144b437f/collection/38636368-984e38fb-520d-4a68-bddc-692acb3ea09f?action=share&source=collection_link&creator=49416533"
+    },
+    "item": [
+        {
+            "name": "USERS",
+            "item": [
+                {
+                    "name": "CRIAR USUARIO",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"name\": \"Matheus Silva\",\r\n  \"email\": \"matheus.silva@email.com\",\r\n  \"password\": \"senha123\",\r\n  \"role\": \"user\",\r\n  \"companyId\": 1\r\n}\r\n",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/users",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "LISTA TODOS USUARIOS",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/users",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 2",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 3",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "AUTH",
+            "item": [
+                {
+                    "name": "LOGIN",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODQ5Njc2fQ.krQeRmgmN0IB8hRWvBe_Vzs0BmZe4EhIs5ohQsDBoLY",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"email\": \"matheus.silva@email.com\",\r\n  \"password\": \"senha123\"\r\n}\r\n",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/auth/login",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "VALIDAR QR CODE MFA",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n\"email\": \"matheus.silva@email.com\",\r\n\"mfaCode\": \"112950\"\r\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/auth/mfa/enable",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "auth",
+                                "mfa",
+                                "enable"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 2",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 3",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "COMPANIES",
+            "item": [
+                {
+                    "name": "CRIAR EMPRESAS",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODUyMjA0fQ.cvCqddJMCEb75l5UM-A6aOgjjtt3XVTe5_XryUc5pA0",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"name\": \"Minha Empresa Ltda\",\r\n  \"CNPJ\": \"12.345.678/0001-99\",\r\n  \"description\": \"Empresa de tecnologia focada em soluções SaaS\",\r\n  \"address\": \"Rua das Flores, 123, São Paulo, SP\"\r\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/companies",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "companies"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "LISTAR EMPRESAS",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODUyMjA0fQ.cvCqddJMCEb75l5UM-A6aOgjjtt3XVTe5_XryUc5pA0",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/companies",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "companies"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 3",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 2",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "ALERTS",
+            "item": [
+                {
+                    "name": "New request",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 3",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 2",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "DEVICES",
+            "item": [
+                {
+                    "name": "CADASTRA DEVICE",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODk1NTU1fQ.u8VYsrYqORmyZq6u-gxKga0XGFbURn_05Ap54lafgpM",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"id\": \"0C4EA065A598\",\r\n  \"name\": \"Sensor Silo Norte\",\r\n  \"siloId\": 1\r\n}\r\n",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/devices",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "devices"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "LISTA DEVICES CADASTRADAS NO POSTGRES",
+                    "request": {
+                        "method": "GET",
+                        "header": []
+                    },
+                    "response": []
+                },
+                {
+                    "name": "LISTA DEVICES ONLINE",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODk2NTQ5fQ.O3ksrbadNhu1_l6NlUusacG6jO0i2Xp298AIFfDgVIA",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/devices/silo/1/online",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "devices",
+                                "silo",
+                                "1",
+                                "online"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "ENVIAR COMANDOS DEVICE",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODk2NTQ5fQ.O3ksrbadNhu1_l6NlUusacG6jO0i2Xp298AIFfDgVIA",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"command\": \"stop\"\r\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/devices/0C4EA065A598/commands",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "devices",
+                                "0C4EA065A598",
+                                "commands"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DADOS EM TEMPO REAL",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODk2NTQ5fQ.O3ksrbadNhu1_l6NlUusacG6jO0i2Xp298AIFfDgVIA",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/devices/0C4EA065A598/updates",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "devices",
+                                "0C4EA065A598",
+                                "updates"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "SILOS",
+            "item": [
+                {
+                    "name": "CRIAR SILO",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODUyMjA0fQ.cvCqddJMCEb75l5UM-A6aOgjjtt3XVTe5_XryUc5pA0",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"name\": \"Silo Norte\",\r\n  \"description\": \"Silo para armazenar grãos de soja\",\r\n  \"grain\": \"Soja\",\r\n  \"inUse\": true,\r\n  \"maxTemperature\": 35,\r\n  \"minTemperature\": 15,\r\n  \"maxHumidity\": 70,\r\n  \"minHumidity\": 20,\r\n  \"maxAirQuality\": 100,\r\n  \"minAirQuality\": 10,\r\n  \"companyId\": 1\r\n}\r\n",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "http://localhost:3000/silos",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "silos"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "LISTAR TODOS OS SILOS",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzYwODUyMjA0fQ.cvCqddJMCEb75l5UM-A6aOgjjtt3XVTe5_XryUc5pA0",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/silos",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "silos"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 3",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 2",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "DATA PROCESS",
+            "item": [
+                {
+                    "name": "New request",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 3",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy 2",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "New request Copy",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "New Request",
+            "request": {
+                "method": "GET",
+                "header": []
+            },
+            "response": []
+        }
+    ]
+}
