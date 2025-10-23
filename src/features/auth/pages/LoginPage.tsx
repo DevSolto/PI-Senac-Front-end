@@ -57,6 +57,7 @@ export const LoginPage = () => {
   const { login: authLogin } = useAuth();
   const [mfaState, setMfaState] = useState<MfaState>('none');
   const [mfaSetupData, setMfaSetupData] = useState<MfaSetupData | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -85,6 +86,7 @@ export const LoginPage = () => {
     if (mfaState === 'none') {
       form.setValue('mfaCode', '');
       setMfaSetupData(null);
+      setPendingEmail(null);
     }
   }, [form, mfaState]);
 
@@ -103,9 +105,10 @@ export const LoginPage = () => {
       form.reset({ ...DEFAULT_FORM_VALUES, email: payload.email });
       setMfaState('none');
       setMfaSetupData(null);
+      setPendingEmail(null);
       navigate('/');
     },
-    [authLogin, form, logFlowEvent, navigate],
+    [authLogin, form, logFlowEvent, navigate, setPendingEmail],
   );
 
   const handleLoginResponse = useCallback(
@@ -132,6 +135,7 @@ export const LoginPage = () => {
         logFlowEvent('login:mfaRequired', { email: payload.email });
         setMfaState('required');
         setMfaSetupData(null);
+        setPendingEmail(payload.email);
         toast.info('Confirmação em duas etapas necessária', {
           description:
             'Informe o código gerado pelo seu aplicativo autenticador para finalizar o acesso.',
@@ -152,6 +156,7 @@ export const LoginPage = () => {
           otpauthUrl: response.otpauth_url,
           qrCodeDataUrl: response.qrCodeDataUrl,
         });
+        setPendingEmail(payload.email);
         toast.info('Configure a autenticação em duas etapas', {
           description:
             'Digite o primeiro código gerado pelo aplicativo autenticador para concluir a ativação.',
@@ -171,6 +176,7 @@ export const LoginPage = () => {
           otpauthUrl: response.otpauth_url,
           qrCodeDataUrl: response.qrCodeDataUrl,
         });
+        setPendingEmail(payload.email);
         toast.info('Configure a autenticação em duas etapas', {
           description:
             'Digite o primeiro código gerado pelo aplicativo autenticador para concluir a ativação.',
@@ -178,7 +184,7 @@ export const LoginPage = () => {
         focusMfaField();
       }
     },
-    [focusMfaField, handleSuccessLogin, logFlowEvent],
+    [focusMfaField, handleSuccessLogin, logFlowEvent, setPendingEmail],
   );
 
   const onSubmit = useCallback(
@@ -187,15 +193,18 @@ export const LoginPage = () => {
       setIsSubmitting(true);
 
       const trimmedEmail = values.email.trim();
+      const emailForRequest =
+        mfaState === 'none' ? trimmedEmail : pendingEmail ?? trimmedEmail;
       const sanitizedMfaCode = values.mfaCode.replace(/\s+/g, '');
       const payload: LoginPayload = {
-        email: trimmedEmail,
+        email: emailForRequest,
         password: values.password,
         ...(sanitizedMfaCode ? { mfaCode: sanitizedMfaCode } : {}),
       };
 
       logFlowEvent('submit:start', {
         email: trimmedEmail,
+        emailInRequest: emailForRequest,
         mfaState,
         hasMfaCode: Boolean(sanitizedMfaCode),
       });
@@ -204,17 +213,19 @@ export const LoginPage = () => {
         if (mfaState === 'setup' || mfaState === 'required') {
           logFlowEvent('submit:enableMfa', {
             email: trimmedEmail,
+            emailInRequest: emailForRequest,
             hasMfaCode: Boolean(sanitizedMfaCode),
             mfaState,
           });
 
           const enableResponse = await enableMfa({
-            email: trimmedEmail,
+            email: emailForRequest,
             mfaCode: sanitizedMfaCode,
           });
 
           logFlowEvent('submit:enableMfa:success', {
             email: trimmedEmail,
+            emailInRequest: emailForRequest,
             hasAccessToken: Boolean(enableResponse.access_token),
             mfaState,
           });
@@ -233,6 +244,7 @@ export const LoginPage = () => {
         const response = await loginRequest(payload);
         logFlowEvent('submit:loginRequest:success', {
           email: trimmedEmail,
+          emailInRequest: emailForRequest,
           responseKeys: Object.keys(response),
         });
         await handleLoginResponse(payload, response);
@@ -241,6 +253,7 @@ export const LoginPage = () => {
           error instanceof Error ? error.message : 'Erro desconhecido ao realizar login';
         logFlowEvent('submit:error', {
           email: trimmedEmail,
+          emailInRequest: emailForRequest,
           mfaState,
           error: parsedError,
         });
@@ -255,13 +268,20 @@ export const LoginPage = () => {
         setIsSubmitting(false);
         logFlowEvent('submit:finished', {
           email: trimmedEmail,
+          emailInRequest: emailForRequest,
           mfaState,
           isSetupFlow: mfaState === 'setup',
         });
       }
     },
-    [handleLoginResponse, handleSuccessLogin, logFlowEvent, mfaState],
+    [handleLoginResponse, handleSuccessLogin, logFlowEvent, mfaState, pendingEmail],
   );
+
+  const handleCancelMfa = useCallback(() => {
+    const currentEmail = pendingEmail ?? form.getValues('email').trim();
+    logFlowEvent('mfa:cancel', { email: currentEmail, mfaState });
+    setMfaState('none');
+  }, [form, logFlowEvent, mfaState, pendingEmail]);
 
   const mfaInstructions = useMemo(() => {
     if (mfaState === 'required') {
@@ -286,6 +306,8 @@ export const LoginPage = () => {
 
     return isSubmitting ? 'Entrando...' : 'Entrar';
   }, [isSubmitting, mfaState]);
+
+  const isMfaStep = mfaState !== 'none';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
@@ -321,7 +343,7 @@ export const LoginPage = () => {
                           type="email"
                           autoComplete="email"
                           placeholder="usuario@empresa.com"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isMfaStep}
                           {...field}
                         />
                       </FormControl>
@@ -342,7 +364,7 @@ export const LoginPage = () => {
                           type="password"
                           autoComplete="current-password"
                           placeholder="Digite sua senha"
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || isMfaStep}
                           {...field}
                         />
                       </FormControl>
@@ -363,6 +385,12 @@ export const LoginPage = () => {
                     )}
                     {mfaState === 'setup' && mfaSetupData?.message && (
                       <p className="text-xs text-muted-foreground">{mfaSetupData.message}</p>
+                    )}
+                    {pendingEmail && (
+                      <p className="text-xs text-muted-foreground">
+                        Código referente ao usuário{' '}
+                        <span className="font-medium text-foreground">{pendingEmail}</span>
+                      </p>
                     )}
                   </div>
 
@@ -386,6 +414,21 @@ export const LoginPage = () => {
                       </code>
                     </div>
                   )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Digite o código numérico exibido no aplicativo autenticador.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto px-0 text-xs"
+                      onClick={handleCancelMfa}
+                      disabled={isSubmitting}
+                    >
+                      Usar outra conta
+                    </Button>
+                  </div>
 
                   <FormField
                     control={form.control}
