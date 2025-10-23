@@ -146,12 +146,15 @@ export const LoginPage = () => {
       const hasAccessToken = 'access_token' in response && Boolean(response.access_token);
       const hasMfaSetupFlag = 'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined;
       const hasMfaRequiredFlag = 'mfaRequired' in response ? response.mfaRequired : undefined;
+      const responseMessage = 'message' in response ? response.message : undefined;
+      const isMfaRequiredResponse =
+        Boolean(hasMfaRequiredFlag) || responseMessage === 'MFA code required';
       const hasQrCode = 'qrCodeDataUrl' in response && Boolean(response.qrCodeDataUrl);
 
       logFlowEvent('login:handleResponse', {
         email: payload.email,
         hasAccessToken,
-        mfaRequired: hasMfaRequiredFlag,
+        mfaRequired: isMfaRequiredResponse,
         mfaSetupRequired: hasMfaSetupFlag,
         hasQrCode,
       });
@@ -161,7 +164,7 @@ export const LoginPage = () => {
         return;
       }
 
-      if ('mfaRequired' in response && response.mfaRequired) {
+      if (isMfaRequiredResponse) {
         logFlowEvent('login:mfaRequired', { email: payload.email });
         setMfaState('required');
         setMfaSetupData(null);
