@@ -15,6 +15,20 @@ import { deleteCookie, getCookie, setCookie } from '@/shared/utils/cookies';
 
 const AUTH_TOKEN_COOKIE_KEY = 'auth_token';
 
+const readStoredToken = (): string | null => {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  const storedToken = getCookie(AUTH_TOKEN_COOKIE_KEY)?.trim();
+
+  if (!storedToken) {
+    return null;
+  }
+
+  return storedToken;
+};
+
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
 interface LoginOptions {
@@ -42,8 +56,16 @@ function isBrowser(): boolean {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
-  const [status, setStatus] = useState<AuthStatus>('idle');
+  const [token, setTokenState] = useState<string | null>(() => {
+    const storedToken = readStoredToken();
+
+    if (storedToken) {
+      setAuthToken(storedToken);
+    }
+
+    return storedToken;
+  });
+  const [status, setStatus] = useState<AuthStatus>(() => (token ? 'authenticated' : 'idle'));
 
   const persistToken = useCallback((value: string) => {
     setTokenState(value);
@@ -134,24 +156,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 
   useEffect(() => {
-    if (!isBrowser()) {
-      setStatus('unauthenticated');
-      return;
-    }
-
-    const storedToken = getCookie(AUTH_TOKEN_COOKIE_KEY);
-
-    if (!storedToken) {
+    if (!token) {
       clearStoredToken();
       setUser(null);
       setStatus('unauthenticated');
       return;
     }
 
-    hydrateFromToken(storedToken).catch(() => {
-      logout();
-    });
-  }, [clearStoredToken, hydrateFromToken, logout]);
+    setAuthToken(token);
+    setStatus('authenticated');
+  }, [clearStoredToken, token]);
 
   useEffect(() => {
     const removeInterceptor = apiClient.addResponseInterceptor((response) => {

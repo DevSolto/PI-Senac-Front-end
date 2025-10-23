@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAuth } from '@/app/hooks/useAuth';
 import { listCompanies } from '@/shared/api/companies';
 import type { Company } from '@/shared/api/companies.types';
 
@@ -14,6 +15,7 @@ interface UseCompaniesResult {
 }
 
 export function useCompanies(): UseCompaniesResult {
+  const { status: authStatus, token } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [status, setStatus] = useState<CompaniesStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,10 @@ export function useCompanies(): UseCompaniesResult {
   }, []);
 
   const fetchCompanies = useCallback(async () => {
+    if (authStatus !== 'authenticated' || !token) {
+      return;
+    }
+
     setStatus('loading');
     setError(null);
 
@@ -48,11 +54,19 @@ export function useCompanies(): UseCompaniesResult {
         err instanceof Error ? err.message : 'Não foi possível carregar as companhias.',
       );
     }
-  }, []);
+  }, [authStatus, token]);
 
   useEffect(() => {
     void fetchCompanies();
   }, [fetchCompanies]);
+
+  useEffect(() => {
+    if (authStatus === 'unauthenticated') {
+      setCompanies([]);
+      setStatus('idle');
+      setError(null);
+    }
+  }, [authStatus]);
 
   const append = useCallback((company: Company) => {
     if (!isMounted.current) {
