@@ -39,3 +39,11 @@ export interface Company {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CompanyApiResponse
+  extends Omit<Company, 'users' | 'silos' | 'description' | 'address'> {
+  description?: string | null;
+  address?: string | null;
+  users?: CompanyUserSummary[] | null;
+  silos?: CompanySiloSummary[] | null;
+}
