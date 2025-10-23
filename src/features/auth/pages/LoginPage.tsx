@@ -110,12 +110,17 @@ export const LoginPage = () => {
 
   const handleLoginResponse = useCallback(
     async (payload: LoginPayload, response: LoginResponse) => {
+      const hasAccessToken = 'access_token' in response && Boolean(response.access_token);
+      const hasMfaSetupFlag = 'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined;
+      const hasMfaRequiredFlag = 'mfaRequired' in response ? response.mfaRequired : undefined;
+      const hasQrCode = 'qrCodeDataUrl' in response && Boolean(response.qrCodeDataUrl);
+
       logFlowEvent('login:handleResponse', {
         email: payload.email,
-        hasAccessToken: 'access_token' in response && Boolean(response.access_token),
-        mfaRequired: 'mfaRequired' in response ? response.mfaRequired : undefined,
-        mfaSetupRequired:
-          'mfaSetupRequired' in response ? response.mfaSetupRequired : undefined,
+        hasAccessToken,
+        mfaRequired: hasMfaRequiredFlag,
+        mfaSetupRequired: hasMfaSetupFlag,
+        hasQrCode,
       });
 
       if ('access_token' in response && response.access_token) {
@@ -139,6 +144,25 @@ export const LoginPage = () => {
         logFlowEvent('login:mfaSetupRequired', {
           email: payload.email,
           hasQrCode: Boolean(response.qrCodeDataUrl),
+          hasOtpAuthUrl: Boolean(response.otpauth_url),
+        });
+        setMfaState('setup');
+        setMfaSetupData({
+          message: response.message,
+          otpauthUrl: response.otpauth_url,
+          qrCodeDataUrl: response.qrCodeDataUrl,
+        });
+        toast.info('Configure a autenticação em duas etapas', {
+          description:
+            'Digite o primeiro código gerado pelo aplicativo autenticador para concluir a ativação.',
+        });
+        focusMfaField();
+        return;
+      }
+
+      if ('qrCodeDataUrl' in response && response.qrCodeDataUrl) {
+        logFlowEvent('login:mfaSetup:implicit', {
+          email: payload.email,
           hasOtpAuthUrl: Boolean(response.otpauth_url),
         });
         setMfaState('setup');
