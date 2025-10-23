@@ -267,33 +267,50 @@ export const LoginPage = () => {
             return;
           }
 
-          logFlowEvent('submit:enableMfa', {
+          if (mfaState === 'setup') {
+            logFlowEvent('submit:enableMfa', {
+              email: trimmedEmail,
+              emailInRequest: emailForRequest,
+              hasMfaCode: Boolean(sanitizedMfaCode),
+              mfaState,
+            });
+
+            const enableResponse = await enableMfa({
+              email: emailForRequest,
+              mfaCode: sanitizedMfaCode,
+            });
+
+            logFlowEvent('submit:enableMfa:success', {
+              email: trimmedEmail,
+              emailInRequest: emailForRequest,
+              hasAccessToken: Boolean(enableResponse.access_token),
+              mfaState,
+            });
+
+            const successMessage =
+              enableResponse.message || 'MFA habilitada com sucesso!';
+
+            toast.success(successMessage);
+            await handleSuccessLogin(payload, enableResponse.access_token);
+            return;
+          }
+
+          logFlowEvent('submit:loginWithMfa', {
             email: trimmedEmail,
             emailInRequest: emailForRequest,
             hasMfaCode: Boolean(sanitizedMfaCode),
             mfaState,
           });
 
-          const enableResponse = await enableMfa({
-            email: emailForRequest,
-            mfaCode: sanitizedMfaCode,
-          });
+          const responseWithMfa = await loginRequest(payload);
 
-          logFlowEvent('submit:enableMfa:success', {
+          logFlowEvent('submit:loginWithMfa:success', {
             email: trimmedEmail,
             emailInRequest: emailForRequest,
-            hasAccessToken: Boolean(enableResponse.access_token),
-            mfaState,
+            responseKeys: Object.keys(responseWithMfa),
           });
 
-          const successMessage =
-            enableResponse.message ||
-            (mfaState === 'setup'
-              ? 'MFA habilitada com sucesso!'
-              : 'Código validado com sucesso!');
-
-          toast.success(successMessage);
-          await handleSuccessLogin(payload, enableResponse.access_token);
+          await handleLoginResponse(payload, responseWithMfa);
           return;
         }
 
