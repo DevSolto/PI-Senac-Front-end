@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { ComponentProps } from 'react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,7 +12,23 @@ import {
 } from '@/components/ui/chart';
 import type { AqiSeries } from '@/hooks/useRealtimeSeries';
 import { getAqiCategory, getAqiColor } from '@/lib/mock/aqi';
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis, type LegendPayload } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from 'recharts';
+
+type ChartLegendPayload = NonNullable<ComponentProps<typeof ChartLegend>['payload']>;
+type AqiCategory = ReturnType<typeof getAqiCategory>;
+type ChartDataPoint = AqiSeries['points'][number] & {
+  category: AqiCategory;
+  fill: string;
+};
+
+const LEGEND_ITEMS: ReadonlyArray<{ category: AqiCategory; label: string }> = [
+  { category: 'good', label: 'Bom (0-50)' },
+  { category: 'moderate', label: 'Moderado (51-100)' },
+  { category: 'unhealthy-for-sensitive', label: 'Sensíveis (101-150)' },
+  { category: 'unhealthy', label: 'Ruim (151-200)' },
+  { category: 'very-unhealthy', label: 'Muito ruim (201-300)' },
+  { category: 'hazardous', label: 'Perigoso (300+)' },
+];
 
 const aqiChartConfig = {
   value: {
@@ -22,7 +39,7 @@ const aqiChartConfig = {
 
 const AQI_BOUNDARIES = [50, 100, 150, 200, 300];
 
-const AQI_CATEGORY_LABEL: Record<ReturnType<typeof getAqiCategory>, string> = {
+const AQI_CATEGORY_LABEL: Record<AqiCategory, string> = {
   good: 'Bom',
   moderate: 'Moderado',
   'unhealthy-for-sensitive': 'Sensíveis',
@@ -37,7 +54,7 @@ interface AirQualityChartProps {
 }
 
 export const AirQualityChart = ({ series, className }: AirQualityChartProps) => {
-  const data = useMemo(
+  const data = useMemo<ChartDataPoint[]>(
     () =>
       series.points.map((point) => {
         const category = getAqiCategory(point.value);
@@ -50,20 +67,13 @@ export const AirQualityChart = ({ series, className }: AirQualityChartProps) => 
     [series.points],
   );
 
-  const legendPayload = useMemo<LegendPayload[]>(
+  const legendPayload = useMemo<ChartLegendPayload>(
     () =>
-      [
-        { category: 'good', label: 'Bom (0-50)' },
-        { category: 'moderate', label: 'Moderado (51-100)' },
-        { category: 'unhealthy-for-sensitive', label: 'Sensíveis (101-150)' },
-        { category: 'unhealthy', label: 'Ruim (151-200)' },
-        { category: 'very-unhealthy', label: 'Muito ruim (201-300)' },
-        { category: 'hazardous', label: 'Perigoso (300+)' },
-      ].map((item) => ({
+      LEGEND_ITEMS.map((item) => ({
         value: item.label,
         id: item.category,
-        color: getAqiColor(item.category as ReturnType<typeof getAqiCategory>),
-        type: 'square',
+        color: getAqiColor(item.category),
+        type: 'square' as const,
       })),
     [],
   );
@@ -96,9 +106,13 @@ export const AirQualityChart = ({ series, className }: AirQualityChartProps) => 
               cursor={{ fillOpacity: 0.12 }}
               content={
                 <ChartTooltipContent
-                  formatter={(value, name, item) => {
-                    if (!item) return value as number;
-                    const payload = item.payload as (typeof data)[number];
+                  formatter={(
+                    value: number,
+                    _name: string,
+                    item: { payload?: ChartDataPoint } | undefined,
+                  ) => {
+                    const payload = item?.payload;
+                    if (!payload) return value;
                     return (
                       <div className="flex flex-col gap-0.5">
                         <span className="font-medium text-foreground">{payload.formattedValue}</span>
@@ -109,7 +123,12 @@ export const AirQualityChart = ({ series, className }: AirQualityChartProps) => 
                 />
               }
             />
-            <ChartLegend content={<ChartLegendContent />} payload={legendPayload} />
+            <ChartLegend
+              payload={legendPayload}
+              content={(props: ComponentProps<typeof ChartLegendContent>) => (
+                <ChartLegendContent {...props} />
+              )}
+            />
             {AQI_BOUNDARIES.map((limit) => (
               <ReferenceLine
                 key={limit}
