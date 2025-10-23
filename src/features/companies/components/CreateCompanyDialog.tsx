@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createCompany } from '@/shared/api/companies';
 import type { Company, CreateCompanyDto } from '@/shared/api/companies.types';
+import { HttpError } from '@/shared/http/client';
 
 interface CreateCompanyDialogProps {
   onCompanyCreated?: (company: Company) => void;
@@ -80,7 +81,11 @@ export function CreateCompanyDialog({ onCompanyCreated }: CreateCompanyDialogPro
         setOpen(false);
       } catch (error) {
         console.error('Erro ao criar empresa', error);
-        toast.error('Não foi possível criar a empresa. Verifique os dados e tente novamente.');
+        const message =
+          error instanceof HttpError && error.message
+            ? error.message
+            : 'Não foi possível criar a empresa. Verifique os dados e tente novamente.';
+        toast.error(message);
       } finally {
         setIsSubmitting(false);
       }
