@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Pause, Play } from 'lucide-react';
 
-import { MainLayout } from '@/app/layout/MainLayout';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { AirQualityChart } from '@/components/charts/AirQualityChart';
 import { HumidityChart } from '@/components/charts/HumidityChart';
@@ -114,100 +113,98 @@ export const DashboardPage = () => {
   ] as const;
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Painel de monitoramento</h1>
-            <p className="text-muted-foreground">Acompanhe a evolução em tempo real dos indicadores ambientais.</p>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Painel de monitoramento</h1>
+          <p className="text-muted-foreground">Acompanhe a evolução em tempo real dos indicadores ambientais.</p>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4">
+          <Button onClick={controls.toggle} className="flex items-center gap-2">
+            {controls.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {controls.isPlaying ? 'Pausar simulação' : 'Iniciar simulação'}
+          </Button>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="simulation-seed">Seed</Label>
+            <Input
+              id="simulation-seed"
+              value={controls.seed}
+              onChange={(event) => controls.setSeed(event.target.value)}
+              className="w-32"
+            />
           </div>
 
-          <div className="flex flex-wrap items-end gap-4">
-            <Button onClick={controls.toggle} className="flex items-center gap-2">
-              {controls.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {controls.isPlaying ? 'Pausar simulação' : 'Iniciar simulação'}
-            </Button>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="simulation-seed">Seed</Label>
-              <Input
-                id="simulation-seed"
-                value={controls.seed}
-                onChange={(event) => controls.setSeed(event.target.value)}
-                className="w-32"
+          <Card className="border-border/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Ruído</CardTitle>
+              <CardDescription>Amplitude das oscilações</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Slider
+                value={[noiseValue]}
+                min={0}
+                max={5}
+                step={0.1}
+                onValueChange={(value) => controls.setNoise(value[0] ?? 0)}
               />
-            </div>
+              <span className="text-sm font-medium text-muted-foreground">
+                {formatPercentage((noiseValue / 5) * 100)}
+              </span>
+            </CardContent>
+          </Card>
 
-            <Card className="border-border/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Ruído</CardTitle>
-                <CardDescription>Amplitude das oscilações</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <Slider
-                  value={[noiseValue]}
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  onValueChange={(value) => controls.setNoise(value[0] ?? 0)}
-                />
-                <span className="text-sm font-medium text-muted-foreground">
-                  {formatPercentage((noiseValue / 5) * 100)}
-                </span>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Correlação</CardTitle>
-                <CardDescription>Impacto cruzado entre séries</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <Slider
-                  value={[correlationValue]}
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  onValueChange={(value) => controls.setCorrelation(value[0] ?? 0)}
-                />
-                <span className="text-sm font-medium text-muted-foreground">
-                  {formatPercentage(correlationValue * 100)}
-                </span>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((card) => (
-            <SummaryCard key={card.id} {...card} />
-          ))}
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {diagnostics.map((item) => (
-            <Card key={item.id} className="border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-                <CardDescription>{item.description}</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Button variant="secondary" className="w-full md:w-auto">
-                  Exibir tarefa
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          <TemperatureChart series={temperature} />
-          <HumidityChart humidity={humidity} temperature={temperature} />
-          <AirQualityChart series={aqi} />
-          <StdDevChart temperature={temperature} humidity={humidity} aqi={aqi} />
+          <Card className="border-border/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Correlação</CardTitle>
+              <CardDescription>Impacto cruzado entre séries</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Slider
+                value={[correlationValue]}
+                min={0}
+                max={1}
+                step={0.05}
+                onValueChange={(value) => controls.setCorrelation(value[0] ?? 0)}
+              />
+              <span className="text-sm font-medium text-muted-foreground">
+                {formatPercentage(correlationValue * 100)}
+              </span>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </MainLayout>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map((card) => (
+          <SummaryCard key={card.id} {...card} />
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {diagnostics.map((item) => (
+          <Card key={item.id} className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
+              <CardDescription>{item.description}</CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button variant="secondary" className="w-full md:w-auto">
+                Exibir tarefa
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <TemperatureChart series={temperature} />
+        <HumidityChart humidity={humidity} temperature={temperature} />
+        <AirQualityChart series={aqi} />
+        <StdDevChart temperature={temperature} humidity={humidity} aqi={aqi} />
+      </div>
+    </div>
   );
 };
 
