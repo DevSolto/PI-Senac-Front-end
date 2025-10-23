@@ -13,13 +13,19 @@ const ENABLE_MFA_ENDPOINT = '/auth/mfa/enable';
 const RESET_MFA_ENDPOINT = '/auth/mfa/reset';
 
 export function login(payload: LoginPayload): Promise<LoginResponse> {
-  return apiClient.post<LoginResponse>(LOGIN_ENDPOINT, payload);
+  const data = apiClient.post<LoginResponse>(LOGIN_ENDPOINT, payload);
+  console.log('login payload', payload);
+  return data;
 }
 
 export function enableMfa(payload: EnableMfaPayload): Promise<EnableMfaResponse> {
-  return apiClient.post<EnableMfaResponse>(ENABLE_MFA_ENDPOINT, payload);
+  const data = apiClient.post<EnableMfaResponse>(ENABLE_MFA_ENDPOINT, payload);
+  console.log('enableMfa payload', payload);
+  return data;
 }
 
 export function resetMfa(payload: ResetMfaPayload): Promise<ResetMfaResponse> {
-  return apiClient.post<ResetMfaResponse>(RESET_MFA_ENDPOINT, payload);
+  const data = apiClient.post<ResetMfaResponse>(RESET_MFA_ENDPOINT, payload);
+  console.log('resetMfa payload', payload);
+  return data;
 }
