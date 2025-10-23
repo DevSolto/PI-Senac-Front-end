@@ -1,4 +1,5 @@
 import { Leaf, Moon, Sun, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,8 +20,22 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
   const { isMobile } = useMobile();
   const { activeTab, setActiveTab, sidebarOpen, closeSidebar } = useSidebar();
   const { isDarkMode, toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleSelectTab = (tabId: string) => {
+    const targetItem = navigationItems.find((item) => item.id === tabId);
+
+    if (!targetItem) {
+      return;
+    }
+
+    const normalizedPath = targetItem.path.startsWith('/') ? targetItem.path : `/${targetItem.path}`;
+
+    if (location.pathname !== normalizedPath) {
+      navigate(normalizedPath);
+    }
+
     setActiveTab(tabId);
     if (isMobile) {
       closeSidebar();

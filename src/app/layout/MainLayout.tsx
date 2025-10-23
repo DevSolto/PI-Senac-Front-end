@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { MoreHorizontal } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { cn } from '@/components/ui/utils';
 import { navigationItems } from '../routes';
@@ -11,6 +12,8 @@ import { useSidebar } from '../hooks/useSidebar';
 export const MainLayout = () => {
   const { isMobile } = useMobile();
   const { activeTab, setActiveTab, openSidebar } = useSidebar();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const { primaryTabs, secondaryTabs } = useMemo(() => {
     const primary = navigationItems.filter((item) => item.primary);
@@ -19,15 +22,49 @@ export const MainLayout = () => {
     return { primaryTabs: primary, secondaryTabs: secondary };
   }, []);
 
-  const currentItem = navigationItems.find((item) => item.id === activeTab) ?? navigationItems[0];
-  const ActiveComponent = currentItem?.component;
-
   const criticalAlerts = 3;
   const totalAlerts = 7;
 
-  if (!ActiveComponent) {
-    return null;
-  }
+  useEffect(() => {
+    const matchingItem = navigationItems.find((item) => {
+      if (!item.path) {
+        return false;
+      }
+
+      const normalizedPath = item.path.startsWith('/') ? item.path : `/${item.path}`;
+
+      if (location.pathname === normalizedPath) {
+        return true;
+      }
+
+      return location.pathname.startsWith(`${normalizedPath}/`);
+    });
+
+    if (matchingItem && matchingItem.id !== activeTab) {
+      setActiveTab(matchingItem.id);
+    }
+  }, [activeTab, location.pathname, setActiveTab]);
+
+  const handleNavigateToItem = useCallback(
+    (itemId: string) => {
+      const targetItem = navigationItems.find((item) => item.id === itemId);
+
+      if (!targetItem) {
+        return;
+      }
+
+      const normalizedPath = targetItem.path.startsWith('/') ? targetItem.path : `/${targetItem.path}`;
+
+      if (location.pathname !== normalizedPath) {
+        navigate(normalizedPath);
+      }
+
+      if (activeTab !== itemId) {
+        setActiveTab(itemId);
+      }
+    },
+    [activeTab, location.pathname, navigate, setActiveTab],
+  );
 
   if (isMobile) {
     return (
@@ -37,7 +74,7 @@ export const MainLayout = () => {
 
         <main className="flex-1 overflow-auto pb-20">
           <div className="p-4">
-            <ActiveComponent />
+            <Outlet />
           </div>
         </main>
 
@@ -50,7 +87,7 @@ export const MainLayout = () => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleNavigateToItem(item.id)}
                   className={cn(
                     'flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-colors relative',
                     isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
@@ -89,7 +126,7 @@ export const MainLayout = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header totalAlerts={totalAlerts} criticalAlerts={criticalAlerts} />
         <main className="flex-1 overflow-auto p-6">
-          <ActiveComponent />
+          <Outlet />
         </main>
       </div>
     </div>
