@@ -23,6 +23,12 @@ Gere a versão otimizada executando:
 npm run build
 ```
 
+## Testes
+Execute a suíte de testes unitários com Jest e Testing Library usando:
+```bash
+npm test
+```
+
 ## Estrutura básica
 - `index.html`: ponto de entrada do Vite.
 - `src/`: código-fonte da aplicação React.
