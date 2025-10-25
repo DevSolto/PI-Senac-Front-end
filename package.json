@@ -64,7 +64,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "jest"
+    "test": "jest",
+    "collect": "node ./cli/collect.js"
   },
   "description": "Interface web do Projeto Integrador Senac."
 }
