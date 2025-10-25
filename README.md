@@ -29,6 +29,19 @@ Execute a suíte de testes unitários com Jest e Testing Library usando:
 npm test
 ```
 
+## Coleta via CLI
+Para disparar a rotina de coleta em linha de comando execute:
+
+```bash
+npm run collect -- --all \
+  --audit-listing-html \
+  --listing-url="https://exemplo.com/listagem"
+```
+
+- `--audit-listing-html`: salva o HTML da primeira página de listagem para auditoria.
+- `--listing-url`: define qual URL deve ser baixada (pode ser informada via `COLLECT_LISTING_URL`).
+- `--audit-output`: permite customizar o diretório de saída (padrão `audits/listing-pages`).
+
 ## Estrutura básica
 - `index.html`: ponto de entrada do Vite.
 - `src/`: código-fonte da aplicação React.
