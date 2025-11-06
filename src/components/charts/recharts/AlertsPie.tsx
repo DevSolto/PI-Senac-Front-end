@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { fmtPerc } from '@/lib/formatters';
@@ -29,6 +30,11 @@ interface AlertsPieProps {
 
 export function AlertsPie({ data, totalRecords, isLoading = false, onAdjustFilters }: AlertsPieProps) {
   const hasValues = data.some((item) => item.value > 0);
+
+  useEffect(() => {
+    console.log('[AlertsPie] dados recebidos:', data);
+    console.log('[AlertsPie] total de registros:', totalRecords);
+  }, [data, totalRecords]);
 
   if (isLoading) {
     return (

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Area,
   CartesianGrid,
@@ -61,6 +61,14 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
       })
       .filter((point) => point.average !== null || point.max !== null || point.min !== null);
   }, [data]);
+
+  useEffect(() => {
+    console.log('[TemperatureLine] dados recebidos:', data);
+  }, [data]);
+
+  useEffect(() => {
+    console.log('[TemperatureLine] dados do gráfico:', chartData);
+  }, [chartData]);
 
   if (isLoading) {
     return (
