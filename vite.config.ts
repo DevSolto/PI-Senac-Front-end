@@ -1,9 +1,62 @@
+import path from 'path';
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react-swc';
 
-  import { defineConfig } from 'vite';
-  import react from '@vitejs/plugin-react-swc';
-  import path from 'path';
+const apiProxyRoutes = [
+  '/alerts',
+  '/auth',
+  '/companies',
+  '/data-process',
+  '/devices',
+  '/health',
+  '/silos',
+  '/users',
+] as const;
 
-  export default defineConfig({
+type ProxyConfig = { target: string; changeOrigin: boolean; secure: boolean };
+
+const buildProxyConfig = (target: string): Record<string, ProxyConfig> =>
+  apiProxyRoutes.reduce<Record<string, ProxyConfig>>((acc, route) => {
+    acc[route] = {
+      target,
+      changeOrigin: true,
+      secure: false,
+    };
+    return acc;
+  }, {});
+
+const coerceBoolean = (value: string | undefined, defaultValue: boolean): boolean => {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  return value !== 'false';
+};
+
+const coerceNumber = (value: string | undefined, fallback: number): number => {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+
+  const apiProxyTarget =
+    env.VITE_API_PROXY_TARGET ??
+    env.API_PROXY_TARGET ??
+    env.VITE_API_URL ??
+    env.API_URL ??
+    'http://localhost:3000';
+
+  const shouldEnableProxy =
+    coerceBoolean(env.VITE_ENABLE_API_PROXY, true) &&
+    coerceBoolean(env.ENABLE_API_PROXY, true);
+
+  return {
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -54,7 +107,9 @@
       outDir: 'build',
     },
     server: {
-      port: 3000,
-      open: true,
+      port: coerceNumber(env.VITE_PORT ?? env.PORT, 3000),
+      open: coerceBoolean(env.VITE_OPEN_BROWSER ?? env.OPEN_BROWSER, true),
+      proxy: shouldEnableProxy ? buildProxyConfig(apiProxyTarget) : undefined,
     },
-  });
+  };
+});
