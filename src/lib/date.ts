@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 
 
 export const RECIFE_TIMEZONE = 'America/Recife';
@@ -12,11 +12,11 @@ export const toZonedDate = (value: string) => {
     throw new Error(`Data inválida: ${value}`);
   }
 
-  return toZonedTime(parsed, RECIFE_TIMEZONE);
+  return parsed;
 };
 
 export const formatZonedDate = (date: Date, pattern = 'dd/MM/yyyy HH:mm') =>
-  format(date, pattern, { locale: ptBR });
+  formatInTimeZone(date, RECIFE_TIMEZONE, pattern, { locale: ptBR });
 
 export const formatDateRange = (
   range: { from?: Date | null; to?: Date | null },
