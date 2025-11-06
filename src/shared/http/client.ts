@@ -1,6 +1,6 @@
-const ENV_API_URL = (
-  import.meta.env.VITE_API_URL ?? import.meta.env.API_URL ?? 'http://localhost:3000'
-) as string;
+import { appEnv } from '@/shared/env';
+
+const ENV_API_URL = (appEnv.VITE_API_URL ?? appEnv.API_URL ?? 'http://localhost:3000') as string;
 
 const AUTH_HEADER_KEY = 'Authorization';
 
