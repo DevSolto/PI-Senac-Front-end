@@ -1,0 +1,331 @@
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+import type { DataProcessRecord } from './api';
+import { formatPeriodRange, formatZonedDate } from './date';
+
+export interface DashboardFilters {
+  from?: Date;
+  to?: Date;
+  silos: string[];
+}
+
+export interface DashboardKpi {
+  id: string;
+  title: string;
+  unit?: string;
+  value: number | null;
+  previousValue: number | null;
+  change: number | null;
+  decimals: number;
+  invertTrend?: boolean;
+}
+
+export interface TemperatureSeriesPoint {
+  timestamp: Date;
+  label: string;
+  average: number | null;
+  min: number | null;
+  max: number | null;
+}
+
+export interface HumiditySeriesPoint {
+  timestamp: Date;
+  label: string;
+  average: number | null;
+  min: number | null;
+  max: number | null;
+  percentOverLimit: number | null;
+}
+
+export interface AlertsBySiloPoint {
+  siloKey: string;
+  siloName: string;
+  total: number;
+  critical: number;
+}
+
+export interface DistributionPoint {
+  id: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
+export interface TableRow {
+  id: number;
+  siloName: string;
+  periodStart: Date;
+  periodEnd: Date;
+  averageTemperature: number | null;
+  averageHumidity: number | null;
+  environmentScore: number | null;
+  alertsCount: number;
+  criticalAlertsCount: number;
+}
+
+export interface DashboardMetrics {
+  kpis: DashboardKpi[];
+  temperatureSeries: TemperatureSeriesPoint[];
+  humiditySeries: HumiditySeriesPoint[];
+  alertsBySilo: AlertsBySiloPoint[];
+  distribution: DistributionPoint[];
+  tableRows: TableRow[];
+}
+
+export const defaultFilters: DashboardFilters = {
+  silos: [],
+};
+
+const computeChange = (
+  current: number | null,
+  previous: number | null,
+): { change: number | null; previous: number | null } => {
+  if (current === null || previous === null) {
+    return { change: null, previous };
+  }
+
+  if (previous === 0) {
+    return { change: null, previous };
+  }
+
+  const delta = ((current - previous) / Math.abs(previous)) * 100;
+
+  return { change: Number.isFinite(delta) ? delta : null, previous };
+};
+
+const normalizeNumber = (value: number | null, decimals: number) => {
+  if (value === null) {
+    return null;
+  }
+
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+};
+
+const toSeriesLabel = (date: Date) => format(date, "dd MMM", { locale: ptBR });
+
+const extractKpiValue = (
+  data: DataProcessRecord[],
+  extractor: (record: DataProcessRecord) => number | null,
+) => {
+  if (data.length === 0) {
+    return { current: null, previous: null };
+  }
+
+  const sorted = [...data].sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+  const current = extractor(sorted[sorted.length - 1]!);
+  const previous = sorted.length >= 2 ? extractor(sorted[sorted.length - 2]!) : null;
+
+  return { current, previous };
+};
+
+export const applyDashboardFilters = (
+  data: DataProcessRecord[],
+  filters: DashboardFilters,
+): DataProcessRecord[] => {
+  const { from, to, silos } = filters;
+
+  return data.filter((record) => {
+    if (from && record.periodStart < from) {
+      return false;
+    }
+
+    if (to && record.periodEnd > to) {
+      return false;
+    }
+
+    if (silos.length > 0) {
+      const recordKey = record.siloId !== null ? String(record.siloId) : record.siloName;
+      if (!silos.includes(recordKey)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+};
+
+export const extractSiloOptions = (data: DataProcessRecord[]) => {
+  const options = new Map<string, string>();
+
+  for (const item of data) {
+    const key = item.siloId !== null ? String(item.siloId) : item.siloName;
+    if (!options.has(key)) {
+      options.set(key, item.siloName);
+    }
+  }
+
+  return Array.from(options.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+};
+
+const buildTemperatureSeries = (data: DataProcessRecord[]): TemperatureSeriesPoint[] =>
+  data.map((item) => ({
+    timestamp: item.periodStart,
+    label: toSeriesLabel(item.periodStart),
+    average: item.averageTemperature,
+    min: item.minTemperature,
+    max: item.maxTemperature,
+  }));
+
+const buildHumiditySeries = (data: DataProcessRecord[]): HumiditySeriesPoint[] =>
+  data.map((item) => ({
+    timestamp: item.periodStart,
+    label: toSeriesLabel(item.periodStart),
+    average: item.averageHumidity,
+    min: item.minHumidity,
+    max: item.maxHumidity,
+    percentOverLimit: item.percentOverHumLimit,
+  }));
+
+const buildAlertsSeries = (data: DataProcessRecord[]): AlertsBySiloPoint[] => {
+  const grouped = new Map<string, AlertsBySiloPoint>();
+
+  for (const item of data) {
+    const key = item.siloId !== null ? String(item.siloId) : item.siloName;
+    const existing = grouped.get(key);
+
+    if (existing) {
+      existing.total += item.alertsCount;
+      existing.critical += item.criticalAlertsCount;
+    } else {
+      grouped.set(key, {
+        siloKey: key,
+        siloName: item.siloName,
+        total: item.alertsCount,
+        critical: item.criticalAlertsCount,
+      });
+    }
+  }
+
+  return Array.from(grouped.values()).sort((a, b) => b.total - a.total);
+};
+
+const buildDistribution = (data: DataProcessRecord[]): DistributionPoint[] => {
+  let healthy = 0;
+  let warning = 0;
+  let critical = 0;
+
+  for (const item of data) {
+    const score = item.environmentScore;
+    if (score === null) {
+      continue;
+    }
+
+    if (score >= 80) {
+      healthy += 1;
+    } else if (score >= 50) {
+      warning += 1;
+    } else {
+      critical += 1;
+    }
+  }
+
+  return [
+    { id: 'healthy', label: 'Estável', value: healthy, color: 'hsl(var(--chart-1))' },
+    { id: 'warning', label: 'Atenção', value: warning, color: 'hsl(var(--chart-2))' },
+    { id: 'critical', label: 'Crítico', value: critical, color: 'hsl(var(--chart-3))' },
+  ];
+};
+
+const buildTableRows = (data: DataProcessRecord[]): TableRow[] =>
+  data.map((item) => ({
+    id: item.id,
+    siloName: item.siloName,
+    periodStart: item.periodStart,
+    periodEnd: item.periodEnd,
+    averageTemperature: item.averageTemperature,
+    averageHumidity: item.averageHumidity,
+    environmentScore: item.environmentScore,
+    alertsCount: item.alertsCount,
+    criticalAlertsCount: item.criticalAlertsCount,
+  }));
+
+export const createDashboardMetrics = (
+  data: DataProcessRecord[],
+): DashboardMetrics => {
+  const sorted = [...data].sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+
+  const temperatureKpi = extractKpiValue(sorted, (item) => item.averageTemperature);
+  const humidityKpi = extractKpiValue(sorted, (item) => item.averageHumidity);
+  const environmentKpi = extractKpiValue(sorted, (item) => item.environmentScore);
+  const alertsKpi = extractKpiValue(sorted, (item) => item.alertsCount);
+
+  const { change: temperatureChange } = computeChange(temperatureKpi.current, temperatureKpi.previous);
+  const { change: humidityChange } = computeChange(humidityKpi.current, humidityKpi.previous);
+  const { change: environmentChange } = computeChange(environmentKpi.current, environmentKpi.previous);
+  const { change: alertsChange } = computeChange(alertsKpi.current, alertsKpi.previous);
+
+  const kpis: DashboardKpi[] = [
+    {
+      id: 'temperature',
+      title: 'Temperatura média',
+      unit: '°C',
+      value: normalizeNumber(temperatureKpi.current, 1),
+      previousValue: normalizeNumber(temperatureKpi.previous, 1),
+      change: temperatureChange,
+      decimals: 1,
+    },
+    {
+      id: 'humidity',
+      title: 'Umidade média',
+      unit: '%',
+      value: normalizeNumber(humidityKpi.current, 1),
+      previousValue: normalizeNumber(humidityKpi.previous, 1),
+      change: humidityChange,
+      decimals: 1,
+    },
+    {
+      id: 'environment',
+      title: 'Índice ambiental',
+      unit: 'pts',
+      value: normalizeNumber(environmentKpi.current, 0),
+      previousValue: normalizeNumber(environmentKpi.previous, 0),
+      change: environmentChange,
+      decimals: 0,
+      invertTrend: true,
+    },
+    {
+      id: 'alerts',
+      title: 'Alertas recentes',
+      value: normalizeNumber(alertsKpi.current, 0),
+      previousValue: normalizeNumber(alertsKpi.previous, 0),
+      change: alertsChange,
+      decimals: 0,
+      invertTrend: true,
+    },
+  ];
+
+  return {
+    kpis,
+    temperatureSeries: buildTemperatureSeries(sorted),
+    humiditySeries: buildHumiditySeries(sorted),
+    alertsBySilo: buildAlertsSeries(sorted),
+    distribution: buildDistribution(sorted),
+    tableRows: buildTableRows(sorted),
+  };
+};
+
+export const describeFilters = (filters: DashboardFilters) => {
+  const parts: string[] = [];
+
+  if (filters.from || filters.to) {
+    parts.push(
+      filters.from && filters.to
+        ? `Período: ${formatPeriodRange(filters.from, filters.to)}`
+        : filters.from
+          ? `A partir de ${formatZonedDate(filters.from, 'dd/MM/yyyy')}`
+          : filters.to
+            ? `Até ${formatZonedDate(filters.to, 'dd/MM/yyyy')}`
+            : '',
+    );
+  }
+
+  if (filters.silos.length > 0) {
+    parts.push(`${filters.silos.length} silos selecionados`);
+  }
+
+  return parts.filter(Boolean).join(' · ');
+};
