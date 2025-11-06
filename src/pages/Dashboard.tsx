@@ -296,7 +296,7 @@ export const DashboardPage = () => {
         </Alert>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4 xl:grid-cols-4">
         {metrics.kpis.map((metric) => (
           <KpiCard
             key={metric.id}
@@ -319,6 +319,16 @@ export const DashboardPage = () => {
           </div>
         </div>
       ) : null}
+      <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-3">
+        <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
+        <HumidityOverTime data={metrics.humiditySeries} height={300} />
+        <EnvironmentScoreOverTime
+          data={metrics.tableRows.map((r) => ({
+            timestamp: r.periodStart,
+            environmentScore: r.environmentScore ?? null,
+          }))}
+        />
+      </div>
 
       <Card className="border-border/60">
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -344,16 +354,7 @@ export const DashboardPage = () => {
           </div>
         </CardContent>
       </Card>
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
-        <HumidityOverTime data={metrics.humiditySeries} height={300} />
-        <EnvironmentScoreOverTime
-          data={metrics.tableRows.map((r) => ({
-            timestamp: r.periodStart,
-            environmentScore: r.environmentScore ?? null,
-          }))}
-        />
-      </div>
+
 
 
 
