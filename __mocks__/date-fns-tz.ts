@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+
 export const utcToZonedTime = (date: Date | number | string, timeZone: string) => {
   const value = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
 
@@ -27,4 +29,14 @@ export const utcToZonedTime = (date: Date | number | string, timeZone: string) =
 
   const isoLike = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.000Z`;
   return new Date(isoLike);
+};
+
+export const formatInTimeZone = (
+  date: Date | number | string,
+  timeZone: string,
+  pattern: string,
+  options?: Parameters<typeof format>[2],
+) => {
+  const zoned = utcToZonedTime(date, timeZone);
+  return format(zoned, pattern, options);
 };
