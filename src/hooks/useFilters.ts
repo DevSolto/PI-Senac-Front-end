@@ -1,19 +1,23 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
 
 import type { DashboardFilters } from '@/lib/metrics';
 
+const DATE_FORMAT = 'yyyy-MM-dd';
+
 const parseDateParam = (value: string | null) => {
   if (!value) {
-    return undefined;
+    return null;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return undefined;
+  try {
+    const parsed = parseISO(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  } catch (error) {
+    console.warn('Não foi possível interpretar a data fornecida nos filtros.', error);
+    return null;
   }
-
-  return date;
 };
 
 const parseFilters = (params: URLSearchParams): DashboardFilters => {
@@ -25,18 +29,23 @@ const parseFilters = (params: URLSearchParams): DashboardFilters => {
     .map((value) => value.trim())
     .filter(Boolean);
 
-  return { from, to, silos };
+  return {
+    dateRange: { from, to },
+    silos,
+  };
 };
 
 const buildSearchParams = (filters: DashboardFilters) => {
   const params = new URLSearchParams();
 
-  if (filters.from) {
-    params.set('from', filters.from.toISOString());
+  const { from, to } = filters.dateRange;
+
+  if (from) {
+    params.set('from', format(from, DATE_FORMAT));
   }
 
-  if (filters.to) {
-    params.set('to', filters.to.toISOString());
+  if (to) {
+    params.set('to', format(to, DATE_FORMAT));
   }
 
   if (filters.silos.length > 0) {
@@ -62,7 +71,11 @@ export const useFilters = () => {
     [setSearchParams],
   );
 
-  return { filters, setFilters };
+  const reset = useCallback(() => {
+    setSearchParams(new URLSearchParams(), { replace: true });
+  }, [setSearchParams]);
+
+  return { filters, setFilters, reset };
 };
 
 export type UseFiltersReturn = ReturnType<typeof useFilters>;

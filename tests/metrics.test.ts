@@ -75,8 +75,10 @@ describe('metrics helpers', () => {
 
   it('filters data using date range and silo selection', () => {
     const filters: DashboardFilters = {
-      from: new Date('2024-01-02T00:00:00Z'),
-      to: new Date('2024-01-03T23:59:59Z'),
+      dateRange: {
+        from: new Date('2024-01-02T00:00:00Z'),
+        to: new Date('2024-01-03T23:59:59Z'),
+      },
       silos: ['1'],
     };
 

@@ -56,8 +56,10 @@ export const DashboardPage = () => {
   const handleDateChange = (range: DayPickerRange | undefined) => {
     setFilters((previous) => ({
       ...previous,
-      from: range?.from ?? undefined,
-      to: range?.to ?? undefined,
+      dateRange: {
+        from: range?.from ?? null,
+        to: range?.to ?? null,
+      },
     }));
   };
 
@@ -95,7 +97,14 @@ export const DashboardPage = () => {
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <DateRange value={{ from: filters.from, to: filters.to }} onChange={handleDateChange} disabled={isLoading} />
+          <DateRange
+            value={{
+              from: filters.dateRange.from ?? undefined,
+              to: filters.dateRange.to ?? undefined,
+            }}
+            onChange={handleDateChange}
+            disabled={isLoading}
+          />
           <SiloMultiSelect
             options={siloOptions}
             value={filters.silos}

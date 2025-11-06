@@ -5,7 +5,7 @@ import type { DateRange as DayPickerRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { formatPeriodRange, formatZonedDate } from '@/lib/date';
+import { formatDateRange } from '@/lib/date';
 
 export interface DateRangeProps {
   value: { from?: Date; to?: Date };
@@ -13,21 +13,8 @@ export interface DateRangeProps {
   disabled?: boolean;
 }
 
-const buildLabel = (from?: Date, to?: Date) => {
-  if (from && to) {
-    return formatPeriodRange(from, to);
-  }
-
-  if (from) {
-    return `A partir de ${formatZonedDate(from, 'dd/MM/yyyy')}`;
-  }
-
-  if (to) {
-    return `Até ${formatZonedDate(to, 'dd/MM/yyyy')}`;
-  }
-
-  return 'Período completo';
-};
+const buildLabel = (from?: Date, to?: Date) =>
+  formatDateRange({ from: from ?? null, to: to ?? null }) ?? 'Período completo';
 
 export const DateRange = ({ value, onChange, disabled = false }: DateRangeProps) => {
   const label = useMemo(() => buildLabel(value.from, value.to), [value.from, value.to]);

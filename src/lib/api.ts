@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { parseToZonedTime } from './date';
+import { toZonedDate } from './date';
 
 const SiloSchema = z
   .object({
@@ -9,7 +9,7 @@ const SiloSchema = z
   })
   .partial({ name: true });
 
-export const ReadDataProcessSchema = z.object({
+const RawReadDataProcessSchema = z.object({
   id: z.number(),
   periodStart: z.string(),
   periodEnd: z.string(),
@@ -33,8 +33,6 @@ export const ReadDataProcessSchema = z.object({
   siloName: z.string().nullable().optional(),
   silo: SiloSchema.nullable().optional(),
 });
-
-export type ReadDataProcess = z.infer<typeof ReadDataProcessSchema>;
 
 export interface DataProcessRecord {
   id: number;
@@ -60,18 +58,16 @@ export interface DataProcessRecord {
   siloName: string;
 }
 
-const normalizeRecord = (record: ReadDataProcess): DataProcessRecord | null => {
-  const periodStart = parseToZonedTime(record.periodStart);
-  const periodEnd = parseToZonedTime(record.periodEnd);
+export const ReadDataProcessSchema = RawReadDataProcessSchema.transform<DataProcessRecord>((record) => {
+  const periodStart = toZonedDate(record.periodStart);
+  const periodEnd = toZonedDate(record.periodEnd);
+  const createdAt = record.createdAt ? toZonedDate(record.createdAt) : null;
 
-  if (!periodStart || !periodEnd) {
-    return null;
-  }
-
-  const createdAt = parseToZonedTime(record.createdAt ?? undefined);
   const siloId = record.silo?.id ?? record.siloId ?? null;
   const siloName =
-    record.silo?.name ?? record.siloName ?? (siloId !== null ? `Silo ${siloId}` : 'Silo não informado');
+    record.silo?.name ??
+    record.siloName ??
+    (siloId !== null ? `Silo ${siloId}` : 'Silo não informado');
 
   return {
     id: record.id,
@@ -95,25 +91,20 @@ const normalizeRecord = (record: ReadDataProcess): DataProcessRecord | null => {
     createdAt,
     siloId,
     siloName,
-  };
-};
+  } satisfies DataProcessRecord;
+});
 
 export const fetchDataProcess = async (): Promise<DataProcessRecord[]> => {
   const response = await fetch('/data-process');
 
   if (!response.ok) {
-    throw new Error('Não foi possível carregar os dados de processamento.');
+    const message = `GET /data-process falhou (${response.status})`;
+    console.error(message);
+    throw new Error(message);
   }
 
   const payload = await response.json();
-  const parsed = z.array(ReadDataProcessSchema).safeParse(payload);
+  const data = ReadDataProcessSchema.array().parse(payload);
 
-  if (!parsed.success) {
-    throw parsed.error;
-  }
-
-  return parsed.data
-    .map(normalizeRecord)
-    .filter((item): item is DataProcessRecord => Boolean(item))
-    .sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+  return data.sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
 };
