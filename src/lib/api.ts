@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
+import { apiClient, HttpError } from '@/shared/http';
+
 import { toZonedDate } from './date';
+
+const DATA_PROCESS_ENDPOINT = '/data-process';
 
 const SiloSchema = z
   .object({
@@ -96,43 +100,44 @@ export const ReadDataProcessSchema = RawReadDataProcessSchema.transform<DataProc
 
 export const fetchDataProcess = async (): Promise<DataProcessRecord[]> => {
   console.info('[Dashboard] Iniciando carregamento de dados agregados.');
-  const response = await fetch('/data-process');
-  console.debug('[Dashboard] Resposta recebida do endpoint /data-process.', {
-    status: response.status,
-    statusText: response.statusText,
-  });
-
-  if (!response.ok) {
-    const message = `GET /data-process falhou (${response.status})`;
-    console.error('[Dashboard] Falha na resposta de /data-process.', {
-      mensagem: message,
-      status: response.status,
-      statusText: response.statusText,
-    });
-    throw new Error(message);
-  }
-
-  const responseClone = response.clone();
   let payload: unknown;
+
   try {
-    payload = await response.json();
+    payload = await apiClient.json<unknown>({
+      path: DATA_PROCESS_ENDPOINT,
+    });
+    console.debug('[Dashboard] Resposta recebida do endpoint /data-process.', {
+      endpoint: DATA_PROCESS_ENDPOINT,
+    });
   } catch (error) {
-    let rawBody: string | undefined;
-    try {
-      rawBody = await responseClone.text();
-    } catch (bodyError) {
-      console.warn('[Dashboard] Não foi possível ler o corpo bruto de /data-process após falha no JSON.', bodyError);
+    if (error instanceof HttpError) {
+      console.error('[Dashboard] Falha na resposta de /data-process.', {
+        mensagem: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        corpo: error.data,
+      });
+      throw error;
     }
 
+    console.error('[Dashboard] Falha ao consultar /data-process.', { erro: error });
+    throw error instanceof Error
+      ? error
+      : new Error('Erro ao consultar o endpoint /data-process.');
+  }
+
+  let data: DataProcessRecord[];
+  try {
+    data = ReadDataProcessSchema.array().parse(payload);
+  } catch (error) {
     console.error('[Dashboard] Erro ao interpretar o JSON do endpoint /data-process.', {
       erro: error,
-      corpo: rawBody,
+      corpo: payload,
     });
 
     throw error instanceof Error ? error : new Error('Erro ao interpretar resposta de /data-process.');
   }
 
-  const data = ReadDataProcessSchema.array().parse(payload);
   console.debug('[Dashboard] Dados agregados validados com sucesso.', {
     totalRegistros: data.length,
   });
