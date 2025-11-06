@@ -342,7 +342,7 @@ export const DashboardPage = () => {
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <TemperatureLine
           data={metrics.temperatureSeries}
           isLoading={showSkeletons}
