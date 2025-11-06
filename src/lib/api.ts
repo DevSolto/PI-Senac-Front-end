@@ -95,16 +95,52 @@ export const ReadDataProcessSchema = RawReadDataProcessSchema.transform<DataProc
 });
 
 export const fetchDataProcess = async (): Promise<DataProcessRecord[]> => {
+  console.info('[Dashboard] Iniciando carregamento de dados agregados.');
   const response = await fetch('/data-process');
+  console.debug('[Dashboard] Resposta recebida do endpoint /data-process.', {
+    status: response.status,
+    statusText: response.statusText,
+  });
 
   if (!response.ok) {
     const message = `GET /data-process falhou (${response.status})`;
-    console.error(message);
+    console.error('[Dashboard] Falha na resposta de /data-process.', {
+      mensagem: message,
+      status: response.status,
+      statusText: response.statusText,
+    });
     throw new Error(message);
   }
 
-  const payload = await response.json();
-  const data = ReadDataProcessSchema.array().parse(payload);
+  const responseClone = response.clone();
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    let rawBody: string | undefined;
+    try {
+      rawBody = await responseClone.text();
+    } catch (bodyError) {
+      console.warn('[Dashboard] Não foi possível ler o corpo bruto de /data-process após falha no JSON.', bodyError);
+    }
 
-  return data.sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+    console.error('[Dashboard] Erro ao interpretar o JSON do endpoint /data-process.', {
+      erro: error,
+      corpo: rawBody,
+    });
+
+    throw error instanceof Error ? error : new Error('Erro ao interpretar resposta de /data-process.');
+  }
+
+  const data = ReadDataProcessSchema.array().parse(payload);
+  console.debug('[Dashboard] Dados agregados validados com sucesso.', {
+    totalRegistros: data.length,
+  });
+
+  const ordered = data.sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+  console.info('[Dashboard] Dados agregados ordenados para consumo.', {
+    totalRegistros: ordered.length,
+  });
+
+  return ordered;
 };
