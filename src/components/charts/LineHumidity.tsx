@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
+type HumidityTooltipProps = TooltipProps<number | string, string>;
+
 const chartConfig = {
   average: {
     label: 'Umidade',
@@ -66,7 +68,7 @@ export const LineHumidity = ({ data, isLoading = false }: LineHumidityProps) => 
     );
   }
 
-  const labelFormatter: TooltipProps['labelFormatter'] = (_, payload) => {
+  const labelFormatter: HumidityTooltipProps['labelFormatter'] = (_, payload) => {
     const rawTimestamp = payload?.[0]?.payload?.timestamp as Date | string | undefined;
 
     if (!rawTimestamp) {
@@ -81,7 +83,7 @@ export const LineHumidity = ({ data, isLoading = false }: LineHumidityProps) => 
     return format(timestamp, 'dd/MM HH:mm', { locale: ptBR });
   };
 
-  const valueFormatter: TooltipProps['formatter'] = (value, name) => {
+  const valueFormatter: HumidityTooltipProps['formatter'] = (value, name) => {
     if (typeof value !== 'number') {
       return [value, name];
     }

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
+type AlertsTooltipProps = TooltipProps<number | string, string>;
+
 const chartConfig = {
   nonCritical: {
     label: 'Alertas',
@@ -56,7 +58,7 @@ export const BarAlerts = ({ data, isLoading = false }: BarAlertsProps) => {
     nonCritical: Math.max(item.total - item.critical, 0),
   }));
 
-  const tooltipFormatter: TooltipProps['formatter'] = (value, _name, entry) => {
+  const tooltipFormatter: AlertsTooltipProps['formatter'] = (value, _name, entry) => {
     if (typeof value !== 'number') {
       return [value, entry?.dataKey ?? ''];
     }
@@ -67,7 +69,7 @@ export const BarAlerts = ({ data, isLoading = false }: BarAlertsProps) => {
     ];
   };
 
-  const tooltipLabelFormatter: TooltipProps['labelFormatter'] = (value) => String(value);
+  const tooltipLabelFormatter: AlertsTooltipProps['labelFormatter'] = (value) => String(value);
 
   return (
     <Card className="border-border/60">
