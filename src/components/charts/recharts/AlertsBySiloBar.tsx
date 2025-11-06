@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Bar,
   BarChart,
@@ -38,6 +38,14 @@ export function AlertsBySiloBar({ data, isLoading = false, onAdjustFilters }: Al
       })),
     [data],
   );
+
+  useEffect(() => {
+    console.log('[AlertsBySiloBar] dados recebidos:', data);
+  }, [data]);
+
+  useEffect(() => {
+    console.log('[AlertsBySiloBar] dados do gráfico:', chartData);
+  }, [chartData]);
 
   if (isLoading) {
     return (

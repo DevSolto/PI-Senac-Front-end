@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Area,
   AreaChart,
@@ -46,6 +46,14 @@ export function HumidityArea({ data, isLoading = false, onAdjustFilters }: Humid
       }))
       .filter((point) => point.average !== null || point.percentOverLimit > 0);
   }, [data]);
+
+  useEffect(() => {
+    console.log('[HumidityArea] dados recebidos:', data);
+  }, [data]);
+
+  useEffect(() => {
+    console.log('[HumidityArea] dados do gráfico:', chartData);
+  }, [chartData]);
 
   if (isLoading) {
     return (
