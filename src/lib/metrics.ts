@@ -4,6 +4,55 @@ import { ptBR } from 'date-fns/locale';
 import type { DataProcessRecord } from './api';
 import { formatDateRange } from './date';
 
+export type ReadDataProcess = DataProcessRecord;
+
+export type KpiDatum = DashboardKpi;
+
+export type KpiSummary = KpiDatum[];
+
+export type LineDatum = TemperatureSeriesPoint | HumiditySeriesPoint;
+
+export type BarDatum = AlertsBySiloPoint;
+
+export type PieDataset = DistributionDataset[];
+
+export function average(values: Array<number | undefined>): number | null {
+  const sanitized = values.filter((value): value is number => typeof value === 'number' && !Number.isNaN(value));
+
+  if (sanitized.length === 0) {
+    return null;
+  }
+
+  const total = sanitized.reduce((accumulator, value) => accumulator + value, 0);
+  return total / sanitized.length;
+}
+
+export function sum(values: number[]): number {
+  return values.reduce((accumulator, value) => accumulator + value, 0);
+}
+
+const sortByPeriodStart = (data: ReadDataProcess[]) =>
+  [...data].sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+
+const resolveSiloKey = (record: ReadDataProcess) =>
+  record.siloId !== null ? String(record.siloId) : record.siloName;
+
+export function groupBySilo(data: ReadDataProcess[]): Record<string, ReadDataProcess[]> {
+  const grouped = data.reduce<Record<string, ReadDataProcess[]>>((groups, record) => {
+    const key = resolveSiloKey(record);
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+
+    groups[key]!.push(record);
+    return groups;
+  }, {});
+
+  return Object.fromEntries(
+    Object.entries(grouped).map(([key, records]) => [key, sortByPeriodStart(records)]),
+  );
+}
+
 export interface DashboardDateRangeFilter {
   from: Date | null;
   to: Date | null;
@@ -118,19 +167,73 @@ const normalizeNumber = (value: number | null, decimals: number) => {
 const toSeriesLabel = (date: Date) => format(date, "dd MMM", { locale: ptBR });
 
 const extractKpiValue = (
-  data: DataProcessRecord[],
-  extractor: (record: DataProcessRecord) => number | null,
+  data: ReadDataProcess[],
+  extractor: (record: ReadDataProcess) => number | null,
 ) => {
   if (data.length === 0) {
     return { current: null, previous: null };
   }
 
-  const sorted = [...data].sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+  const sorted = sortByPeriodStart(data);
   const current = extractor(sorted[sorted.length - 1]!);
   const previous = sorted.length >= 2 ? extractor(sorted[sorted.length - 2]!) : null;
 
   return { current, previous };
 };
+
+export function computeKpis(data: ReadDataProcess[]): KpiSummary {
+  const sorted = sortByPeriodStart(data);
+
+  const temperatureKpi = extractKpiValue(sorted, (item) => item.averageTemperature);
+  const humidityKpi = extractKpiValue(sorted, (item) => item.averageHumidity);
+  const environmentKpi = extractKpiValue(sorted, (item) => item.environmentScore);
+  const alertsKpi = extractKpiValue(sorted, (item) => item.alertsCount);
+
+  const { change: temperatureChange } = computeChange(temperatureKpi.current, temperatureKpi.previous);
+  const { change: humidityChange } = computeChange(humidityKpi.current, humidityKpi.previous);
+  const { change: environmentChange } = computeChange(environmentKpi.current, environmentKpi.previous);
+  const { change: alertsChange } = computeChange(alertsKpi.current, alertsKpi.previous);
+
+  return [
+    {
+      id: 'temperature',
+      title: 'Temperatura média',
+      unit: '°C',
+      value: normalizeNumber(temperatureKpi.current, 1),
+      previousValue: normalizeNumber(temperatureKpi.previous, 1),
+      change: temperatureChange,
+      decimals: 1,
+    },
+    {
+      id: 'humidity',
+      title: 'Umidade média',
+      unit: '%',
+      value: normalizeNumber(humidityKpi.current, 1),
+      previousValue: normalizeNumber(humidityKpi.previous, 1),
+      change: humidityChange,
+      decimals: 1,
+    },
+    {
+      id: 'environment',
+      title: 'Índice ambiental',
+      unit: 'pts',
+      value: normalizeNumber(environmentKpi.current, 0),
+      previousValue: normalizeNumber(environmentKpi.previous, 0),
+      change: environmentChange,
+      decimals: 0,
+      invertTrend: true,
+    },
+    {
+      id: 'alerts',
+      title: 'Alertas recentes',
+      value: normalizeNumber(alertsKpi.current, 0),
+      previousValue: normalizeNumber(alertsKpi.previous, 0),
+      change: alertsChange,
+      decimals: 0,
+      invertTrend: true,
+    },
+  ];
+}
 
 export const applyDashboardFilters = (
   data: DataProcessRecord[],
@@ -195,6 +298,19 @@ const buildHumiditySeries = (data: DataProcessRecord[]): HumiditySeriesPoint[] =
     percentOverLimit: item.percentOverHumLimit,
   }));
 
+export function buildLineSeries(
+  data: ReadDataProcess[],
+  field: 'averageTemperature' | 'averageHumidity',
+): LineDatum[] {
+  const sorted = sortByPeriodStart(data);
+
+  if (field === 'averageTemperature') {
+    return buildTemperatureSeries(sorted);
+  }
+
+  return buildHumiditySeries(sorted);
+}
+
 const buildAlertsSeries = (data: DataProcessRecord[]): AlertsBySiloPoint[] => {
   const grouped = new Map<string, AlertsBySiloPoint>();
 
@@ -217,6 +333,11 @@ const buildAlertsSeries = (data: DataProcessRecord[]): AlertsBySiloPoint[] => {
 
   return Array.from(grouped.values()).sort((a, b) => b.total - a.total);
 };
+
+export function buildAlertsStack(data: ReadDataProcess[]): BarDatum[] {
+  const sorted = sortByPeriodStart(data);
+  return buildAlertsSeries(sorted);
+}
 
 const buildDistribution = (data: DataProcessRecord[]): DistributionDataset[] => {
   let scoreHealthy = 0;
@@ -295,6 +416,11 @@ const buildDistribution = (data: DataProcessRecord[]): DistributionDataset[] => 
   ];
 };
 
+export function buildPieDistributions(data: ReadDataProcess[]): PieDataset {
+  const sorted = sortByPeriodStart(data);
+  return buildDistribution(sorted);
+}
+
 const buildTableRows = (data: DataProcessRecord[]): TableRow[] =>
   data.map((item) => ({
     id: item.id,
@@ -311,64 +437,14 @@ const buildTableRows = (data: DataProcessRecord[]): TableRow[] =>
 export const createDashboardMetrics = (
   data: DataProcessRecord[],
 ): DashboardMetrics => {
-  const sorted = [...data].sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
-
-  const temperatureKpi = extractKpiValue(sorted, (item) => item.averageTemperature);
-  const humidityKpi = extractKpiValue(sorted, (item) => item.averageHumidity);
-  const environmentKpi = extractKpiValue(sorted, (item) => item.environmentScore);
-  const alertsKpi = extractKpiValue(sorted, (item) => item.alertsCount);
-
-  const { change: temperatureChange } = computeChange(temperatureKpi.current, temperatureKpi.previous);
-  const { change: humidityChange } = computeChange(humidityKpi.current, humidityKpi.previous);
-  const { change: environmentChange } = computeChange(environmentKpi.current, environmentKpi.previous);
-  const { change: alertsChange } = computeChange(alertsKpi.current, alertsKpi.previous);
-
-  const kpis: DashboardKpi[] = [
-    {
-      id: 'temperature',
-      title: 'Temperatura média',
-      unit: '°C',
-      value: normalizeNumber(temperatureKpi.current, 1),
-      previousValue: normalizeNumber(temperatureKpi.previous, 1),
-      change: temperatureChange,
-      decimals: 1,
-    },
-    {
-      id: 'humidity',
-      title: 'Umidade média',
-      unit: '%',
-      value: normalizeNumber(humidityKpi.current, 1),
-      previousValue: normalizeNumber(humidityKpi.previous, 1),
-      change: humidityChange,
-      decimals: 1,
-    },
-    {
-      id: 'environment',
-      title: 'Índice ambiental',
-      unit: 'pts',
-      value: normalizeNumber(environmentKpi.current, 0),
-      previousValue: normalizeNumber(environmentKpi.previous, 0),
-      change: environmentChange,
-      decimals: 0,
-      invertTrend: true,
-    },
-    {
-      id: 'alerts',
-      title: 'Alertas recentes',
-      value: normalizeNumber(alertsKpi.current, 0),
-      previousValue: normalizeNumber(alertsKpi.previous, 0),
-      change: alertsChange,
-      decimals: 0,
-      invertTrend: true,
-    },
-  ];
+  const sorted = sortByPeriodStart(data);
 
   return {
-    kpis,
-    temperatureSeries: buildTemperatureSeries(sorted),
-    humiditySeries: buildHumiditySeries(sorted),
-    alertsBySilo: buildAlertsSeries(sorted),
-    distribution: buildDistribution(sorted),
+    kpis: computeKpis(sorted),
+    temperatureSeries: buildLineSeries(sorted, 'averageTemperature') as TemperatureSeriesPoint[],
+    humiditySeries: buildLineSeries(sorted, 'averageHumidity') as HumiditySeriesPoint[],
+    alertsBySilo: buildAlertsStack(sorted),
+    distribution: buildPieDistributions(sorted),
     tableRows: buildTableRows(sorted),
   };
 };
