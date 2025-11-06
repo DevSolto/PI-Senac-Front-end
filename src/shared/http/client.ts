@@ -1,6 +1,16 @@
 import { appEnv } from '@/shared/env';
 
-const ENV_API_URL = (appEnv.VITE_API_URL ?? appEnv.API_URL ?? 'http://localhost:3000') as string;
+const BROWSER_BASE_URL =
+  typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : undefined;
+
+const ENV_API_URL = (
+  appEnv.VITE_API_URL ??
+  appEnv.API_URL ??
+  BROWSER_BASE_URL ??
+  'http://localhost:3000'
+) as string;
 
 const AUTH_HEADER_KEY = 'Authorization';
 
