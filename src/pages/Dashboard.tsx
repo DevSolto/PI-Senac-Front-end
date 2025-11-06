@@ -25,6 +25,10 @@ import {
   extractSiloOptions,
   type DashboardKpi,
 } from '@/lib/metrics';
+import { TemperatureOverTime } from '@/components/charts/simple/TemperatureOverTime';
+import { HumidityOverTime } from '@/components/charts/simple/HumidityOverTime';
+import { AirQualityOverTime } from '@/components/charts/simple/AirQualityOverTime';
+import { EnvironmentScoreOverTime } from '@/components/charts/simple/EnvironmentScoreOverTime';
 
 const REFRESH_INTERVAL = 300_000;
 
@@ -340,6 +344,17 @@ export const DashboardPage = () => {
           </div>
         </CardContent>
       </Card>
+      <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
+      <HumidityOverTime data={metrics.humiditySeries} height={300} />
+      <EnvironmentScoreOverTime
+        data={metrics.tableRows.map((r) => ({
+          timestamp: r.periodStart,
+          environmentScore: r.environmentScore ?? null,
+        }))}
+      />
+
+
+
     </div>
   );
 };
