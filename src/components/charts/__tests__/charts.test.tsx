@@ -1,73 +1,94 @@
 import { render, screen } from '@testing-library/react';
+import type { ButtonHTMLAttributes } from 'react';
 
-import { AirQualityChart } from '../AirQualityChart';
-import { HumidityChart } from '../HumidityChart';
-import { StdDevChart } from '../StdDevChart';
-import { TemperatureChart } from '../TemperatureChart';
-import type { AqiSeries, FormattedSeries, SeriesPointWithBands } from '@/hooks/useRealtimeSeries';
+import { AlertsBySiloBar } from '../recharts/AlertsBySiloBar';
+import type { AlertsPieDatum } from '../recharts/AlertsPie';
+import { AlertsPie } from '../recharts/AlertsPie';
+import { HumidityArea } from '../recharts/HumidityArea';
+import { TemperatureLine } from '../recharts/TemperatureLine';
+import type {
+  AlertsBySiloPoint,
+  HumiditySeriesPoint,
+  TemperatureSeriesPoint,
+} from '@/lib/metrics';
 
-type PartialSeries = Pick<FormattedSeries, 'points' | 'latest' | 'average' | 'stdDev' | 'unit'>;
+jest.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...props}>
+      {children}
+    </button>
+  ),
+}));
 
-const baseTimestamp = new Date('2024-01-01T00:00:00Z').getTime();
+describe('componentes Recharts do dashboard', () => {
+  const baseDate = new Date('2024-01-01T00:00:00Z');
 
-function createPoint(index: number, value: number): SeriesPointWithBands {
-  return {
-    timestamp: baseTimestamp + index * 60 * 60 * 1000,
-    value,
-    label: `Ponto ${index}`,
-    formattedValue: value.toFixed(1),
-    average: value,
-    upperBand: value + 2,
-    lowerBand: value - 2,
-  };
-}
+  const temperatureSeries: TemperatureSeriesPoint[] = [
+    {
+      timestamp: baseDate,
+      label: '01 Jan',
+      average: 21.5,
+      min: 19.8,
+      max: 24.3,
+    },
+    {
+      timestamp: new Date(baseDate.getTime() + 60 * 60 * 1000),
+      label: '01 Jan',
+      average: 22.1,
+      min: 20.5,
+      max: 25.4,
+    },
+  ];
 
-function createSeries(values: number[], unit: string): PartialSeries {
-  const points = values.map((value, index) => createPoint(index, value));
-  const latest = points[points.length - 1] ?? null;
+  const humiditySeries: HumiditySeriesPoint[] = [
+    {
+      timestamp: baseDate,
+      label: '01 Jan',
+      average: 48.2,
+      min: 42.1,
+      max: 55.3,
+      percentOverLimit: 5,
+    },
+    {
+      timestamp: new Date(baseDate.getTime() + 60 * 60 * 1000),
+      label: '01 Jan',
+      average: 52.1,
+      min: 45.2,
+      max: 58.7,
+      percentOverLimit: 12,
+    },
+  ];
 
-  return {
-    points,
-    latest,
-    average: latest?.average ?? 0,
-    stdDev: 0.5,
-    unit,
-  };
-}
+  const alertsBySilo: AlertsBySiloPoint[] = [
+    { siloKey: '1', siloName: 'Silo Norte', total: 5, critical: 2 },
+    { siloKey: '2', siloName: 'Silo Sul', total: 2, critical: 0 },
+  ];
 
-function createAqiSeries(values: number[]): AqiSeries {
-  const formatted = createSeries(values, 'AQI');
-  const latestValue = formatted.latest?.value ?? 0;
-  return {
-    ...formatted,
-    category: latestValue > 150 ? 'unhealthy' : 'moderate',
-    color: latestValue > 150 ? '#e74c3c' : '#f1c40f',
-  };
-}
+  const alertsStatus: AlertsPieDatum[] = [
+    { key: 'critical', name: 'Crítico', value: 3 },
+    { key: 'warning', name: 'Alerta', value: 4 },
+    { key: 'ok', name: 'OK', value: 10 },
+  ];
 
-describe('smoke tests dos componentes de gráficos', () => {
-  const temperature = createSeries([21.3, 22.1, 23.4], '°C');
-  const humidity = createSeries([45.2, 47.9, 52.1], '%');
-  const airQuality = createAqiSeries([80, 95, 110]);
-
-  it('renderiza TemperatureChart sem lançar erros', () => {
-    render(<TemperatureChart series={temperature} />);
-    expect(screen.getByText('Temperatura ambiente')).toBeInTheDocument();
-    expect(screen.getByText('Última leitura:')).toBeInTheDocument();
+  it('renderiza TemperatureLine com dados válidos', () => {
+    render(<TemperatureLine data={temperatureSeries} />);
+    expect(screen.getByText('Temperatura média')).toBeInTheDocument();
   });
 
-  it('renderiza HumidityChart com dados combinados', () => {
-    render(<HumidityChart humidity={humidity} temperature={temperature} />);
-    expect(screen.getByText('Umidade relativa & temperatura média')).toBeInTheDocument();
+  it('renderiza HumidityArea com dados válidos', () => {
+    render(<HumidityArea data={humiditySeries} />);
+    expect(screen.getByText('Umidade média')).toBeInTheDocument();
   });
 
-  it('renderiza AirQualityChart com séries de AQI', () => {
-    render(<AirQualityChart series={airQuality} />);
-    expect(screen.getByText('Qualidade do ar')).toBeInTheDocument();
+  it('renderiza AlertsBySiloBar com legendas', () => {
+    render(<AlertsBySiloBar data={alertsBySilo} />);
+    expect(screen.getByText('Alertas por silo')).toBeInTheDocument();
+    expect(screen.getByText('Críticos')).toBeInTheDocument();
   });
 
-  it('renderiza StdDevChart com séries agregadas', () => {
-    render(<StdDevChart temperature={temperature} humidity={humidity} aqi={airQuality} />);
-    expect(screen.getByText('Desvios diários')).toBeInTheDocument();
+  it('renderiza AlertsPie com distribuição de estados', () => {
+    render(<AlertsPie data={alertsStatus} totalRecords={17} />);
+    expect(screen.getByText('Status de alertas')).toBeInTheDocument();
+    expect(screen.getByText('Crítico')).toBeInTheDocument();
   });
 });

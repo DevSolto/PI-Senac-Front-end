@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { AlertTriangle, Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -6,10 +6,10 @@ import type { DateRange as DayPickerRange } from 'react-day-picker';
 import { toast } from 'sonner';
 import { ptBR } from 'date-fns/locale';
 
-import { BarAlerts } from '@/components/charts/BarAlerts';
-import { LineHumidity } from '@/components/charts/LineHumidity';
-import { LineTemperature } from '@/components/charts/LineTemperature';
-import { PieDistribution } from '@/components/charts/PieDistribution';
+import { AlertsBySiloBar } from '@/components/charts/recharts/AlertsBySiloBar';
+import { AlertsPie } from '@/components/charts/recharts/AlertsPie';
+import { HumidityArea } from '@/components/charts/recharts/HumidityArea';
+import { TemperatureLine } from '@/components/charts/recharts/TemperatureLine';
 import { DateRange } from '@/components/filters/DateRange';
 import { SiloMultiSelect } from '@/components/filters/SiloMultiSelect';
 import { KpiCard } from '@/components/kpi/KpiCard';
@@ -18,6 +18,7 @@ import { DataTable } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useFilters } from '@/hooks/useFilters';
 import type { DataProcessRecord } from '@/lib/api';
 import { fetchDataProcess } from '@/lib/api';
@@ -89,6 +90,7 @@ const kpiIcons: Record<string, ReactNode> = {
 export const DashboardPage = () => {
   const { filters, setFilters } = useFilters();
   const previousDataRef = useRef<DataProcessRecord[] | null>(null);
+  const filtersContainerRef = useRef<HTMLDivElement | null>(null);
 
   const query = useQuery({
     queryKey: ['data-process'],
@@ -151,6 +153,27 @@ export const DashboardPage = () => {
   const metrics = useMemo(() => createDashboardMetrics(filteredData), [filteredData]);
   const siloOptions = useMemo(() => (dataset.length > 0 ? extractSiloOptions(dataset) : []), [dataset]);
   const filtersDescription = useMemo(() => describeFilters(filters), [filters]);
+  const alertsSummary = useMemo(() => {
+    let critical = 0;
+    let warning = 0;
+    let ok = 0;
+
+    for (const record of filteredData) {
+      if ((record.criticalAlertsCount ?? 0) > 0) {
+        critical += 1;
+      } else if ((record.alertsCount ?? 0) > 0) {
+        warning += 1;
+      } else {
+        ok += 1;
+      }
+    }
+
+    return [
+      { key: 'critical' as const, name: 'Crítico', value: critical },
+      { key: 'warning' as const, name: 'Alerta', value: warning },
+      { key: 'ok' as const, name: 'OK', value: ok },
+    ];
+  }, [filteredData]);
 
   useEffect(() => {
     console.info('[Dashboard] Filtros atualizados.', filters);
@@ -231,15 +254,23 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleAdjustFilters = useCallback(() => {
+    filtersContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const isLoading = query.isLoading;
   const hasPreviousData = (previousDataRef.current?.length ?? 0) > 0;
   const showSkeletons = isLoading && !hasPreviousData;
   const isRefreshing = query.isFetching && !query.isLoading;
   const showEmptyState = !showSkeletons && filteredData.length === 0;
+  const showErrorAlert = query.isError;
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <div
+        ref={filtersContainerRef}
+        className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between"
+      >
         <div className="space-y-2">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Painel operacional</h1>
@@ -275,6 +306,18 @@ export const DashboardPage = () => {
         </div>
       </div>
 
+      {showErrorAlert ? (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Erro ao carregar dados</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>Não foi possível carregar as métricas neste momento. Tente novamente.</span>
+            <Button variant="secondary" size="sm" onClick={handleRefetch}>
+              Tentar novamente
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.kpis.map((metric) => (
           <KpiCard
@@ -290,18 +333,40 @@ export const DashboardPage = () => {
 
       {showEmptyState ? (
         <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-          Nenhum dado encontrado para os filtros selecionados.
+          <div className="flex flex-col items-center justify-center gap-3">
+            <span>Nenhum dado encontrado para os filtros selecionados.</span>
+            <Button variant="outline" size="sm" onClick={handleAdjustFilters}>
+              Ajustar filtros
+            </Button>
+          </div>
         </div>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <LineTemperature data={metrics.temperatureSeries} isLoading={showSkeletons} />
-        <LineHumidity data={metrics.humiditySeries} isLoading={showSkeletons} />
+        <TemperatureLine
+          data={metrics.temperatureSeries}
+          isLoading={showSkeletons}
+          onAdjustFilters={handleAdjustFilters}
+        />
+        <HumidityArea
+          data={metrics.humiditySeries}
+          isLoading={showSkeletons}
+          onAdjustFilters={handleAdjustFilters}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <BarAlerts data={metrics.alertsBySilo} isLoading={showSkeletons} />
-        <PieDistribution data={metrics.distribution} isLoading={showSkeletons} />
+        <AlertsBySiloBar
+          data={metrics.alertsBySilo}
+          isLoading={showSkeletons}
+          onAdjustFilters={handleAdjustFilters}
+        />
+        <AlertsPie
+          data={alertsSummary}
+          totalRecords={filteredData.length}
+          isLoading={showSkeletons}
+          onAdjustFilters={handleAdjustFilters}
+        />
       </div>
 
       <Card className="border-border/60">

@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom';
 
+(globalThis as typeof globalThis & { __APP_ENV__?: Record<string, string | undefined> }).__APP_ENV__ = {
+  VITE_API_URL: 'http://localhost:3000',
+  API_URL: 'http://localhost:3000',
+};
+
 global.ResizeObserver = class ResizeObserver {
   private callback: ResizeObserverCallback;
 
