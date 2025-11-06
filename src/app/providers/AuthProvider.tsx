@@ -65,7 +65,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     return storedToken;
   });
-  const [status, setStatus] = useState<AuthStatus>(() => (token ? 'authenticated' : 'idle'));
+  const [status, setStatus] = useState<AuthStatus>(() =>
+    token ? 'authenticated' : 'unauthenticated',
+  );
 
   const persistToken = useCallback((value: string) => {
     setTokenState(value);
@@ -166,6 +168,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setAuthToken(token);
     setStatus('authenticated');
   }, [clearStoredToken, token]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      redirectToLogin();
+    }
+  }, [redirectToLogin, status]);
 
   useEffect(() => {
     const removeInterceptor = apiClient.addResponseInterceptor((response) => {
