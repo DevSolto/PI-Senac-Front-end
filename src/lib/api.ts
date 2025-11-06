@@ -98,6 +98,44 @@ export const ReadDataProcessSchema = RawReadDataProcessSchema.transform<DataProc
   } satisfies DataProcessRecord;
 });
 
+const resolveSiloKey = (record: DataProcessRecord) =>
+  record.siloId !== null ? String(record.siloId) : record.siloName;
+
+const buildRecordKey = (record: DataProcessRecord) =>
+  `${resolveSiloKey(record)}::${record.periodStart.getTime()}::${record.periodEnd.getTime()}`;
+
+const isCandidateNewer = (current: DataProcessRecord, candidate: DataProcessRecord) => {
+  const currentTimestamp = current.createdAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+  const candidateTimestamp = candidate.createdAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+
+  if (candidateTimestamp !== currentTimestamp) {
+    return candidateTimestamp > currentTimestamp;
+  }
+
+  if (candidate.id !== current.id) {
+    return candidate.id > current.id;
+  }
+
+  return false;
+};
+
+export const deduplicateDataProcessRecords = (
+  data: DataProcessRecord[],
+): DataProcessRecord[] => {
+  const unique = new Map<string, DataProcessRecord>();
+
+  for (const record of data) {
+    const key = buildRecordKey(record);
+    const existing = unique.get(key);
+
+    if (!existing || isCandidateNewer(existing, record)) {
+      unique.set(key, record);
+    }
+  }
+
+  return Array.from(unique.values());
+};
+
 export const fetchDataProcess = async (): Promise<DataProcessRecord[]> => {
   console.info('[Dashboard] Iniciando carregamento de dados agregados.');
   let payload: unknown;
@@ -142,7 +180,18 @@ export const fetchDataProcess = async (): Promise<DataProcessRecord[]> => {
     totalRegistros: data.length,
   });
 
-  const ordered = data.sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
+  const deduplicated = deduplicateDataProcessRecords(data);
+
+  if (deduplicated.length !== data.length) {
+    console.info('[Dashboard] Registros agregados deduplicados para consumo.', {
+      antes: data.length,
+      depois: deduplicated.length,
+    });
+  }
+
+  const ordered = deduplicated.sort(
+    (a, b) => a.periodStart.getTime() - b.periodStart.getTime(),
+  );
   console.info('[Dashboard] Dados agregados ordenados para consumo.', {
     totalRegistros: ordered.length,
   });
