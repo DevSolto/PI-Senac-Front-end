@@ -24,6 +24,13 @@ const tooltipStyle: React.CSSProperties = {
   color: 'hsl(var(--foreground))',
 };
 
+const chartColors = {
+  average: 'hsl(var(--chart-1, 217 91% 60%))',
+  band: 'hsl(var(--chart-2, 271 81% 56%))',
+  max: 'hsl(var(--chart-3, 0 72% 51%))',
+  min: 'hsl(var(--chart-4, 142 76% 36%))',
+} as const;
+
 type ChartPoint = {
   // normalizamos para número (ms) para o eixo temporal
   timestampMs: number;
@@ -134,6 +141,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               minTickGap={32}
             />
             <YAxis
+              domain={['dataMin - 1', 'dataMax + 1']}
               tickFormatter={(value: number) => fmtTemp(value)}
               width={64}
               axisLine={false}
@@ -164,7 +172,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               dataKey="bandRange"
               stackId="temperature-band"
               stroke="none"
-              fill="hsl(var(--chart-2))"
+              fill={chartColors.band}
               fillOpacity={0.16}
               isAnimationActive={false}
               name="Faixa máx/mín"
@@ -174,16 +182,16 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               type="monotone"
               dataKey="average"
               name="Temperatura média (°C)"
-              stroke="hsl(var(--chart-1))"
+              stroke={chartColors.average}
               strokeWidth={2}
-              dot={false}
+              dot
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="max"
               name="Máxima (°C)"
-              stroke="hsl(var(--chart-3))"
+              stroke={chartColors.max}
               strokeWidth={2}
               dot={false}
               connectNulls
@@ -192,7 +200,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               type="monotone"
               dataKey="min"
               name="Mínima (°C)"
-              stroke="hsl(var(--chart-4))"
+              stroke={chartColors.min}
               strokeWidth={2}
               dot={false}
               connectNulls
