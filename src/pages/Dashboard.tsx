@@ -1,197 +1,143 @@
-import { useMemo } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { Loader2, RotateCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import type { DateRange as DayPickerRange } from 'react-day-picker';
+import { toast } from 'sonner';
 
-import { SummaryCard } from '@/components/dashboard/SummaryCard';
-import { AirQualityChart } from '@/components/charts/AirQualityChart';
-import { HumidityChart } from '@/components/charts/HumidityChart';
-import { StdDevChart } from '@/components/charts/StdDevChart';
-import { TemperatureChart } from '@/components/charts/TemperatureChart';
+import { BarAlerts } from '@/components/charts/BarAlerts';
+import { LineHumidity } from '@/components/charts/LineHumidity';
+import { LineTemperature } from '@/components/charts/LineTemperature';
+import { PieDistribution } from '@/components/charts/PieDistribution';
+import { DateRange } from '@/components/filters/DateRange';
+import { SiloMultiSelect } from '@/components/filters/SiloMultiSelect';
+import { KpiCard } from '@/components/kpi/KpiCard';
+import { DataTable } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { useRealtimeSeries } from '@/hooks/useRealtimeSeries';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFilters } from '@/hooks/useFilters';
+import { fetchDataProcess } from '@/lib/api';
+import {
+  applyDashboardFilters,
+  createDashboardMetrics,
+  describeFilters,
+  extractSiloOptions,
+} from '@/lib/metrics';
 
-const formatPercentage = (value: number) => `${Math.round(value)}%`;
-
-function computeMovingAverages(values: number[], pointsPerDay: number, days: number) {
-  const windowSize = Math.max(1, Math.round(pointsPerDay * days));
-  const currentSlice = values.slice(-windowSize);
-  const previousSlice = values.slice(-windowSize * 2, -windowSize);
-
-  const currentAverage =
-    currentSlice.length > 0
-      ? currentSlice.reduce((acc, value) => acc + value, 0) / currentSlice.length
-      : 0;
-
-  const previousAverage =
-    previousSlice.length > 0
-      ? previousSlice.reduce((acc, value) => acc + value, 0) / previousSlice.length
-      : currentAverage;
-
-  return { currentAverage, previousAverage };
-}
+const REFRESH_INTERVAL = 300_000;
 
 export const DashboardPage = () => {
-  const { temperature, humidity, aqi, controls } = useRealtimeSeries();
+  const { filters, setFilters } = useFilters();
 
-  const sevenDayTemperature = useMemo(
-    () => computeMovingAverages(temperature.points.map((point) => point.value), controls.pointsPerDay, 7),
-    [controls.pointsPerDay, temperature.points],
-  );
+  const query = useQuery({
+    queryKey: ['data-process'],
+    queryFn: fetchDataProcess,
+    refetchInterval: REFRESH_INTERVAL,
+  });
 
-  const sevenDayHumidity = useMemo(
-    () => computeMovingAverages(humidity.points.map((point) => point.value), controls.pointsPerDay, 7),
-    [controls.pointsPerDay, humidity.points],
-  );
+  const filteredData = useMemo(() => {
+    if (!query.data) {
+      return [];
+    }
 
-  const sevenDayAqi = useMemo(
-    () => computeMovingAverages(aqi.points.map((point) => point.value), controls.pointsPerDay, 7),
-    [aqi.points, controls.pointsPerDay],
-  );
+    return applyDashboardFilters(query.data, filters);
+  }, [filters, query.data]);
 
-  const noiseValue = controls.noise;
-  const correlationValue = controls.correlation;
+  const metrics = useMemo(() => createDashboardMetrics(filteredData), [filteredData]);
+  const siloOptions = useMemo(() => (query.data ? extractSiloOptions(query.data) : []), [query.data]);
+  const filtersDescription = useMemo(() => describeFilters(filters), [filters]);
 
-  const diagnostics = [
-    {
-      id: 'temperature-volatility',
-      title: 'Oscilações fora do ideal',
-      description:
-        'Picos de temperatura média semanal sugerem sensores descalibrados, exigindo revisão do plano de manutenção.',
-    },
-    {
-      id: 'humidity-trend',
-      title: 'Tendência de umidade ascendente',
-      description:
-        'Umidade segue em alta mesmo após reduzir o ruído da simulação, indicando possível infiltração em silos críticos.',
-    },
-    {
-      id: 'air-quality-drop',
-      title: 'Queda na qualidade do ar',
-      description:
-        'Índice AQI consistente acima do limiar desejado aponta necessidade de revisar ventilação e filtros.',
-    },
-  ] as const;
+  useEffect(() => {
+    if (query.isError) {
+      const message = query.error instanceof Error ? query.error.message : 'Erro ao carregar dados.';
+      toast.error(message);
+    }
+  }, [query.error, query.isError]);
 
-  const summaryCards = [
-    {
-      id: 'temperature',
-      title: 'Temperatura média',
-      unit: '°C',
-      decimals: 1,
-      ...sevenDayTemperature,
-    },
-    {
-      id: 'humidity',
-      title: 'Umidade média',
-      unit: '%',
-      decimals: 1,
-      ...sevenDayHumidity,
-    },
-    {
-      id: 'aqi',
-      title: 'Qualidade do ar (AQI)',
-      unit: 'AQI',
-      invertTrend: true,
-      decimals: 0,
-      ...sevenDayAqi,
-    },
-  ] as const;
+  const handleDateChange = (range: DayPickerRange | undefined) => {
+    setFilters((previous) => ({
+      ...previous,
+      from: range?.from ?? undefined,
+      to: range?.to ?? undefined,
+    }));
+  };
+
+  const handleSiloChange = (next: string[]) => {
+    setFilters((previous) => ({
+      ...previous,
+      silos: next,
+    }));
+  };
+
+  const handleRefetch = async () => {
+    const result = await query.refetch();
+    if (result.status === 'success') {
+      toast.success('Dados atualizados com sucesso.');
+    } else {
+      const message = result.error instanceof Error ? result.error.message : 'Não foi possível atualizar agora.';
+      toast.error(message);
+    }
+  };
+
+  const isLoading = query.isLoading;
+  const isRefreshing = query.isFetching && !query.isLoading;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Painel de monitoramento</h1>
-          <p className="text-muted-foreground">Acompanhe a evolução em tempo real dos indicadores ambientais.</p>
-        </div>
-
-        <div className="flex flex-wrap items-end gap-4">
-          <Button onClick={controls.toggle} className="flex items-center gap-2">
-            {controls.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {controls.isPlaying ? 'Pausar simulação' : 'Iniciar simulação'}
-          </Button>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="simulation-seed">Seed</Label>
-            <Input
-              id="simulation-seed"
-              value={controls.seed}
-              onChange={(event) => controls.setSeed(event.target.value)}
-              className="w-32"
-            />
+    <div className="space-y-8">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+        <div className="space-y-2">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Painel operacional</h1>
+            <p className="text-muted-foreground">
+              Acompanhe indicadores ambientais consolidados dos silos monitorados.
+            </p>
           </div>
+          {filtersDescription ? <p className="text-sm text-muted-foreground">{filtersDescription}</p> : null}
+        </div>
 
-          <Card className="border-border/60">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Ruído</CardTitle>
-              <CardDescription>Amplitude das oscilações</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Slider
-                value={[noiseValue]}
-                min={0}
-                max={5}
-                step={0.1}
-                onValueChange={(value) => controls.setNoise(value[0] ?? 0)}
-              />
-              <span className="text-sm font-medium text-muted-foreground">
-                {formatPercentage((noiseValue / 5) * 100)}
-              </span>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Correlação</CardTitle>
-              <CardDescription>Impacto cruzado entre séries</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Slider
-                value={[correlationValue]}
-                min={0}
-                max={1}
-                step={0.05}
-                onValueChange={(value) => controls.setCorrelation(value[0] ?? 0)}
-              />
-              <span className="text-sm font-medium text-muted-foreground">
-                {formatPercentage(correlationValue * 100)}
-              </span>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <DateRange value={{ from: filters.from, to: filters.to }} onChange={handleDateChange} disabled={isLoading} />
+          <SiloMultiSelect
+            options={siloOptions}
+            value={filters.silos}
+            onChange={handleSiloChange}
+            disabled={isLoading || siloOptions.length === 0}
+          />
+          <Button onClick={handleRefetch} disabled={query.isFetching} className="md:ml-2">
+            {query.isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCw className="mr-2 h-4 w-4" />}
+            Atualizar agora
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-        {summaryCards.map((card) => (
-          <SummaryCard key={card.id} {...card} />
-        ))}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {diagnostics.map((item) => (
-          <Card key={item.id} className="border-border/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">{item.title}</CardTitle>
-              <CardDescription>{item.description}</CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button variant="secondary" className="w-full md:w-auto">
-                Exibir tarefa
-              </Button>
-            </CardFooter>
-          </Card>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.kpis.map((metric) => (
+          <KpiCard key={metric.id} metric={metric} isLoading={isLoading && !query.data} />
         ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <TemperatureChart series={temperature} />
-        <HumidityChart humidity={humidity} temperature={temperature} />
-        <AirQualityChart series={aqi} />
-        <StdDevChart temperature={temperature} humidity={humidity} aqi={aqi} />
+        <LineTemperature data={metrics.temperatureSeries} isLoading={isLoading && !query.data} />
+        <LineHumidity data={metrics.humiditySeries} isLoading={isLoading && !query.data} />
       </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <BarAlerts data={metrics.alertsBySilo} isLoading={isLoading && !query.data} />
+        <PieDistribution data={metrics.distribution} isLoading={isLoading && !query.data} />
+      </div>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Histórico de agregações</CardTitle>
+          {isRefreshing ? (
+            <span className="text-xs text-muted-foreground">Atualizando dados em segundo plano…</span>
+          ) : null}
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <DataTable rows={metrics.tableRows} isLoading={isLoading && !query.data} />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
