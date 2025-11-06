@@ -244,10 +244,10 @@ export const DashboardPage = () => {
   const showErrorAlert = query.isError;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10 xl:space-y-12">
       <div
         ref={filtersContainerRef}
-        className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between"
+        className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between"
       >
         <div className="space-y-2">
           <div>
@@ -259,7 +259,7 @@ export const DashboardPage = () => {
           {filtersDescription ? <p className="text-sm text-muted-foreground">{filtersDescription}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
           <DateRange
             value={{
               from: filters.dateRange.from ?? undefined,
@@ -296,7 +296,7 @@ export const DashboardPage = () => {
         </Alert>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-4 xl:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-4 xl:grid-cols-4">
         {metrics.kpis.map((metric) => (
           <KpiCard
             key={metric.id}
@@ -319,7 +319,7 @@ export const DashboardPage = () => {
           </div>
         </div>
       ) : null}
-      <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3 xl:grid-cols-3">
         <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
         <HumidityOverTime data={metrics.humiditySeries} height={300} />
         <EnvironmentScoreOverTime
