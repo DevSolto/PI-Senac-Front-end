@@ -1,10 +1,25 @@
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import type { DashboardKpi } from '@/lib/metrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const trendIcon = (trend: 'up' | 'down' | 'neutral') => {
+type TrendDirection = 'up' | 'down' | 'neutral';
+
+export interface KpiTrend {
+  label: string;
+  direction: TrendDirection;
+}
+
+export interface KpiCardProps {
+  label: string;
+  value: ReactNode;
+  trend?: KpiTrend;
+  icon?: ReactNode;
+  isLoading?: boolean;
+}
+
+const trendIcon = (trend: TrendDirection) => {
   switch (trend) {
     case 'up':
       return <ArrowUpRight className="h-4 w-4" />;
@@ -15,35 +30,7 @@ const trendIcon = (trend: 'up' | 'down' | 'neutral') => {
   }
 };
 
-const resolveTrend = (kpi: DashboardKpi) => {
-  if (kpi.change === null) {
-    return 'neutral' as const;
-  }
-
-  if (Math.abs(kpi.change) < 0.01) {
-    return 'neutral' as const;
-  }
-
-  const isPositive = kpi.change > 0;
-  if (isPositive) {
-    return kpi.invertTrend ? ('down' as const) : ('up' as const);
-  }
-
-  return kpi.invertTrend ? ('up' as const) : ('down' as const);
-};
-
-const formatNumber = (value: number, decimals: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    maximumFractionDigits: decimals,
-    minimumFractionDigits: decimals,
-  }).format(value);
-
-export interface KpiCardProps {
-  metric: DashboardKpi;
-  isLoading?: boolean;
-}
-
-export const KpiCard = ({ metric, isLoading = false }: KpiCardProps) => {
+export const KpiCard = ({ label, value, trend, icon, isLoading = false }: KpiCardProps) => {
   if (isLoading) {
     return (
       <Card className="border-border/60">
@@ -58,32 +45,24 @@ export const KpiCard = ({ metric, isLoading = false }: KpiCardProps) => {
     );
   }
 
-  const valueLabel =
-    metric.value === null
-      ? '--'
-      : `${formatNumber(metric.value, metric.decimals)}${metric.unit ? ` ${metric.unit}` : ''}`;
-
-  const changeLabel =
-    metric.change === null
-      ? 'Sem variação'
-      : `${metric.change > 0 ? '+' : ''}${formatNumber(metric.change, 1)}%`;
-
-  const trend = resolveTrend(metric);
-
   return (
     <Card className="border-border/60">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{metric.title}</CardTitle>
-        <div className="text-2xl font-bold leading-tight">{valueLabel}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1 font-medium text-foreground">
-            {trendIcon(trend)}
-            {changeLabel}
-          </span>
-          <span className="text-xs text-muted-foreground">vs período anterior</span>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          {icon ? <span className="text-foreground">{icon}</span> : null}
+          <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
         </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="text-2xl font-bold leading-tight text-foreground">{value}</div>
+        {trend ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 font-medium text-foreground">
+              {trendIcon(trend.direction)}
+              {trend.label}
+            </span>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

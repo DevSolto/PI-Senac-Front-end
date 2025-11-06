@@ -56,6 +56,13 @@ export interface DistributionPoint {
   color: string;
 }
 
+export interface DistributionDataset {
+  id: string;
+  label: string;
+  description?: string;
+  data: DistributionPoint[];
+}
+
 export interface TableRow {
   id: number;
   siloName: string;
@@ -73,7 +80,7 @@ export interface DashboardMetrics {
   temperatureSeries: TemperatureSeriesPoint[];
   humiditySeries: HumiditySeriesPoint[];
   alertsBySilo: AlertsBySiloPoint[];
-  distribution: DistributionPoint[];
+  distribution: DistributionDataset[];
   tableRows: TableRow[];
 }
 
@@ -211,30 +218,80 @@ const buildAlertsSeries = (data: DataProcessRecord[]): AlertsBySiloPoint[] => {
   return Array.from(grouped.values()).sort((a, b) => b.total - a.total);
 };
 
-const buildDistribution = (data: DataProcessRecord[]): DistributionPoint[] => {
-  let healthy = 0;
-  let warning = 0;
-  let critical = 0;
+const buildDistribution = (data: DataProcessRecord[]): DistributionDataset[] => {
+  let scoreHealthy = 0;
+  let scoreWarning = 0;
+  let scoreCritical = 0;
+
+  let alertsNone = 0;
+  let alertsWarning = 0;
+  let alertsCritical = 0;
+
+  let humidityWithin = 0;
+  let humidityMild = 0;
+  let humiditySevere = 0;
 
   for (const item of data) {
     const score = item.environmentScore;
-    if (score === null) {
-      continue;
+    if (score !== null) {
+      if (score >= 80) {
+        scoreHealthy += 1;
+      } else if (score >= 50) {
+        scoreWarning += 1;
+      } else {
+        scoreCritical += 1;
+      }
     }
 
-    if (score >= 80) {
-      healthy += 1;
-    } else if (score >= 50) {
-      warning += 1;
+    if (item.criticalAlertsCount > 0) {
+      alertsCritical += 1;
+    } else if (item.alertsCount > 0) {
+      alertsWarning += 1;
     } else {
-      critical += 1;
+      alertsNone += 1;
+    }
+
+    const percentOver = item.percentOverHumLimit ?? 0;
+    if (percentOver <= 0) {
+      humidityWithin += 1;
+    } else if (percentOver <= 10) {
+      humidityMild += 1;
+    } else {
+      humiditySevere += 1;
     }
   }
 
   return [
-    { id: 'healthy', label: 'Estável', value: healthy, color: 'hsl(var(--chart-1))' },
-    { id: 'warning', label: 'Atenção', value: warning, color: 'hsl(var(--chart-2))' },
-    { id: 'critical', label: 'Crítico', value: critical, color: 'hsl(var(--chart-3))' },
+    {
+      id: 'environment',
+      label: 'Score ambiental',
+      description: 'Distribuição dos registros por faixa de score ambiental.',
+      data: [
+        { id: 'healthy', label: 'Estável (≥ 80)', value: scoreHealthy, color: 'hsl(var(--chart-1))' },
+        { id: 'warning', label: 'Atenção (50-79)', value: scoreWarning, color: 'hsl(var(--chart-2))' },
+        { id: 'critical', label: 'Crítico (< 50)', value: scoreCritical, color: 'hsl(var(--chart-3))' },
+      ],
+    },
+    {
+      id: 'alerts',
+      label: 'Situação de alertas',
+      description: 'Presença de alertas e criticidade nos períodos monitorados.',
+      data: [
+        { id: 'none', label: 'Sem alertas', value: alertsNone, color: 'hsl(var(--chart-4))' },
+        { id: 'warning', label: 'Com alertas', value: alertsWarning, color: 'hsl(var(--chart-6))' },
+        { id: 'critical', label: 'Com críticos', value: alertsCritical, color: 'hsl(var(--chart-7))' },
+      ],
+    },
+    {
+      id: 'humidity',
+      label: 'Exposição à umidade',
+      description: 'Percentual de registros acima do limite de umidade.',
+      data: [
+        { id: 'within', label: 'Dentro do limite', value: humidityWithin, color: 'hsl(var(--chart-5))' },
+        { id: 'mild', label: 'Até 10% acima', value: humidityMild, color: 'hsl(var(--chart-6))' },
+        { id: 'severe', label: 'Acima de 10%', value: humiditySevere, color: 'hsl(var(--chart-7))' },
+      ],
+    },
   ];
 };
 

@@ -1,6 +1,8 @@
 import { CalendarIcon, X } from 'lucide-react';
 import { useMemo } from 'react';
 import type { DateRange as DayPickerRange } from 'react-day-picker';
+import type { Locale } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -11,13 +13,26 @@ export interface DateRangeProps {
   value: { from?: Date; to?: Date };
   onChange: (value: DayPickerRange | undefined) => void;
   disabled?: boolean;
+  minDate?: Date;
+  maxDate?: Date;
+  locale?: Locale;
 }
 
-const buildLabel = (from?: Date, to?: Date) =>
-  formatDateRange({ from: from ?? null, to: to ?? null }) ?? 'Período completo';
+const buildLabel = (from: Date | undefined, to: Date | undefined, locale: Locale) =>
+  formatDateRange({ from: from ?? null, to: to ?? null }, locale) ?? 'Período completo';
 
-export const DateRange = ({ value, onChange, disabled = false }: DateRangeProps) => {
-  const label = useMemo(() => buildLabel(value.from, value.to), [value.from, value.to]);
+export const DateRange = ({
+  value,
+  onChange,
+  disabled = false,
+  minDate,
+  maxDate,
+  locale = ptBR,
+}: DateRangeProps) => {
+  const label = useMemo(
+    () => buildLabel(value.from, value.to, locale),
+    [locale, value.from, value.to],
+  );
 
   return (
     <Popover>
@@ -37,6 +52,9 @@ export const DateRange = ({ value, onChange, disabled = false }: DateRangeProps)
           numberOfMonths={2}
           selected={value.from || value.to ? { from: value.from, to: value.to } : undefined}
           onSelect={onChange}
+          fromDate={minDate}
+          toDate={maxDate}
+          locale={locale}
           initialFocus
         />
         {(value.from || value.to) && (

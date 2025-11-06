@@ -1,5 +1,11 @@
+import { useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent } from 'react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Search } from 'lucide-react';
+
 import type { TableRow } from '@/lib/metrics';
 import { formatPeriodRange } from '@/lib/date';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -15,6 +21,11 @@ export interface DataTableProps {
   isLoading?: boolean;
 }
 
+type SortColumn = 'period' | 'silo' | 'alerts' | 'criticalAlerts' | 'temperature' | 'humidity';
+type SortDirection = 'asc' | 'desc';
+
+const PAGE_SIZE = 10;
+
 const formatNumber = (value: number | null, suffix = '') => {
   if (value === null) {
     return '--';
@@ -25,70 +36,271 @@ const formatNumber = (value: number | null, suffix = '') => {
   }${suffix}`;
 };
 
+const buildSortValue = (row: TableRow, column: SortColumn) => {
+  switch (column) {
+    case 'period':
+      return row.periodStart.getTime();
+    case 'silo':
+      return row.siloName.toLocaleLowerCase('pt-BR');
+    case 'alerts':
+      return row.alertsCount;
+    case 'criticalAlerts':
+      return row.criticalAlertsCount;
+    case 'temperature':
+      return row.averageTemperature ?? Number.NEGATIVE_INFINITY;
+    case 'humidity':
+      return row.averageHumidity ?? Number.NEGATIVE_INFINITY;
+    default:
+      return 0;
+  }
+};
+
+const SortIndicator = ({ active, direction }: { active: boolean; direction: SortDirection }) => {
+  if (!active) {
+    return <ChevronsUpDown className="ml-1 h-4 w-4" />;
+  }
+
+  return direction === 'asc' ? (
+    <ArrowUp className="ml-1 h-4 w-4" />
+  ) : (
+    <ArrowDown className="ml-1 h-4 w-4" />
+  );
+};
+
 export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection }>(
+    { column: 'period', direction: 'desc' },
+  );
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, rows.length]);
+
+  const filteredRows = useMemo(() => {
+    const normalized = searchTerm.trim().toLocaleLowerCase('pt-BR');
+
+    if (!normalized) {
+      return rows;
+    }
+
+    return rows.filter((row) => {
+      const period = formatPeriodRange(row.periodStart, row.periodEnd).toLocaleLowerCase('pt-BR');
+      const silo = row.siloName.toLocaleLowerCase('pt-BR');
+
+      return period.includes(normalized) || silo.includes(normalized);
+    });
+  }, [rows, searchTerm]);
+
+  const sortedRows = useMemo(() => {
+    const sorted = [...filteredRows].sort((a, b) => {
+      const aValue = buildSortValue(a, sort.column);
+      const bValue = buildSortValue(b, sort.column);
+
+      if (aValue === bValue) {
+        return 0;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sort.direction === 'asc'
+          ? aValue.localeCompare(bValue, 'pt-BR')
+          : bValue.localeCompare(aValue, 'pt-BR');
+      }
+
+      return sort.direction === 'asc'
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
+    return sorted;
+  }, [filteredRows, sort.column, sort.direction]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+
+  useEffect(() => {
+    if (page > pageCount) {
+      setPage(pageCount);
+    }
+  }, [page, pageCount]);
+
+  const start = (page - 1) * PAGE_SIZE;
+  const paginatedRows = sortedRows.slice(start, start + PAGE_SIZE);
+
+  const handleSort = (column: SortColumn) => {
+    setSort((current) => {
+      if (current.column === column) {
+        return { column, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+
+      return { column, direction: column === 'period' ? 'desc' : 'asc' };
+    });
+  };
+
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const changePage = (next: number) => {
+    setPage(Math.min(Math.max(1, next), pageCount));
+  };
+
   if (isLoading) {
     return (
-      <Table>
-        <TableHeader>
-          <TableRowComponent>
-            <TableHead>Silo</TableHead>
-            <TableHead>Período</TableHead>
-            <TableHead className="text-right">Temperatura</TableHead>
-            <TableHead className="text-right">Umidade</TableHead>
-            <TableHead className="text-right">Score</TableHead>
-            <TableHead className="text-right">Alertas</TableHead>
-          </TableRowComponent>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: 5 }).map((_, index) => (
-            <TableRowComponent key={index}>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full md:w-64" />
+        <Table>
+          <TableHeader>
+            <TableRowComponent>
+              <TableHead>Período</TableHead>
+              <TableHead>Silo</TableHead>
+              <TableHead className="text-right">Alertas</TableHead>
+              <TableHead className="text-right">Alertas críticos</TableHead>
+              <TableHead className="text-right">Temp média</TableHead>
+              <TableHead className="text-right">Umidade média</TableHead>
             </TableRowComponent>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRowComponent key={index}>
+                <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-16" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+              </TableRowComponent>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     );
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRowComponent>
-          <TableHead>Silo</TableHead>
-          <TableHead>Período</TableHead>
-          <TableHead className="text-right">Temperatura</TableHead>
-          <TableHead className="text-right">Umidade</TableHead>
-          <TableHead className="text-right">Score</TableHead>
-          <TableHead className="text-right">Alertas</TableHead>
-        </TableRowComponent>
-      </TableHeader>
-      <TableBody>
-        {rows.map((row) => (
-          <TableRowComponent key={`${row.id}-${row.periodStart.toISOString()}`}>
-            <TableCell className="font-medium">{row.siloName}</TableCell>
-            <TableCell>{formatPeriodRange(row.periodStart, row.periodEnd)}</TableCell>
-            <TableCell className="text-right">{formatNumber(row.averageTemperature, ' °C')}</TableCell>
-            <TableCell className="text-right">{formatNumber(row.averageHumidity, ' %')}</TableCell>
-            <TableCell className="text-right">{formatNumber(row.environmentScore, ' pts')}</TableCell>
-            <TableCell className="text-right">
-              {row.alertsCount}
-              {row.criticalAlertsCount > 0 ? ` (${row.criticalAlertsCount} críticos)` : ''}
-            </TableCell>
-          </TableRowComponent>
-        ))}
-        {rows.length === 0 ? (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={handleSearch}
+            placeholder="Buscar por período ou silo"
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => changePage(page - 1)}
+            disabled={page === 1}
+          >
+            Anterior
+          </Button>
+          <span>
+            Página {page} de {pageCount}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => changePage(page + 1)}
+            disabled={page === pageCount}
+          >
+            Próxima
+          </Button>
+        </div>
+      </div>
+
+      <Table>
+        <TableHeader>
           <TableRowComponent>
-            <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-              Nenhum registro encontrado para o filtro aplicado.
-            </TableCell>
+            <TableHead>
+              <button
+                type="button"
+                onClick={() => handleSort('period')}
+                className="flex w-full items-center justify-start text-left text-sm font-medium"
+              >
+                Período
+                <SortIndicator active={sort.column === 'period'} direction={sort.direction} />
+              </button>
+            </TableHead>
+            <TableHead>
+              <button
+                type="button"
+                onClick={() => handleSort('silo')}
+                className="flex w-full items-center justify-start text-left text-sm font-medium"
+              >
+                Silo
+                <SortIndicator active={sort.column === 'silo'} direction={sort.direction} />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                type="button"
+                onClick={() => handleSort('alerts')}
+                className="flex w-full items-center justify-end text-sm font-medium"
+              >
+                Alertas
+                <SortIndicator active={sort.column === 'alerts'} direction={sort.direction} />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                type="button"
+                onClick={() => handleSort('criticalAlerts')}
+                className="flex w-full items-center justify-end text-sm font-medium"
+              >
+                Alertas críticos
+                <SortIndicator active={sort.column === 'criticalAlerts'} direction={sort.direction} />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                type="button"
+                onClick={() => handleSort('temperature')}
+                className="flex w-full items-center justify-end text-sm font-medium"
+              >
+                Temp média
+                <SortIndicator active={sort.column === 'temperature'} direction={sort.direction} />
+              </button>
+            </TableHead>
+            <TableHead className="text-right">
+              <button
+                type="button"
+                onClick={() => handleSort('humidity')}
+                className="flex w-full items-center justify-end text-sm font-medium"
+              >
+                Umidade média
+                <SortIndicator active={sort.column === 'humidity'} direction={sort.direction} />
+              </button>
+            </TableHead>
           </TableRowComponent>
-        ) : null}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {paginatedRows.map((row) => (
+            <TableRowComponent key={`${row.id}-${row.periodStart.toISOString()}`}>
+              <TableCell className="whitespace-nowrap">
+                {formatPeriodRange(row.periodStart, row.periodEnd)}
+              </TableCell>
+              <TableCell className="font-medium">{row.siloName}</TableCell>
+              <TableCell className="text-right">{row.alertsCount.toLocaleString('pt-BR')}</TableCell>
+              <TableCell className="text-right">
+                {row.criticalAlertsCount.toLocaleString('pt-BR')}
+              </TableCell>
+              <TableCell className="text-right">{formatNumber(row.averageTemperature, ' °C')}</TableCell>
+              <TableCell className="text-right">{formatNumber(row.averageHumidity, ' %')}</TableCell>
+            </TableRowComponent>
+          ))}
+          {paginatedRows.length === 0 ? (
+            <TableRowComponent>
+              <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                Nenhum dado encontrado.
+              </TableCell>
+            </TableRowComponent>
+          ) : null}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
