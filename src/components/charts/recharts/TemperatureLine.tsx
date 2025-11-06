@@ -17,14 +17,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
-const tooltipStyle = {
+const tooltipStyle: React.CSSProperties = {
   borderRadius: 12,
   border: '1px solid hsl(var(--border))',
   backgroundColor: 'hsl(var(--card))',
   color: 'hsl(var(--foreground))',
 };
 
-type ChartPoint = TemperatureSeriesPoint & {
+type ChartPoint = {
+  // normalizamos para número (ms) para o eixo temporal
+  timestampMs: number;
+  average: number | null;
+  max: number | null;
+  min: number | null;
   bandLower: number;
   bandRange: number;
 };
@@ -37,29 +42,38 @@ interface TemperatureLineProps {
 
 export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: TemperatureLineProps) {
   const chartData = useMemo<ChartPoint[]>(() => {
-    const sorted = [...data].sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+    // normalização: garantir Date -> number
+    const normalized = data.map((p) => {
+      const ts =
+        p.timestamp instanceof Date
+          ? p.timestamp
+          : new Date((p as any).timestamp); // se vier ISO string
+
+      const avg = typeof (p as any).average === 'number' ? (p as any).average : null;
+      const mx = typeof (p as any).max === 'number' ? (p as any).max : avg;
+      const mn = typeof (p as any).min === 'number' ? (p as any).min : avg;
+
+      const safeMax = typeof mx === 'number' ? mx : null;
+      const safeMin = typeof mn === 'number' ? mn : null;
+
+      return {
+        timestampMs: ts.getTime(),
+        average: avg,
+        max: safeMax,
+        min: safeMin,
+        bandLower: safeMin ?? 0,
+        bandRange:
+          safeMax !== null && safeMin !== null ? Math.max(safeMax - safeMin, 0) : 0,
+      };
+    });
+
+    // ordenar por tempo
+    normalized.sort((a, b) => a.timestampMs - b.timestampMs);
+
+    // filtrar pontos completamente vazios
+    return normalized.filter(
+      (p) => p.average !== null || p.max !== null || p.min !== null,
     );
-
-    return sorted
-      .map((point) => {
-        const average = typeof point.average === 'number' ? point.average : null;
-        const max = typeof point.max === 'number' ? point.max : average;
-        const min = typeof point.min === 'number' ? point.min : average;
-        const safeMax = typeof max === 'number' ? max : null;
-        const safeMin = typeof min === 'number' ? min : null;
-
-        return {
-          ...point,
-          average,
-          max: safeMax,
-          min: safeMin,
-          bandLower: safeMin ?? 0,
-          bandRange:
-            safeMax !== null && safeMin !== null ? Math.max(safeMax - safeMin, 0) : 0,
-        } satisfies ChartPoint;
-      })
-      .filter((point) => point.average !== null || point.max !== null || point.min !== null);
   }, [data]);
 
   useEffect(() => {
@@ -111,8 +125,10 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
           <LineChart data={chartData} margin={{ left: 12, right: 16, top: 12, bottom: 12 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground) / 0.2)" />
             <XAxis
-              dataKey="timestamp"
-              tickFormatter={(value) => fmtData(value as Date)}
+              dataKey="timestampMs"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(ms) => fmtData(new Date(ms as number))}
               tickLine={false}
               axisLine={false}
               minTickGap={32}
@@ -125,13 +141,15 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
             />
             <Tooltip
               contentStyle={tooltipStyle}
-              labelFormatter={(value) => fmtData(value as Date)}
+              labelFormatter={(ms) => fmtData(new Date(ms as number))}
               formatter={(value: number | string, name) => [
                 typeof value === 'number' ? fmtTemp(value) : value,
-                name === 'average' ? 'Temperatura média (°C)' : name,
+                name === 'average' ? 'Temperatura média (°C)' : name === 'max' ? 'Máxima (°C)' : name === 'min' ? 'Mínima (°C)' : name,
               ]}
             />
             <Legend verticalAlign="bottom" height={24} />
+
+            {/* Banda Máx/Mín (stack) */}
             <Area
               type="monotone"
               dataKey="bandLower"
@@ -139,9 +157,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               stroke="none"
               fill="transparent"
               isAnimationActive={false}
-              name="Mínima (°C)"
-              legendType="none"
-              tooltipType="none"
+              hide={true} /* esconder da legenda/tooltip */
             />
             <Area
               type="monotone"
@@ -152,9 +168,8 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               fillOpacity={0.16}
               isAnimationActive={false}
               name="Faixa máx/mín"
-              legendType="none"
-              tooltipType="none"
             />
+
             <Line
               type="monotone"
               dataKey="average"
@@ -162,6 +177,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               stroke="hsl(var(--chart-1))"
               strokeWidth={2}
               dot={false}
+              connectNulls
             />
             <Line
               type="monotone"
@@ -170,6 +186,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               stroke="hsl(var(--chart-3))"
               strokeWidth={2}
               dot={false}
+              connectNulls
             />
             <Line
               type="monotone"
@@ -178,6 +195,7 @@ export function TemperatureLine({ data, isLoading = false, onAdjustFilters }: Te
               stroke="hsl(var(--chart-4))"
               strokeWidth={2}
               dot={false}
+              connectNulls
             />
           </LineChart>
         </ResponsiveContainer>
