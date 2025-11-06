@@ -6,10 +6,6 @@ import type { DateRange as DayPickerRange } from 'react-day-picker';
 import { toast } from 'sonner';
 import { ptBR } from 'date-fns/locale';
 
-import { AlertsBySiloBar } from '@/components/charts/recharts/AlertsBySiloBar';
-import { AlertsPie } from '@/components/charts/recharts/AlertsPie';
-import { HumidityArea } from '@/components/charts/recharts/HumidityArea';
-import { TemperatureLine } from '@/components/charts/recharts/TemperatureLine';
 import { DateRange } from '@/components/filters/DateRange';
 import { SiloMultiSelect } from '@/components/filters/SiloMultiSelect';
 import { KpiCard } from '@/components/kpi/KpiCard';
@@ -153,28 +149,6 @@ export const DashboardPage = () => {
   const metrics = useMemo(() => createDashboardMetrics(filteredData), [filteredData]);
   const siloOptions = useMemo(() => (dataset.length > 0 ? extractSiloOptions(dataset) : []), [dataset]);
   const filtersDescription = useMemo(() => describeFilters(filters), [filters]);
-  const alertsSummary = useMemo(() => {
-    let critical = 0;
-    let warning = 0;
-    let ok = 0;
-
-    for (const record of filteredData) {
-      if ((record.criticalAlertsCount ?? 0) > 0) {
-        critical += 1;
-      } else if ((record.alertsCount ?? 0) > 0) {
-        warning += 1;
-      } else {
-        ok += 1;
-      }
-    }
-
-    return [
-      { key: 'critical' as const, name: 'Crítico', value: critical },
-      { key: 'warning' as const, name: 'Alerta', value: warning },
-      { key: 'ok' as const, name: 'OK', value: ok },
-    ];
-  }, [filteredData]);
-
   useEffect(() => {
     console.info('[Dashboard] Filtros atualizados.', filters);
   }, [filters]);
@@ -341,33 +315,6 @@ export const DashboardPage = () => {
           </div>
         </div>
       ) : null}
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TemperatureLine
-          data={metrics.temperatureSeries}
-          isLoading={showSkeletons}
-          onAdjustFilters={handleAdjustFilters}
-        />
-        <HumidityArea
-          data={metrics.humiditySeries}
-          isLoading={showSkeletons}
-          onAdjustFilters={handleAdjustFilters}
-        />
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <AlertsBySiloBar
-          data={metrics.alertsBySilo}
-          isLoading={showSkeletons}
-          onAdjustFilters={handleAdjustFilters}
-        />
-        <AlertsPie
-          data={alertsSummary}
-          totalRecords={filteredData.length}
-          isLoading={showSkeletons}
-          onAdjustFilters={handleAdjustFilters}
-        />
-      </div>
 
       <Card className="border-border/60">
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
