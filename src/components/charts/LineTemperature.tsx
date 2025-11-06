@@ -3,7 +3,6 @@ import {
   Legend,
   Line,
   LineChart,
-  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -13,7 +12,7 @@ import { ptBR } from 'date-fns/locale';
 
 import type { TemperatureSeriesPoint } from '@/lib/metrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type TemperatureTooltipProps = TooltipProps<number | string, string>;
@@ -101,17 +100,18 @@ export const LineTemperature = ({ data, isLoading = false }: LineTemperatureProp
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[320px]">
           <LineChart data={data} margin={{ left: 12, right: 12 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} />
+            <CartesianGrid vertical={false} className="stroke-muted" />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis width={40} tickLine={false} axisLine={false} unit="°C" />
-            <Tooltip
+            <ChartTooltip
+              cursor={false}
               content={
                 <ChartTooltipContent labelFormatter={labelFormatter} formatter={valueFormatter} />
               }
             />
             <Legend />
             <Line
-              type="monotone"
+              type="step"
               dataKey="average"
               stroke="var(--color-average)"
               strokeWidth={2}
@@ -119,7 +119,7 @@ export const LineTemperature = ({ data, isLoading = false }: LineTemperatureProp
               name="Média"
             />
             <Line
-              type="monotone"
+              type="step"
               dataKey="max"
               stroke="var(--color-max)"
               strokeWidth={1.5}
@@ -127,7 +127,7 @@ export const LineTemperature = ({ data, isLoading = false }: LineTemperatureProp
               name="Máxima"
             />
             <Line
-              type="monotone"
+              type="step"
               dataKey="min"
               stroke="var(--color-min)"
               strokeWidth={1.5}
