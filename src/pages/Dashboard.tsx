@@ -344,14 +344,16 @@ export const DashboardPage = () => {
           </div>
         </CardContent>
       </Card>
-      <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
-      <HumidityOverTime data={metrics.humiditySeries} height={300} />
-      <EnvironmentScoreOverTime
-        data={metrics.tableRows.map((r) => ({
-          timestamp: r.periodStart,
-          environmentScore: r.environmentScore ?? null,
-        }))}
-      />
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
+        <HumidityOverTime data={metrics.humiditySeries} height={300} />
+        <EnvironmentScoreOverTime
+          data={metrics.tableRows.map((r) => ({
+            timestamp: r.periodStart,
+            environmentScore: r.environmentScore ?? null,
+          }))}
+        />
+      </div>
 
 
 
