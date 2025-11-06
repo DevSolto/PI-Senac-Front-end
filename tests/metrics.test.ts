@@ -3,8 +3,15 @@ import { describe, expect, it } from '@jest/globals';
 import type { DataProcessRecord } from '@/lib/api';
 import {
   applyDashboardFilters,
+  average,
+  buildAlertsStack,
+  buildLineSeries,
+  buildPieDistributions,
+  computeKpis,
   createDashboardMetrics,
   extractSiloOptions,
+  groupBySilo,
+  sum,
   type DashboardFilters,
 } from '@/lib/metrics';
 
@@ -73,6 +80,24 @@ describe('metrics helpers', () => {
     }),
   ];
 
+  it('computes averages and sums ignoring undefined values', () => {
+    expect(average([10, undefined, 20, 30])).toBeCloseTo(20, 5);
+    expect(average([undefined, undefined])).toBeNull();
+    expect(sum([1, 2, 3, 4])).toBe(10);
+  });
+
+  it('groups records by silo and keeps them sorted', () => {
+    const grouped = groupBySilo([
+      baseData[1]!,
+      baseData[0]!,
+      baseData[2]!,
+    ]);
+
+    expect(Object.keys(grouped).sort()).toEqual(['1', '2']);
+    expect(grouped['1']).toHaveLength(2);
+    expect(grouped['1']?.map((item) => item.id)).toEqual([1, 3]);
+  });
+
   it('filters data using date range and silo selection', () => {
     const filters: DashboardFilters = {
       dateRange: {
@@ -95,24 +120,45 @@ describe('metrics helpers', () => {
     ]);
   });
 
+  it('computes KPI summaries based on the most recent records', () => {
+    const kpis = computeKpis(baseData);
+
+    expect(kpis).toHaveLength(4);
+    const alerts = kpis.find((item) => item.id === 'alerts');
+    expect(alerts?.value).toBe(4);
+    expect(alerts?.previousValue).toBe(1);
+    expect(alerts?.change).toBeCloseTo(((4 - 1) / 1) * 100, 5);
+  });
+
+  it('builds ordered line series for temperature and humidity', () => {
+    const shuffled = [baseData[2]!, baseData[0]!, baseData[1]!];
+    const temperatureSeries = buildLineSeries(shuffled, 'averageTemperature');
+    const humiditySeries = buildLineSeries(shuffled, 'averageHumidity');
+
+    expect(temperatureSeries.map((item) => item.average)).toEqual([24, 26, 27]);
+    expect(humiditySeries[2]?.percentOverLimit).toBe(12);
+  });
+
+  it('aggregates alerts by silo and sorts by total', () => {
+    const alerts = buildAlertsStack(baseData);
+
+    expect(alerts[0]?.siloKey).toBe('1');
+    expect(alerts[0]?.total).toBe(7);
+    expect(alerts[0]?.critical).toBe(3);
+  });
+
+  it('builds pie datasets with categorized counts', () => {
+    const dataset = buildPieDistributions(baseData);
+
+    const environment = dataset.find((item) => item.id === 'environment');
+    expect(environment?.data.find((item) => item.id === 'critical')?.value).toBe(1);
+  });
+
   it('generates dashboard metrics with series and kpis', () => {
     const metrics = createDashboardMetrics(baseData);
 
     expect(metrics.kpis).toHaveLength(4);
-    const temperatureKpi = metrics.kpis.find((item) => item.id === 'temperature');
-    expect(temperatureKpi?.value).toBe(27);
-    expect(temperatureKpi?.change).toBeCloseTo(((27 - 26) / 26) * 100, 5);
-
     expect(metrics.temperatureSeries).toHaveLength(3);
-    expect(metrics.humiditySeries[2]?.percentOverLimit).toBe(12);
-
-    const alertsBySilo = metrics.alertsBySilo.find((item) => item.siloKey === '1');
-    expect(alertsBySilo?.total).toBe(7);
-    expect(alertsBySilo?.critical).toBe(3);
-
-    const distribution = metrics.distribution.find((item) => item.id === 'critical');
-    expect(distribution?.value).toBe(1);
-
     expect(metrics.tableRows[0]?.siloName).toBe('Silo Norte');
   });
 });

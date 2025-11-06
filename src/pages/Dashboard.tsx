@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { AlertTriangle, Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFilters } from '@/hooks/useFilters';
+import type { DataProcessRecord } from '@/lib/api';
 import { fetchDataProcess } from '@/lib/api';
 import {
   applyDashboardFilters,
@@ -87,6 +88,7 @@ const kpiIcons: Record<string, ReactNode> = {
 
 export const DashboardPage = () => {
   const { filters, setFilters } = useFilters();
+  const previousDataRef = useRef<DataProcessRecord[] | null>(null);
 
   const query = useQuery({
     queryKey: ['data-process'],
@@ -94,15 +96,23 @@ export const DashboardPage = () => {
     refetchInterval: REFRESH_INTERVAL,
   });
 
+  useEffect(() => {
+    if (query.status === 'success') {
+      previousDataRef.current = query.data ?? [];
+    }
+  }, [query.data, query.status]);
+
+  const dataset = query.data ?? previousDataRef.current ?? [];
+
   const [minDate, maxDate] = useMemo(() => {
-    if (!query.data || query.data.length === 0) {
+    if (dataset.length === 0) {
       return [undefined, undefined] as const;
     }
 
-    let min = query.data[0]!.periodStart;
-    let max = query.data[0]!.periodEnd;
+    let min = dataset[0]!.periodStart;
+    let max = dataset[0]!.periodEnd;
 
-    for (const item of query.data) {
+    for (const item of dataset) {
       if (item.periodStart < min) {
         min = item.periodStart;
       }
@@ -113,23 +123,18 @@ export const DashboardPage = () => {
     }
 
     return [min, max] as const;
-  }, [query.data]);
+  }, [dataset]);
 
-  const filteredData = useMemo(() => {
-    if (!query.data) {
-      return [];
-    }
-
-    return applyDashboardFilters(query.data, filters);
-  }, [filters, query.data]);
+  const filteredData = useMemo(() => applyDashboardFilters(dataset, filters), [dataset, filters]);
 
   const metrics = useMemo(() => createDashboardMetrics(filteredData), [filteredData]);
-  const siloOptions = useMemo(() => (query.data ? extractSiloOptions(query.data) : []), [query.data]);
+  const siloOptions = useMemo(() => (dataset.length > 0 ? extractSiloOptions(dataset) : []), [dataset]);
   const filtersDescription = useMemo(() => describeFilters(filters), [filters]);
 
   useEffect(() => {
     if (query.isError) {
       const message = query.error instanceof Error ? query.error.message : 'Erro ao carregar dados.';
+      console.error('Erro ao carregar agregações do dashboard:', query.error);
       toast.error(message);
     }
   }, [query.error, query.isError]);
@@ -152,7 +157,7 @@ export const DashboardPage = () => {
   };
 
   const handleRefetch = async () => {
-    const result = await query.refetch();
+    const result = await query.refetch({ cancelRefetch: false });
     if (result.status === 'success') {
       toast.success('Dados atualizados com sucesso.');
     } else {
@@ -162,7 +167,8 @@ export const DashboardPage = () => {
   };
 
   const isLoading = query.isLoading;
-  const showSkeletons = isLoading && !query.data;
+  const hasPreviousData = (previousDataRef.current?.length ?? 0) > 0;
+  const showSkeletons = isLoading && !hasPreviousData;
   const isRefreshing = query.isFetching && !query.isLoading;
   const showEmptyState = !showSkeletons && filteredData.length === 0;
 
