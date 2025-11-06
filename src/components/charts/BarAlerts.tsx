@@ -1,4 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from 'recharts';
+import type { TooltipProps } from 'recharts';
 
 import type { AlertsBySiloPoint } from '@/lib/metrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const chartConfig = {
-  total: {
+  nonCritical: {
     label: 'Alertas',
     color: 'hsl(var(--chart-6))',
   },
@@ -35,6 +36,39 @@ export const BarAlerts = ({ data, isLoading = false }: BarAlertsProps) => {
     );
   }
 
+  if (data.length === 0) {
+    return (
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Alertas por silo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
+            Nenhum dado encontrado.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const chartData = data.map((item) => ({
+    ...item,
+    nonCritical: Math.max(item.total - item.critical, 0),
+  }));
+
+  const tooltipFormatter: TooltipProps['formatter'] = (value, _name, entry) => {
+    if (typeof value !== 'number') {
+      return [value, entry?.dataKey ?? ''];
+    }
+
+    return [
+      value.toLocaleString('pt-BR'),
+      entry?.dataKey === 'nonCritical' ? 'Alertas' : 'Críticos',
+    ];
+  };
+
+  const tooltipLabelFormatter: TooltipProps['labelFormatter'] = (value) => String(value);
+
   return (
     <Card className="border-border/60">
       <CardHeader>
@@ -42,14 +76,33 @@ export const BarAlerts = ({ data, isLoading = false }: BarAlertsProps) => {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[320px]">
-          <BarChart data={data} margin={{ left: 12, right: 12 }}>
+          <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis dataKey="siloName" tickLine={false} axisLine={false} interval={0} angle={-15} textAnchor="end" />
             <YAxis width={40} tickLine={false} axisLine={false} />
-            <Tooltip content={<ChartTooltipContent />} />
+            <Tooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value, name, entry) => tooltipFormatter(value, name, entry)}
+                  labelFormatter={tooltipLabelFormatter}
+                />
+              }
+            />
             <Legend />
-            <Bar dataKey="total" fill="var(--color-total)" radius={[4, 4, 0, 0]} name="Alertas" />
-            <Bar dataKey="critical" fill="var(--color-critical)" radius={[4, 4, 0, 0]} name="Críticos" />
+            <Bar
+              dataKey="nonCritical"
+              stackId="alerts"
+              fill="var(--color-nonCritical)"
+              radius={[4, 4, 0, 0]}
+              name="Alertas"
+            />
+            <Bar
+              dataKey="critical"
+              stackId="alerts"
+              fill="var(--color-critical)"
+              radius={[4, 4, 0, 0]}
+              name="Críticos"
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

@@ -7,6 +7,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import type { TemperatureSeriesPoint } from '@/lib/metrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +50,47 @@ export const LineTemperature = ({ data, isLoading = false }: LineTemperatureProp
     );
   }
 
+  if (data.length === 0) {
+    return (
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Temperatura por período</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
+            Nenhum dado encontrado.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const labelFormatter: TooltipProps['labelFormatter'] = (_, payload) => {
+    const rawTimestamp = payload?.[0]?.payload?.timestamp as Date | string | undefined;
+
+    if (!rawTimestamp) {
+      return '';
+    }
+
+    const timestamp = rawTimestamp instanceof Date ? rawTimestamp : new Date(rawTimestamp);
+    if (Number.isNaN(timestamp.getTime())) {
+      return '';
+    }
+
+    return format(timestamp, 'dd/MM HH:mm', { locale: ptBR });
+  };
+
+  const valueFormatter: TooltipProps['formatter'] = (value, name) => {
+    if (typeof value !== 'number') {
+      return [value, name];
+    }
+
+    return [
+      `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 0 })} °C`,
+      name,
+    ];
+  };
+
   return (
     <Card className="border-border/60">
       <CardHeader>
@@ -58,7 +102,11 @@ export const LineTemperature = ({ data, isLoading = false }: LineTemperatureProp
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} />
             <YAxis width={40} tickLine={false} axisLine={false} unit="°C" />
-            <Tooltip content={<ChartTooltipContent />} />
+            <Tooltip
+              content={
+                <ChartTooltipContent labelFormatter={labelFormatter} formatter={valueFormatter} />
+              }
+            />
             <Legend />
             <Line
               type="monotone"
