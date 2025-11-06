@@ -102,6 +102,27 @@ export const DashboardPage = () => {
     }
   }, [query.data, query.status]);
 
+  useEffect(() => {
+    console.info('[Dashboard] Estado da consulta atualizado.', {
+      status: query.status,
+      isFetching: query.isFetching,
+      isLoading: query.isLoading,
+      isError: query.isError,
+    });
+  }, [query.isError, query.isFetching, query.isLoading, query.status]);
+
+  useEffect(() => {
+    if (query.data) {
+      console.debug('[Dashboard] Dados recebidos do backend.', {
+        totalRegistros: query.data.length,
+        primeiroPeriodo: query.data[0]?.periodStart?.toISOString() ?? null,
+        ultimoPeriodo: query.data[query.data.length - 1]?.periodEnd?.toISOString() ?? null,
+      });
+    } else if (!query.isLoading) {
+      console.debug('[Dashboard] Nenhum dado retornado para o dashboard.');
+    }
+  }, [query.data, query.isLoading]);
+
   const dataset = query.data ?? previousDataRef.current ?? [];
 
   const [minDate, maxDate] = useMemo(() => {
@@ -132,6 +153,43 @@ export const DashboardPage = () => {
   const filtersDescription = useMemo(() => describeFilters(filters), [filters]);
 
   useEffect(() => {
+    console.info('[Dashboard] Filtros atualizados.', filters);
+  }, [filters]);
+
+  useEffect(() => {
+    console.debug('[Dashboard] Resultado dos filtros aplicado.', {
+      totalOriginal: dataset.length,
+      totalFiltrado: filteredData.length,
+    });
+  }, [dataset, filteredData]);
+
+  useEffect(() => {
+    console.debug('[Dashboard] Opções de silos recalculadas.', {
+      totalSilos: siloOptions.length,
+    });
+  }, [siloOptions]);
+
+  useEffect(() => {
+    console.debug('[Dashboard] Métricas consolidadas atualizadas.', {
+      totalKpis: metrics.kpis.length,
+      temperaturaSeries: metrics.temperatureSeries.length,
+      umidadeSeries: metrics.humiditySeries.length,
+      alertas: metrics.alertsBySilo.length,
+      distribuicoes: metrics.distribution.length,
+      linhasTabela: metrics.tableRows.length,
+    });
+  }, [metrics]);
+
+  useEffect(() => {
+    const possuiDadosAntigos = (previousDataRef.current?.length ?? 0) > 0;
+    console.info('[Dashboard] Estado de dados vazios atualizado.', {
+      exibindoEstadoVazio: filteredData.length === 0,
+      carregandoSkeleton: query.isLoading && !possuiDadosAntigos,
+      possuiDadosAntigos,
+    });
+  }, [filteredData.length, query.isLoading, query.status]);
+
+  useEffect(() => {
     if (query.isError) {
       const message = query.error instanceof Error ? query.error.message : 'Erro ao carregar dados.';
       console.error('Erro ao carregar agregações do dashboard:', query.error);
@@ -140,6 +198,10 @@ export const DashboardPage = () => {
   }, [query.error, query.isError]);
 
   const handleDateChange = (range: DayPickerRange | undefined) => {
+    console.info('[Dashboard] Intervalo de datas alterado.', {
+      de: range?.from?.toISOString() ?? null,
+      ate: range?.to?.toISOString() ?? null,
+    });
     setFilters((previous) => ({
       ...previous,
       dateRange: {
@@ -150,6 +212,7 @@ export const DashboardPage = () => {
   };
 
   const handleSiloChange = (next: string[]) => {
+    console.info('[Dashboard] Seleção de silos alterada.', { totalSelecionados: next.length, selecionados: next });
     setFilters((previous) => ({
       ...previous,
       silos: next,
@@ -157,7 +220,9 @@ export const DashboardPage = () => {
   };
 
   const handleRefetch = async () => {
+    console.info('[Dashboard] Atualização manual iniciada pelo usuário.');
     const result = await query.refetch({ cancelRefetch: false });
+    console.info('[Dashboard] Atualização manual finalizada.', { status: result.status });
     if (result.status === 'success') {
       toast.success('Dados atualizados com sucesso.');
     } else {
