@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RealtimeMockProvider } from '@/contexts/RealtimeMockProvider';
 
 import { AuthProvider } from './providers/AuthProvider';
@@ -22,6 +23,9 @@ const App = ({ children }: AppProps) => {
               {children}
             </RealtimeMockProvider>
             <Toaster richColors closeButton />
+            {import.meta.env.DEV ? (
+              <ReactQueryDevtools buttonPosition="bottom-left" />
+            ) : null}
           </SidebarProvider>
         </MobileProvider>
       </ThemeProvider>
