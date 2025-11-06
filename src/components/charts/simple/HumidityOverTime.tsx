@@ -51,42 +51,50 @@ export function HumidityOverTime({
   }, [data]);
 
   return (
-    <div style={{ width: '100%', height }}>
-      <ResponsiveContainer>
-        <LineChart data={rows} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            type="number"
-            dataKey="t"
-            domain={['dataMin', 'dataMax']}
-            minTickGap={24}
-            tickFormatter={(ms) => fmtData(new Date(ms as number))}
-          />
-          <YAxis
-            // umidade geralmente varia menos, dá uma folga de 2pp
-            domain={['dataMin - 2', 'dataMax + 2']}
-            tickFormatter={(v: number) => fmtHum(v)}
-            width={56}
-          />
-          <Tooltip
-            labelFormatter={(ms) => fmtData(new Date(ms as number))}
-            formatter={(v: number | string, name) => {
-              const label =
-                name === 'avg' ? 'Umidade média (%)'
-                : name === 'max' ? 'Máxima (%)'
-                : name === 'min' ? 'Mínima (%)'
-                : name;
-              return [typeof v === 'number' ? fmtHum(v) : v, label];
-            }}
-          />
-          <Legend />
+    <figure className="flex h-full w-full flex-col gap-3">
+      <figcaption className="space-y-1">
+        <h3 className="text-lg font-semibold">Umidade relativa ao longo do tempo</h3>
+        <p className="text-sm text-muted-foreground">
+          Série de umidade média, mínima e máxima observada nas leituras do intervalo escolhido.
+        </p>
+      </figcaption>
+      <div style={{ width: '100%', height }}>
+        <ResponsiveContainer>
+          <LineChart data={rows} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              type="number"
+              dataKey="t"
+              domain={['dataMin', 'dataMax']}
+              minTickGap={24}
+              tickFormatter={(ms) => fmtData(new Date(ms as number))}
+            />
+            <YAxis
+              // umidade geralmente varia menos, dá uma folga de 2pp
+              domain={['dataMin - 2', 'dataMax + 2']}
+              tickFormatter={(v: number) => fmtHum(v)}
+              width={56}
+            />
+            <Tooltip
+              labelFormatter={(ms) => fmtData(new Date(ms as number))}
+              formatter={(v: number | string, name) => {
+                const label =
+                  name === 'avg' ? 'Umidade média (%)'
+                    : name === 'max' ? 'Máxima (%)'
+                      : name === 'min' ? 'Mínima (%)'
+                        : name;
+                return [typeof v === 'number' ? fmtHum(v) : v, label];
+              }}
+            />
+            <Legend />
 
-          {/* Linhas principais */}
-          <Line type="monotone" dataKey="avg" name="Umidade média (%)" stroke="#0ea5e9" strokeWidth={2} dot connectNulls />
-          <Line type="monotone" dataKey="max" name="Máxima (%)" stroke="#0369a1" strokeWidth={2} dot={false} connectNulls />
-          <Line type="monotone" dataKey="min" name="Mínima (%)" stroke="#22d3ee" strokeWidth={2} dot={false} connectNulls />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+            {/* Linhas principais */}
+            <Line type="monotone" dataKey="avg" name="Umidade média (%)" stroke="#0ea5e9" strokeWidth={2} dot connectNulls />
+            <Line type="monotone" dataKey="max" name="Máxima (%)" stroke="#0369a1" strokeWidth={2} dot={false} connectNulls />
+            <Line type="monotone" dataKey="min" name="Mínima (%)" stroke="#22d3ee" strokeWidth={2} dot={false} connectNulls />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </figure>
   );
 }

@@ -37,41 +37,49 @@ export function EnvironmentScoreOverTime({
   }, [data]);
 
   return (
-    <div style={{ width: '100%', height }}>
-      <ResponsiveContainer>
-        <LineChart
-          data={rows}
-          margin={{ left: 12, right: 12, top: 8, bottom: 8 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            type="number"
-            dataKey="t"
-            domain={['dataMin', 'dataMax']}
-            tickFormatter={(ms) => fmtDate(new Date(ms as number))}
-            minTickGap={24}
-          />
-          <YAxis domain={[0, 100]} tickFormatter={(v) => fmtScore(v)} width={48} />
-          <Tooltip
-            labelFormatter={(ms) => fmtDate(new Date(ms as number))}
-            formatter={(v: number) => [`${fmtScore(v)} pts`, 'Environment Score']}
-          />
+    <figure className="flex h-full w-full flex-col gap-3">
+      <figcaption className="space-y-1">
+        <h3 className="text-lg font-semibold">Pontuação ambiental ao longo do tempo</h3>
+        <p className="text-sm text-muted-foreground">
+          Evolução do environment score consolidado para o período analisado.
+        </p>
+      </figcaption>
+      <div style={{ width: '100%', height }}>
+        <ResponsiveContainer>
+          <LineChart
+            data={rows}
+            margin={{ left: 12, right: 12, top: 8, bottom: 8 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              type="number"
+              dataKey="t"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(ms) => fmtDate(new Date(ms as number))}
+              minTickGap={24}
+            />
+            <YAxis domain={[0, 100]} tickFormatter={(v) => fmtScore(v)} width={48} />
+            <Tooltip
+              labelFormatter={(ms) => fmtDate(new Date(ms as number))}
+              formatter={(v: number) => [`${fmtScore(v)} pts`, 'Environment Score']}
+            />
 
-          {/* zonas de qualidade */}
-          <ReferenceArea y1={90} y2={100} fill="#22c55e40" stroke="none" /> {/* verde */}
-          <ReferenceArea y1={70} y2={90} fill="#facc1540" stroke="none" /> {/* amarelo */}
-          <ReferenceArea y1={0} y2={70} fill="#ef444440" stroke="none" /> {/* vermelho */}
+            {/* zonas de qualidade */}
+            <ReferenceArea y1={90} y2={100} fill="#22c55e40" stroke="none" /> {/* verde */}
+            <ReferenceArea y1={70} y2={90} fill="#facc1540" stroke="none" /> {/* amarelo */}
+            <ReferenceArea y1={0} y2={70} fill="#ef444440" stroke="none" /> {/* vermelho */}
 
-          <Line
-            type="monotone"
-            dataKey="score"
-            name="Condição do ambiente"
-            stroke="#0ea5e9"
-            strokeWidth={2}
-            dot={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+            <Line
+              type="monotone"
+              dataKey="score"
+              name="Condição do ambiente"
+              stroke="#0ea5e9"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </figure>
   );
 }
