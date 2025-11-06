@@ -2,11 +2,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import type { DataProcessRecord } from './api';
-import { formatPeriodRange, formatZonedDate } from './date';
+import { formatDateRange } from './date';
+
+export interface DashboardDateRangeFilter {
+  from: Date | null;
+  to: Date | null;
+}
 
 export interface DashboardFilters {
-  from?: Date;
-  to?: Date;
+  dateRange: DashboardDateRangeFilter;
   silos: string[];
 }
 
@@ -74,6 +78,7 @@ export interface DashboardMetrics {
 }
 
 export const defaultFilters: DashboardFilters = {
+  dateRange: { from: null, to: null },
   silos: [],
 };
 
@@ -124,7 +129,10 @@ export const applyDashboardFilters = (
   data: DataProcessRecord[],
   filters: DashboardFilters,
 ): DataProcessRecord[] => {
-  const { from, to, silos } = filters;
+  const {
+    dateRange: { from, to },
+    silos,
+  } = filters;
 
   return data.filter((record) => {
     if (from && record.periodStart < from) {
@@ -311,16 +319,9 @@ export const createDashboardMetrics = (
 export const describeFilters = (filters: DashboardFilters) => {
   const parts: string[] = [];
 
-  if (filters.from || filters.to) {
-    parts.push(
-      filters.from && filters.to
-        ? `Período: ${formatPeriodRange(filters.from, filters.to)}`
-        : filters.from
-          ? `A partir de ${formatZonedDate(filters.from, 'dd/MM/yyyy')}`
-          : filters.to
-            ? `Até ${formatZonedDate(filters.to, 'dd/MM/yyyy')}`
-            : '',
-    );
+  const formattedRange = formatDateRange(filters.dateRange);
+  if (formattedRange) {
+    parts.push(`Período: ${formattedRange}`);
   }
 
   if (filters.silos.length > 0) {
