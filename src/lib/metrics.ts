@@ -61,6 +61,7 @@ export interface DashboardDateRangeFilter {
 export interface DashboardFilters {
   dateRange: DashboardDateRangeFilter;
   silos: string[];
+  rangePreset: string | null;
 }
 
 export interface DashboardKpi {
@@ -137,6 +138,7 @@ export interface DashboardMetrics {
 export const defaultFilters: DashboardFilters = {
   dateRange: { from: null, to: null },
   silos: [],
+  rangePreset: null,
 };
 
 const computeChange = (

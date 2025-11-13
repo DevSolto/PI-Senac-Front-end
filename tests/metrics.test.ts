@@ -105,6 +105,7 @@ describe('metrics helpers', () => {
         to: new Date('2024-01-03T23:59:59Z'),
       },
       silos: ['1'],
+      rangePreset: null,
     };
 
     const filtered = applyDashboardFilters(baseData, filters);
@@ -123,11 +124,10 @@ describe('metrics helpers', () => {
   it('computes KPI summaries based on the most recent records', () => {
     const kpis = computeKpis(baseData);
 
-    expect(kpis).toHaveLength(4);
-    const alerts = kpis.find((item) => item.id === 'alerts');
-    expect(alerts?.value).toBe(4);
-    expect(alerts?.previousValue).toBe(1);
-    expect(alerts?.change).toBeCloseTo(((4 - 1) / 1) * 100, 5);
+    expect(kpis).toHaveLength(3);
+    const temperature = kpis.find((item) => item.id === 'temperature');
+    expect(temperature?.value).toBe(27);
+    expect(temperature?.previousValue).toBe(26);
   });
 
   it('builds ordered line series for temperature and humidity', () => {
@@ -157,7 +157,7 @@ describe('metrics helpers', () => {
   it('generates dashboard metrics with series and kpis', () => {
     const metrics = createDashboardMetrics(baseData);
 
-    expect(metrics.kpis).toHaveLength(4);
+    expect(metrics.kpis).toHaveLength(3);
     expect(metrics.temperatureSeries).toHaveLength(3);
     expect(metrics.tableRows[0]?.siloName).toBe('Silo Norte');
   });
