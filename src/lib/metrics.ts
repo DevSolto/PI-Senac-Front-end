@@ -128,6 +128,7 @@ export interface DashboardMetrics {
   kpis: DashboardKpi[];
   temperatureSeries: TemperatureSeriesPoint[];
   humiditySeries: HumiditySeriesPoint[];
+  airQualitySeries: AirQualitySeriesPoint[];
   alertsBySilo: AlertsBySiloPoint[];
   distribution: DistributionDataset[];
   tableRows: TableRow[];
@@ -187,12 +188,10 @@ export function computeKpis(data: ReadDataProcess[]): KpiSummary {
   const temperatureKpi = extractKpiValue(sorted, (item) => item.averageTemperature);
   const humidityKpi = extractKpiValue(sorted, (item) => item.averageHumidity);
   const environmentKpi = extractKpiValue(sorted, (item) => item.environmentScore);
-  const alertsKpi = extractKpiValue(sorted, (item) => item.alertsCount);
 
   const { change: temperatureChange } = computeChange(temperatureKpi.current, temperatureKpi.previous);
   const { change: humidityChange } = computeChange(humidityKpi.current, humidityKpi.previous);
   const { change: environmentChange } = computeChange(environmentKpi.current, environmentKpi.previous);
-  const { change: alertsChange } = computeChange(alertsKpi.current, alertsKpi.previous);
 
   return [
     {
@@ -220,15 +219,6 @@ export function computeKpis(data: ReadDataProcess[]): KpiSummary {
       value: normalizeNumber(environmentKpi.current, 0),
       previousValue: normalizeNumber(environmentKpi.previous, 0),
       change: environmentChange,
-      decimals: 0,
-      invertTrend: true,
-    },
-    {
-      id: 'alerts',
-      title: 'Alertas recentes',
-      value: normalizeNumber(alertsKpi.current, 0),
-      previousValue: normalizeNumber(alertsKpi.previous, 0),
-      change: alertsChange,
       decimals: 0,
       invertTrend: true,
     },
@@ -296,6 +286,19 @@ const buildHumiditySeries = (data: DataProcessRecord[]): HumiditySeriesPoint[] =
     min: item.minHumidity,
     max: item.maxHumidity,
     percentOverLimit: item.percentOverHumLimit,
+  }));
+
+export interface AirQualitySeriesPoint {
+  timestamp: Date;
+  label: string;
+  average: number | null;
+}
+
+const buildAirQualitySeries = (data: DataProcessRecord[]): AirQualitySeriesPoint[] =>
+  data.map((item) => ({
+    timestamp: item.periodStart,
+    label: toSeriesLabel(item.periodStart),
+    average: item.averageAirQuality ?? null,
   }));
 
 export function buildLineSeries(
@@ -443,6 +446,7 @@ export const createDashboardMetrics = (
     kpis: computeKpis(sorted),
     temperatureSeries: buildLineSeries(sorted, 'averageTemperature') as TemperatureSeriesPoint[],
     humiditySeries: buildLineSeries(sorted, 'averageHumidity') as HumiditySeriesPoint[],
+    airQualitySeries: buildAirQualitySeries(sorted),
     alertsBySilo: buildAlertsStack(sorted),
     distribution: buildPieDistributions(sorted),
     tableRows: buildTableRows(sorted),
