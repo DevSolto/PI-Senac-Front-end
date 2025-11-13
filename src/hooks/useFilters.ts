@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 
 import type { DashboardFilters } from '@/lib/metrics';
+import { DEFAULT_DATE_RANGE_PRESET, isValidRangePreset } from '@/lib/date-range-presets';
 
 const DATE_FORMAT = 'yyyy-MM-dd';
 
@@ -23,15 +24,24 @@ const parseDateParam = (value: string | null) => {
 const parseFilters = (params: URLSearchParams): DashboardFilters => {
   const from = parseDateParam(params.get('from'));
   const to = parseDateParam(params.get('to'));
+  const rangeParam = params.get('range');
   const silosParam = params.get('silos') ?? '';
   const silos = silosParam
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
 
+  const hasManualRange = from !== null || to !== null;
+  const rangePreset = hasManualRange
+    ? null
+    : isValidRangePreset(rangeParam)
+      ? rangeParam
+      : DEFAULT_DATE_RANGE_PRESET;
+
   return {
     dateRange: { from, to },
     silos,
+    rangePreset,
   };
 };
 
@@ -46,6 +56,10 @@ const buildSearchParams = (filters: DashboardFilters) => {
 
   if (to) {
     params.set('to', format(to, DATE_FORMAT));
+  }
+
+  if (filters.rangePreset) {
+    params.set('range', filters.rangePreset);
   }
 
   if (filters.silos.length > 0) {

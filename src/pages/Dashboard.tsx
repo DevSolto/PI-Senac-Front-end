@@ -2,11 +2,9 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import type { DateRange as DayPickerRange } from 'react-day-picker';
 import { toast } from 'sonner';
-import { ptBR } from 'date-fns/locale';
 
-import { DateRange } from '@/components/filters/DateRange';
+import { RangeSelect } from '@/components/filters/RangeSelect';
 import { SiloMultiSelect } from '@/components/filters/SiloMultiSelect';
 import { KpiCard } from '@/components/kpi/KpiCard';
 import type { KpiTrend } from '@/components/kpi/KpiCard';
@@ -25,6 +23,12 @@ import {
   extractSiloOptions,
   type DashboardKpi,
 } from '@/lib/metrics';
+import {
+  computePresetDateRange,
+  DATE_RANGE_PRESETS,
+  findMatchingPreset,
+  isSameDateRange,
+} from '@/lib/date-range-presets';
 import { TemperatureOverTime } from '@/components/charts/simple/TemperatureOverTime';
 import { HumidityOverTime } from '@/components/charts/simple/HumidityOverTime';
 import { AirQualityOverTime } from '@/components/charts/simple/AirQualityOverTime';
@@ -147,11 +151,39 @@ export const DashboardPage = () => {
     return [min, max] as const;
   }, [dataset]);
 
+  useEffect(() => {
+    if (!filters.rangePreset) {
+      return;
+    }
+
+    const targetRange = computePresetDateRange(filters.rangePreset, minDate ?? null, maxDate ?? null);
+    if (isSameDateRange(filters.dateRange, targetRange)) {
+      return;
+    }
+
+    setFilters((previous) => ({
+      ...previous,
+      dateRange: targetRange,
+    }));
+  }, [filters.dateRange, filters.rangePreset, maxDate, minDate, setFilters]);
+
   const filteredData = useMemo(() => applyDashboardFilters(dataset, filters), [dataset, filters]);
 
   const metrics = useMemo(() => createDashboardMetrics(filteredData), [filteredData]);
   const siloOptions = useMemo(() => (dataset.length > 0 ? extractSiloOptions(dataset) : []), [dataset]);
   const filtersDescription = useMemo(() => describeFilters(filters), [filters]);
+  const rangeOptions = useMemo(
+    () => DATE_RANGE_PRESETS.map((preset) => ({
+      value: preset.id,
+      label: preset.label,
+      description: preset.description,
+    })),
+    [],
+  );
+  const selectedRangePreset = useMemo(
+    () => filters.rangePreset ?? findMatchingPreset(filters.dateRange, minDate ?? null, maxDate ?? null),
+    [filters.dateRange, filters.rangePreset, maxDate, minDate],
+  );
   useEffect(() => {
     console.info('[Dashboard] Filtros atualizados.', filters);
   }, [filters]);
@@ -197,17 +229,13 @@ export const DashboardPage = () => {
     }
   }, [query.error, query.isError]);
 
-  const handleDateChange = (range: DayPickerRange | undefined) => {
-    console.info('[Dashboard] Intervalo de datas alterado.', {
-      de: range?.from?.toISOString() ?? null,
-      ate: range?.to?.toISOString() ?? null,
-    });
+  const handleRangeChange = (presetId: string) => {
+    console.info('[Dashboard] Intervalo predefinido selecionado.', { presetId });
+    const nextRange = computePresetDateRange(presetId, minDate ?? null, maxDate ?? null);
     setFilters((previous) => ({
       ...previous,
-      dateRange: {
-        from: range?.from ?? null,
-        to: range?.to ?? null,
-      },
+      rangePreset: presetId,
+      dateRange: nextRange,
     }));
   };
 
@@ -259,16 +287,11 @@ export const DashboardPage = () => {
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-          <DateRange
-            value={{
-              from: filters.dateRange.from ?? undefined,
-              to: filters.dateRange.to ?? undefined,
-            }}
-            onChange={handleDateChange}
-            disabled={isLoading}
-            minDate={minDate}
-            maxDate={maxDate}
-            locale={ptBR}
+          <RangeSelect
+            value={selectedRangePreset}
+            options={rangeOptions}
+            onChange={handleRangeChange}
+            disabled={isLoading || dataset.length === 0}
           />
           <SiloMultiSelect
             options={siloOptions}
