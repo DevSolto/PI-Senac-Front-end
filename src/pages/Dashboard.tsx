@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { AlertTriangle, Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
+import { Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { DateRange as DayPickerRange } from 'react-day-picker';
 import { toast } from 'sonner';
@@ -84,7 +84,6 @@ const kpiIcons: Record<string, ReactNode> = {
   temperature: <ThermometerSun className="h-5 w-5" />,
   humidity: <Droplets className="h-5 w-5" />,
   environment: <Gauge className="h-5 w-5" />,
-  alerts: <AlertTriangle className="h-5 w-5" />,
 };
 
 export const DashboardPage = () => {
@@ -319,9 +318,16 @@ export const DashboardPage = () => {
           </div>
         </div>
       ) : null}
-      <div className="grid gap-8 lg:grid-cols-3 xl:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-2">
         <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
         <HumidityOverTime data={metrics.humiditySeries} height={300} />
+        <AirQualityOverTime
+          data={metrics.airQualitySeries.map((point) => ({
+            timestamp: point.timestamp,
+            average: point.average,
+          }))}
+          height={300}
+        />
         <EnvironmentScoreOverTime
           data={metrics.tableRows.map((r) => ({
             timestamp: r.periodStart,
