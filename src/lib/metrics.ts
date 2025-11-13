@@ -397,16 +397,6 @@ const buildDistribution = (data: DataProcessRecord[]): DistributionDataset[] => 
       ],
     },
     {
-      id: 'alerts',
-      label: 'Situação de alertas',
-      description: 'Presença de alertas e criticidade nos períodos monitorados.',
-      data: [
-        { id: 'none', label: 'Sem alertas', value: alertsNone, color: 'hsl(var(--chart-4))' },
-        { id: 'warning', label: 'Com alertas', value: alertsWarning, color: 'hsl(var(--chart-6))' },
-        { id: 'critical', label: 'Com críticos', value: alertsCritical, color: 'hsl(var(--chart-7))' },
-      ],
-    },
-    {
       id: 'humidity',
       label: 'Exposição à umidade',
       description: 'Percentual de registros acima do limite de umidade.',
