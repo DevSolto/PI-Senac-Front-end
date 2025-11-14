@@ -14,10 +14,9 @@ export type DateRangePresetId = DateRangePreset['id'];
 export const DEFAULT_DATE_RANGE_PRESET: DateRangePresetId = '90d';
 
 export const DATE_RANGE_PRESETS: DateRangePreset[] = [
-  { id: '30d', label: 'Últimos 30 dias', days: 30 },
+  { id: '30d', label: 'Últimos 30 dias', days: 30 },´
   { id: '60d', label: 'Últimos 60 dias', days: 60 },
   { id: '90d', label: 'Últimos 90 dias', days: 90 },
-  { id: '180d', label: 'Últimos 180 dias', days: 180 },
   { id: 'all', label: 'Período completo' },
 ];
 
