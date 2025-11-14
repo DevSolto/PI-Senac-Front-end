@@ -12,7 +12,6 @@ import {
 } from 'recharts';
 
 import { fmtData } from '@/lib/formatters';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 // formatador simples de AQI
 function fmtAQI(v: number) {
@@ -53,18 +52,14 @@ export function AirQualityOverTime({
   }, [data]);
 
   return (
-    <Card>
     <figure className="flex h-full w-full flex-col gap-3">
       <figcaption className="space-y-1">
-          <CardHeader>
         <h3 className="text-lg font-semibold">Qualidade do ar média</h3>
         <p className="text-sm text-muted-foreground">
           Indicador de qualidade do ar (AQI) agregado por período para os silos monitorados.
         </p>
-          </CardHeader>
       </figcaption>
-        <CardContent>
-          <div style={{ width: '100%', height }}>
+      <div style={{ width: '100%', height }}>
         <ResponsiveContainer>
           <LineChart data={rows} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -101,8 +96,6 @@ export function AirQualityOverTime({
           </LineChart>
         </ResponsiveContainer>
       </div>
-        </CardContent>
     </figure>
-    </Card>
   );
 }
