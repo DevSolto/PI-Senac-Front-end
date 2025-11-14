@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export const DevicesPage = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dispositivos IoT</h1>
-        <p className="text-muted-foreground">Acompanhe o estado dos dispositivos vinculados aos silos.</p>
+      <div className="space-y-4">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Dispositivos IoT</h1>
+        <div className="max-w-prose text-base leading-relaxed text-muted-foreground">
+          <p>Acompanhe o estado dos dispositivos vinculados aos silos.</p>
+        </div>
       </div>
 
       <Card>

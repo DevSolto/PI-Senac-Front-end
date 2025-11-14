@@ -15,10 +15,12 @@ const alerts = [
 export function AlertsPage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Alerts & Notifications</h1>
-          <p className="text-muted-foreground">Real-time alerts and system notifications</p>
+      <div className="space-y-4 lg:flex lg:items-end lg:justify-between">
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Alerts & Notifications</h1>
+          <div className="max-w-prose text-base leading-relaxed text-muted-foreground">
+            <p>Real-time alerts and system notifications</p>
+          </div>
         </div>
         <Button variant="outline">
           <CheckCircle2 className="w-4 h-4 mr-2" />
