@@ -29,28 +29,28 @@ export function AlertsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-agro-red">Critical</CardTitle>
+            <CardTitle className="text-red-600">Critical</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-agro-red">2</div>
+            <div className="text-2xl font-bold text-red-600">2</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-agro-orange">High</CardTitle>
+            <CardTitle className="text-orange-500">High</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-agro-orange">3</div>
+            <div className="text-2xl font-bold text-orange-500">3</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-agro-yellow">Medium</CardTitle>
+            <CardTitle className="text-yellow-500">Medium</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-agro-yellow">5</div>
+            <div className="text-2xl font-bold text-yellow-500">5</div>
           </CardContent>
         </Card>
 

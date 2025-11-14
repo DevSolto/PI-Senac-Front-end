@@ -78,7 +78,7 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
         <div className="absolute left-0 top-0 h-full w-80 bg-sidebar border-r border-sidebar-border">
           <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-agro-green rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -111,7 +111,7 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
     <div className="w-64 flex flex-col bg-sidebar border-r border-sidebar-border">
       <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-agro-green rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
             <Leaf className="w-5 h-5 text-white" />
           </div>
           <div>
