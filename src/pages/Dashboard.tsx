@@ -286,7 +286,7 @@ export const DashboardPage = () => {
           {filtersDescription ? <p className="text-sm text-muted-foreground">{filtersDescription}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+        <div className="flex gap-4 ">
           <RangeSelect
             value={selectedRangePreset}
             options={rangeOptions}
@@ -299,10 +299,6 @@ export const DashboardPage = () => {
             onChange={handleSiloChange}
             disabled={isLoading || siloOptions.length === 0}
           />
-          <Button onClick={handleRefetch} disabled={query.isFetching} className="md:ml-2">
-            {query.isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCw className="mr-2 h-4 w-4" />}
-            Atualizar agora
-          </Button>
         </div>
       </div>
 
