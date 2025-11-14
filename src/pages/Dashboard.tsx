@@ -271,13 +271,13 @@ export const DashboardPage = () => {
   const showErrorAlert = query.isError;
 
   return (
-    <div className="space-y-10 xl:space-y-12">
+    <div className="flex flex-col gap-8 lg:gap-10 xl:gap-12">
       <div
         ref={filtersContainerRef}
-        className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between"
+        className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between xl:gap-8"
       >
-        <div className="space-y-2">
-          <div>
+        <div className="space-y-3">
+          <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">Painel operacional</h1>
             <p className="text-muted-foreground">
               Acompanhe indicadores ambientais consolidados dos silos monitorados.
@@ -286,7 +286,7 @@ export const DashboardPage = () => {
           {filtersDescription ? <p className="text-sm text-muted-foreground">{filtersDescription}</p> : null}
         </div>
 
-        <div className="flex gap-4 ">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <RangeSelect
             value={selectedRangePreset}
             options={rangeOptions}
@@ -305,7 +305,7 @@ export const DashboardPage = () => {
       {showErrorAlert ? (
         <Alert variant="destructive" role="alert">
           <AlertTitle>Erro ao carregar dados</AlertTitle>
-          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <AlertDescription className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <span>Não foi possível carregar as métricas neste momento. Tente novamente.</span>
             <Button variant="secondary" size="sm" onClick={handleRefetch}>
               Tentar novamente
@@ -314,30 +314,33 @@ export const DashboardPage = () => {
         </Alert>
       ) : null}
 
-      <div className="grid gap-6 md:grid-cols-4 xl:grid-cols-4">
-        {metrics.kpis.map((metric) => (
-          <KpiCard
-            key={metric.id}
-            label={metric.title}
-            value={formatMetricValue(metric)}
-            trend={buildTrend(metric)}
-            icon={kpiIcons[metric.id] ?? null}
-            isLoading={showSkeletons}
-          />
-        ))}
-      </div>
-
-      {showEmptyState ? (
-        <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-          <div className="flex flex-col items-center justify-center gap-3">
-            <span>Nenhum dado encontrado para os filtros selecionados.</span>
-            <Button variant="outline" size="sm" onClick={handleAdjustFilters}>
-              Ajustar filtros
-            </Button>
-          </div>
+      <section className="flex flex-col gap-6">
+        <div className="grid gap-7 md:grid-cols-4 xl:grid-cols-4">
+          {metrics.kpis.map((metric) => (
+            <KpiCard
+              key={metric.id}
+              label={metric.title}
+              value={formatMetricValue(metric)}
+              trend={buildTrend(metric)}
+              icon={kpiIcons[metric.id] ?? null}
+              isLoading={showSkeletons}
+            />
+          ))}
         </div>
-      ) : null}
-      <div className="grid gap-8 lg:grid-cols-2">
+
+        {showEmptyState ? (
+          <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-3">
+              <span>Nenhum dado encontrado para os filtros selecionados.</span>
+              <Button variant="outline" size="sm" onClick={handleAdjustFilters}>
+                Ajustar filtros
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <div className="grid gap-8 lg:grid-cols-2 xl:gap-10">
         <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
         <HumidityOverTime data={metrics.humiditySeries} height={300} />
         <AirQualityOverTime
@@ -355,34 +358,32 @@ export const DashboardPage = () => {
         />
       </div>
 
-      <Card className="border-border/60">
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-lg font-semibold">Histórico de agregações</CardTitle>
-          {isRefreshing ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground"
-                  aria-label="Atualizando dados em segundo plano"
-                  role="status"
-                >
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="left">Atualizando dados em segundo plano…</TooltipContent>
-            </Tooltip>
-          ) : null}
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <DataTable rows={metrics.tableRows} isLoading={showSkeletons} />
-          </div>
-        </CardContent>
-      </Card>
-
-
-
-
+      <section className="flex flex-col gap-4">
+        <Card className="border-border/60">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-lg font-semibold">Histórico de agregações</CardTitle>
+            {isRefreshing ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground"
+                    aria-label="Atualizando dados em segundo plano"
+                    role="status"
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="left">Atualizando dados em segundo plano…</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="overflow-x-auto">
+              <DataTable rows={metrics.tableRows} isLoading={showSkeletons} />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 };
