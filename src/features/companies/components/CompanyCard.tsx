@@ -23,7 +23,7 @@ export function CompanyCard({ company, showId = false }: CompanyCardProps) {
     <Card data-company-id={company.id}>
       <CardHeader className="gap-2">
         <div className="space-y-1">
-          <CardTitle className="text-xl font-semibold leading-tight">
+          <CardTitle className="text-xl leading-tight">
             {company.name}
           </CardTitle>
           {showId ? (

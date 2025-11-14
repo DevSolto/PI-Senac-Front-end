@@ -361,7 +361,7 @@ export const DashboardPage = () => {
       <section className="flex flex-col gap-4">
         <Card className="border-border/60">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-lg font-semibold">Histórico de agregações</CardTitle>
+            <CardTitle>Histórico de agregações</CardTitle>
             {isRefreshing ? (
               <Tooltip>
                 <TooltipTrigger asChild>
