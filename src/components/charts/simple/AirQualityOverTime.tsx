@@ -52,7 +52,9 @@ export function AirQualityOverTime({
   }, [data]);
 
   return (
-    <figure className="flex h-full w-full flex-col gap-3">
+    <div className='p-[5px]'>
+
+      <figure className="flex h-full w-full flex-col gap-3 ">
       <figcaption className="space-y-1">
         <h3 className="text-lg font-semibold">Qualidade do ar média</h3>
         <p className="text-sm text-muted-foreground">
@@ -97,5 +99,6 @@ export function AirQualityOverTime({
         </ResponsiveContainer>
       </div>
     </figure>
+    </div>
   );
 }
