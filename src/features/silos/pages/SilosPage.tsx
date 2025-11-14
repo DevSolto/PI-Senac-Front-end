@@ -18,12 +18,14 @@ export const SilosPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Silos</h1>
-          <p className="text-muted-foreground">
-            Acompanhe os silos monitorados, verifique limites ideais e mantenha os ambientes sob controle.
-          </p>
+      <div className="space-y-4 lg:flex lg:items-end lg:justify-between">
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Silos</h1>
+          <div className="max-w-prose text-base leading-relaxed text-muted-foreground">
+            <p>
+              Acompanhe os silos monitorados, verifique limites ideais e mantenha os ambientes sob controle.
+            </p>
+          </div>
         </div>
 
         <CreateSiloDialog onSiloCreated={append} />

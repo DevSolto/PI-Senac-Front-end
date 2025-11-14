@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export const HealthStatusPage = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Status da Aplicação</h1>
-        <p className="text-muted-foreground">Acompanhe o resultado do endpoint de saúde exposto pelo backend.</p>
+      <div className="space-y-4">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Status da Aplicação</h1>
+        <div className="max-w-prose text-base leading-relaxed text-muted-foreground">
+          <p>Acompanhe o resultado do endpoint de saúde exposto pelo backend.</p>
+        </div>
       </div>
 
       <Card>

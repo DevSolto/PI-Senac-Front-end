@@ -18,12 +18,14 @@ export const CompaniesPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Companhias</h1>
-          <p className="text-muted-foreground">
-            Visualize e acompanhe as empresas cadastradas e seus principais indicadores.
-          </p>
+      <div className="space-y-4 lg:flex lg:items-end lg:justify-between">
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Companhias</h1>
+          <div className="max-w-prose text-base leading-relaxed text-muted-foreground">
+            <p>
+              Visualize e acompanhe as empresas cadastradas e seus principais indicadores.
+            </p>
+          </div>
         </div>
 
         <CreateCompanyDialog onCompanyCreated={append} />
