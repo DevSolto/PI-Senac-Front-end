@@ -162,7 +162,7 @@ export function CreateSiloDialog({ onSiloCreated }: CreateSiloDialogProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="dialog-surface dialog-surface--wide dialog-scroll dialog-scroll--tall">
         <DialogHeader>
           <DialogTitle>Novo silo</DialogTitle>
           <DialogDescription>

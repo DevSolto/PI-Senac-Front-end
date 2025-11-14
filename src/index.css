@@ -1551,9 +1551,42 @@
     text-transform: uppercase;
   }
 
-  .underline-offset-4 {
-    text-underline-offset: 4px;
-  }
+.underline-offset-4 {
+  text-underline-offset: 4px;
+}
+
+/*
+ * Utility helpers to keep form surfaces and dialogs proportional to their
+ * content without stretching across the entire viewport.
+ */
+.form-surface {
+  width: min(90vw, 28rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form-surface--wide {
+  width: min(92vw, 34rem);
+}
+
+.dialog-surface {
+  width: min(92vw, 34rem);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dialog-surface--wide {
+  width: min(94vw, 46rem);
+}
+
+.dialog-scroll {
+  max-height: min(90vh, 42rem);
+  overflow-y: auto;
+}
+
+.dialog-scroll--tall {
+  max-height: min(90vh, 52rem);
+}
 
   .opacity-20 {
     opacity: .2;
