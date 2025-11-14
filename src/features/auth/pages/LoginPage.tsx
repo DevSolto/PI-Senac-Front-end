@@ -485,7 +485,7 @@ export const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <Card className="w-full max-w-md">
+      <Card className="form-surface form-surface--wide">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-semibold tracking-tight">
             Acessar plataforma
@@ -691,7 +691,7 @@ export const LoginPage = () => {
       </Card>
 
       <Dialog open={isResetDialogOpen} onOpenChange={handleResetDialogOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="dialog-surface dialog-scroll">
           <DialogHeader>
             <DialogTitle>Perdeu o aplicativo autenticador?</DialogTitle>
             <DialogDescription>

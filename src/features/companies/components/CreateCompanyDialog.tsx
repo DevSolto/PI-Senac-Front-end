@@ -113,7 +113,7 @@ export function CreateCompanyDialog({ onCompanyCreated }: CreateCompanyDialogPro
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="dialog-surface dialog-scroll">
         <DialogHeader>
           <DialogTitle>Nova empresa</DialogTitle>
           <DialogDescription>

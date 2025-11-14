@@ -146,7 +146,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="dialog-surface dialog-surface--wide dialog-scroll">
         <DialogHeader>
           <DialogTitle>Novo usuário</DialogTitle>
           <DialogDescription>
