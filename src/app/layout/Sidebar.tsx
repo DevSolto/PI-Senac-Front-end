@@ -57,7 +57,7 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
         )}
       >
         <Icon className="w-5 h-5 shrink-0" />
-        <span className="truncate">{item.label}</span>
+        <span className="truncate text-sm font-medium">{item.label}</span>
         {item.id === 'alerts' && totalAlerts > 0 && (
           <Badge variant="destructive" className="ml-auto">
             {totalAlerts}
@@ -81,9 +81,9 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
               <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="font-semibold text-sidebar-foreground">PI Senac</h1>
-                <p className="text-xs text-muted-foreground">Projeto Integrador</p>
+              <div className="leading-tight">
+                <p className="text-lg font-semibold tracking-tight text-sidebar-foreground">PI Senac</p>
+                <p className="text-sm leading-snug text-muted-foreground">Projeto Integrador</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={closeSidebar} className="p-2">
@@ -93,12 +93,12 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
 
           <nav className="p-4 space-y-2">
             <div className="mb-4">
-              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Primary</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Primary</h3>
               {primaryTabs.map(renderNavButton)}
             </div>
 
             <div>
-              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Additional</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Additional</h3>
               {secondaryTabs.map(renderNavButton)}
             </div>
           </nav>
@@ -114,9 +114,9 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
           <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
             <Leaf className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="font-semibold text-sidebar-foreground">PI Senac</h1>
-            <p className="text-xs text-muted-foreground">Projeto Integrador</p>
+          <div className="leading-tight">
+            <p className="text-xl font-semibold tracking-tight text-sidebar-foreground">PI Senac</p>
+            <p className="text-sm leading-snug text-muted-foreground">Projeto Integrador</p>
           </div>
         </div>
       </div>
