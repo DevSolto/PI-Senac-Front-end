@@ -24,7 +24,7 @@ export function SiloCard({ silo }: SiloCardProps) {
     <Card data-silo-id={silo.id}>
       <CardHeader className="gap-2">
         <div className="space-y-1">
-          <CardTitle className="text-xl font-semibold leading-tight">{silo.name}</CardTitle>
+          <CardTitle className="text-xl leading-tight">{silo.name}</CardTitle>
 
           <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
             <span className="font-mono">ID {silo.id}</span>

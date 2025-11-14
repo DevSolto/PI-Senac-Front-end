@@ -487,7 +487,7 @@ export const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <Card className="form-surface form-surface--wide">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-semibold tracking-tight">
+          <CardTitle className="text-2xl">
             Acessar plataforma
           </CardTitle>
           <CardDescription>
