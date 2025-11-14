@@ -85,39 +85,39 @@ export const keyMetrics: KeyMetric[] = [
     title: 'Total Hectares',
     value: '12,847',
     icon: Sprout,
-    iconClassName: 'text-agro-green',
+    iconClassName: 'text-emerald-500',
     trend: {
       icon: TrendingUp,
       label: '+2.1% from last season',
-      className: 'text-agro-green',
+      className: 'text-emerald-500',
     },
   },
   {
     title: 'Crop Health Score',
     value: '92%',
     icon: CheckCircle2,
-    iconClassName: 'text-agro-green',
+    iconClassName: 'text-emerald-500',
     progress: 92,
     description: 'Excellent conditions',
-    descriptionClassName: 'text-agro-green',
+    descriptionClassName: 'text-emerald-500',
   },
   {
     title: 'Forecasted Yield',
     value: '18,200',
     icon: TrendingUp,
-    iconClassName: 'text-agro-blue',
+    iconClassName: 'text-sky-500',
     description: 'tons estimated',
-    descriptionClassName: 'text-agro-blue',
+    descriptionClassName: 'text-sky-500',
     trend: {
       label: '+8.3% vs target',
-      className: 'text-agro-green',
+      className: 'text-emerald-500',
     },
   },
   {
     title: 'Active Alerts',
     value: '7',
     icon: AlertTriangle,
-    iconClassName: 'text-agro-orange',
+    iconClassName: 'text-orange-500',
     badges: [
       { label: '3 Critical', variant: 'destructive', className: 'text-xs' },
       { label: '4 Warning', variant: 'secondary', className: 'text-xs' },
@@ -126,10 +126,10 @@ export const keyMetrics: KeyMetric[] = [
 ];
 
 export const quickStats: QuickStat[] = [
-  { icon: Tractor, iconClassName: 'text-agro-orange', value: '24', label: 'Active Machines' },
-  { icon: Satellite, iconClassName: 'text-agro-blue', value: '8', label: 'Drones Deployed' },
-  { icon: Thermometer, iconClassName: 'text-agro-red', value: '74°F', label: 'Avg Temperature' },
-  { icon: DollarSign, iconClassName: 'text-agro-green', value: '$2.4M', label: 'Projected Revenue' },
+  { icon: Tractor, iconClassName: 'text-orange-500', value: '24', label: 'Active Machines' },
+  { icon: Satellite, iconClassName: 'text-sky-500', value: '8', label: 'Drones Deployed' },
+  { icon: Thermometer, iconClassName: 'text-red-500', value: '74°F', label: 'Avg Temperature' },
+  { icon: DollarSign, iconClassName: 'text-emerald-500', value: '$2.4M', label: 'Projected Revenue' },
 ];
 
 export const recentAlerts: Alert[] = [

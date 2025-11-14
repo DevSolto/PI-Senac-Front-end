@@ -100,7 +100,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
                   <div className="relative">
                     <Icon className="w-5 h-5" />
                     {item.id === 'alerts' && totalAlerts > 0 && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-agro-red rounded-full flex items-center justify-center">
+                      <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 flex items-center justify-center">
                         <span className="text-white text-xs">{criticalAlerts}</span>
                       </div>
                     )}
