@@ -56,7 +56,7 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
           isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground',
         )}
       >
-        <Icon className="w-5 h-5 flex-shrink-0" />
+        <Icon className="w-5 h-5 shrink-0" />
         <span className="truncate">{item.label}</span>
         {item.id === 'alerts' && totalAlerts > 0 && (
           <Badge variant="destructive" className="ml-auto">

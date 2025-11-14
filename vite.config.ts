@@ -1,6 +1,8 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+import tailwindcss from "@tailwindcss/vite";
+
 
 const apiProxyRoutes = [
   '/alerts',
@@ -12,6 +14,7 @@ const apiProxyRoutes = [
   '/silos',
   '/users',
 ] as const;
+
 
 type ProxyConfig = { target: string; changeOrigin: boolean; secure: boolean };
 
@@ -57,7 +60,9 @@ export default defineConfig(({ mode }) => {
     coerceBoolean(env.ENABLE_API_PROXY, true);
 
   return {
-    plugins: [react()],
+    plugins: [react(),
+    tailwindcss(),
+    ],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
