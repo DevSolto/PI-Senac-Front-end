@@ -220,6 +220,12 @@ importers:
         specifier: 6.3.5
         version: 6.3.5(@types/node@20.19.21)(jiti@2.6.1)(lightningcss@1.30.2)
 
+  packages/tailwindcss-animate:
+    dependencies:
+      tailwindcss:
+        specifier: ^3.0.0 || ^4.0.0
+        version: 4.1.17
+
 packages:
 
   '@adobe/css-tools@4.4.4':
@@ -3098,9 +3104,6 @@ packages:
 
   tailwind-merge@3.3.1:
     resolution: {integrity: sha512-gBXpgUm/3rp1lMZZrM/w7D8GKqshif0zAymAhbCyIt8KMe+0v9DQ7cdYLR4FHH/cKpdTXb+A/tKKU3eolfsI+g==}
-
-  tailwindcss-animate@link:packages/tailwindcss-animate:
-    resolution: {directory: packages/tailwindcss-animate, type: directory}
 
   tailwindcss@4.1.17:
     resolution: {integrity: sha512-j9Ee2YjuQqYT9bbRTfTZht9W/ytp5H+jJpZKiYdP/bpnXARAuELt9ofP0lPnmHjbga7SNQIxdTAXCmtKVYjN+Q==}
@@ -6426,8 +6429,6 @@ snapshots:
   symbol-tree@3.2.4: {}
 
   tailwind-merge@3.3.1: {}
-
-  tailwindcss-animate@link:packages/tailwindcss-animate: {}
 
   tailwindcss@4.1.17: {}
 
