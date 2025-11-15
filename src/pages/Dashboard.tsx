@@ -325,7 +325,7 @@ export const DashboardPage = () => {
       ) : null}
 
       <section className="flex flex-col gap-6">
-        <div className="grid gap-7 md:grid-cols-4 xl:grid-cols-4">
+        <div className="grid gap-7 md:grid-cols-3 xl:grid-cols-3">
           {metrics.kpis.map((metric) => (
             <KpiCard
               key={metric.id}
