@@ -106,7 +106,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
-      outDir: 'build',
+      outDir: 'dist',
     },
     server: {
       port: coerceNumber(env.VITE_PORT ?? env.PORT, 3000),
