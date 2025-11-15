@@ -9,6 +9,11 @@ import { SiloMultiSelect } from '@/components/filters/SiloMultiSelect';
 import { KpiCard } from '@/components/kpi/KpiCard';
 import type { KpiTrend } from '@/components/kpi/KpiCard';
 import { DataTable } from '@/components/table/DataTable';
+import { DashboardChartsLegacy } from '@/components/dashboard/DashboardChartsLegacy';
+import {
+  DashboardChartsShadcn,
+  type EnvironmentScoreSeriesPoint,
+} from '@/components/dashboard/DashboardChartsShadcn';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,10 +34,6 @@ import {
   findMatchingPreset,
   isSameDateRange,
 } from '@/lib/date-range-presets';
-import { TemperatureOverTime } from '@/components/charts/simple/TemperatureOverTime';
-import { HumidityOverTime } from '@/components/charts/simple/HumidityOverTime';
-import { AirQualityOverTime } from '@/components/charts/simple/AirQualityOverTime';
-import { EnvironmentScoreOverTime } from '@/components/charts/simple/EnvironmentScoreOverTime';
 
 const REFRESH_INTERVAL = 300_000;
 
@@ -269,6 +270,15 @@ export const DashboardPage = () => {
   const isRefreshing = query.isFetching && !query.isLoading;
   const showEmptyState = !showSkeletons && filteredData.length === 0;
   const showErrorAlert = query.isError;
+  const environmentScoreSeries = useMemo<EnvironmentScoreSeriesPoint[]>(
+    () =>
+      metrics.tableRows.map((row) => ({
+        timestamp: row.periodStart,
+        environmentScore: row.environmentScore ?? null,
+      })),
+    [metrics.tableRows],
+  );
+  const shouldUseLegacyCharts = import.meta.env?.VITE_USE_LEGACY_CHARTS === 'true';
 
   return (
     <div className="flex flex-col gap-8 lg:gap-10 xl:gap-12">
@@ -340,23 +350,23 @@ export const DashboardPage = () => {
         ) : null}
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-2 xl:gap-10">
-        <TemperatureOverTime data={metrics.temperatureSeries} height={300} />
-        <HumidityOverTime data={metrics.humiditySeries} height={300} />
-        <AirQualityOverTime
-          data={metrics.airQualitySeries.map((point) => ({
-            timestamp: point.timestamp,
-            average: point.average,
-          }))}
-          height={300}
+      {shouldUseLegacyCharts ? (
+        <DashboardChartsLegacy
+          temperatureSeries={metrics.temperatureSeries}
+          humiditySeries={metrics.humiditySeries}
+          airQualitySeries={metrics.airQualitySeries}
+          environmentScoreSeries={environmentScoreSeries}
         />
-        <EnvironmentScoreOverTime
-          data={metrics.tableRows.map((r) => ({
-            timestamp: r.periodStart,
-            environmentScore: r.environmentScore ?? null,
-          }))}
+      ) : (
+        <DashboardChartsShadcn
+          temperatureSeries={metrics.temperatureSeries}
+          humiditySeries={metrics.humiditySeries}
+          airQualitySeries={metrics.airQualitySeries}
+          environmentScoreSeries={environmentScoreSeries}
+          showSkeletons={showSkeletons}
+          showEmptyState={showEmptyState}
         />
-      </div>
+      )}
 
       <section className="flex flex-col gap-4">
         <Card className="border-border/60">
