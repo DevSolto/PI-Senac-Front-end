@@ -29,6 +29,11 @@ Execute a suíte de testes unitários com Jest e Testing Library usando:
 npm test
 ```
 
+## Variáveis de ambiente
+- Crie um arquivo `.env` (ou `.env.local`) na raiz do projeto para configurar valores como `VITE_API_URL`, `API_URL` ou `COLLECT_LISTING_URL`.
+- Em modo de desenvolvimento o Vite expõe automaticamente as variáveis iniciadas com `VITE_` no `import.meta.env`.
+- Para Jest, scripts Node e a CLI (`npm run collect`), o arquivo `load-env.js` garante o carregamento dos arquivos `.env`, `.env.local`, `.env.<modo>` e `.env.<modo>.local` respeitando a ordem de precedência, permitindo que todos os contextos compartilhem a mesma configuração.
+
 ## Coleta via CLI
 Para disparar a rotina de coleta em linha de comando execute:
 

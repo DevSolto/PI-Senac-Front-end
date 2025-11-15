@@ -13,6 +13,10 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const process = require('node:process');
 
+const { loadEnv } = require('../load-env');
+
+loadEnv({ mode: process.env.NODE_ENV });
+
 const DEFAULT_AUDIT_DIR = path.join('audits', 'listing-pages');
 
 function usage() {
