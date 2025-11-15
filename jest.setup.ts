@@ -1,8 +1,17 @@
 import '@testing-library/jest-dom';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { loadEnv } = require('./load-env');
+
+loadEnv({ mode: process.env.NODE_ENV });
+
+const env = process.env as Record<string, string | undefined>;
+const fallbackApiUrl = env.VITE_API_URL ?? env.API_URL ?? 'http://localhost:3000';
+
 (globalThis as typeof globalThis & { __APP_ENV__?: Record<string, string | undefined> }).__APP_ENV__ = {
-  VITE_API_URL: 'http://localhost:3000',
-  API_URL: 'http://localhost:3000',
+  ...env,
+  VITE_API_URL: env.VITE_API_URL ?? fallbackApiUrl,
+  API_URL: env.API_URL ?? fallbackApiUrl,
 };
 
 global.ResizeObserver = class ResizeObserver {

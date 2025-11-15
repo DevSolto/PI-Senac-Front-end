@@ -5,6 +5,7 @@ const config = {
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/?(*.)+(test).[tj]s?(x)'],
   moduleNameMapper: {
+    '^@/shared/env$': '<rootDir>/tests/mocks/app-env.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^recharts@.+$': 'recharts',
     '^date-fns-tz$': '<rootDir>/__mocks__/date-fns-tz.ts',
