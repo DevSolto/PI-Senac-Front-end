@@ -39,14 +39,6 @@ export const navigationItems: NavigationItem[] = [
     primary: true,
   },
   {
-    id: 'silos',
-    label: 'Silos',
-    icon: Warehouse,
-    path: '/silos',
-    element: <SilosPage />,
-    primary: true,
-  },
-  {
     id: 'companies',
     label: 'Companhias',
     icon: Building,
@@ -55,11 +47,12 @@ export const navigationItems: NavigationItem[] = [
     primary: true,
   },
   {
-    id: 'data-process',
-    label: 'Processamentos',
-    icon: BarChart3,
-    path: '/data-process',
-    element: <DataProcessPage />,
+    id: 'silos',
+    label: 'Silos',
+    icon: Warehouse,
+    path: '/silos',
+    element: <SilosPage />,
+    primary: true,
   },
   {
     id: 'users',
@@ -67,12 +60,5 @@ export const navigationItems: NavigationItem[] = [
     icon: UsersIcon,
     path: '/users',
     element: <UsersPage />,
-  },
-  {
-    id: 'health',
-    label: 'Status',
-    icon: Activity,
-    path: '/health',
-    element: <HealthStatusPage />,
   },
 ];
