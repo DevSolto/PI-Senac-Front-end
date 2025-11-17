@@ -4,7 +4,7 @@ import { apiClient, HttpError } from '@/shared/http';
 
 import { toZonedDate } from './date';
 
-const DATA_PROCESS_ENDPOINT = '/api/data-process';
+const DATA_PROCESS_ENDPOINT = '/data-process';
 
 const SiloSchema = z
   .object({

@@ -9,7 +9,7 @@ const ENV_API_URL = (
   appEnv.VITE_API_URL ??
   appEnv.API_URL ??
   BROWSER_BASE_URL ??
-  'http://localhost:3000'
+  'http://localhost:3000/'
 ) as string;
 
 const API_PATH_PREFIX = 'api/';
