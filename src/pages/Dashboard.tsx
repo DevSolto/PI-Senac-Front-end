@@ -278,7 +278,7 @@ export const DashboardPage = () => {
       })),
     [metrics.tableRows],
   );
-  const shouldUseLegacyCharts = import.meta.env?.VITE_USE_LEGACY_CHARTS === 'true';
+  const shouldUseLegacyCharts = true;
 
   return (
     <div className="flex flex-col gap-8 lg:gap-10 xl:gap-12">
