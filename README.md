@@ -30,8 +30,9 @@ npm test
 ```
 
 ## Variáveis de ambiente
+- Copie o arquivo `.env.example` para `.env` (ou `.env.local`) e ajuste os valores conforme o ambiente que você precisa configurar.
 - Crie um arquivo `.env` (ou `.env.local`) na raiz do projeto para configurar valores como `VITE_API_URL`, `API_URL` ou `COLLECT_LISTING_URL`.
-- Em modo de desenvolvimento o Vite expõe automaticamente as variáveis iniciadas com `VITE_` no `import.meta.env`.
+- Em modo de desenvolvimento o Vite expõe automaticamente as variáveis iniciadas com `VITE_` ou `API_` no `import.meta.env`.
 - Para Jest, scripts Node e a CLI (`npm run collect`), o arquivo `load-env.js` garante o carregamento dos arquivos `.env`, `.env.local`, `.env.<modo>` e `.env.<modo>.local` respeitando a ordem de precedência, permitindo que todos os contextos compartilhem a mesma configuração.
 
 ## Coleta via CLI
