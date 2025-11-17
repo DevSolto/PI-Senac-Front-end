@@ -12,6 +12,8 @@ const ENV_API_URL = (
   'http://localhost:3000'
 ) as string;
 
+const API_PATH_PREFIX = 'api/';
+
 const AUTH_HEADER_KEY = 'Authorization';
 
 type HttpMethod =
@@ -56,17 +58,30 @@ function ensureTrailingSlash(url: string): string {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
+function ensureApiPath(path: string): string {
+  const baseUrl = new URL(path, 'http://local-placeholder/');
+  const pathname = baseUrl.pathname.replace(/^\/+/, '');
+  const normalizedPathname = pathname.startsWith(API_PATH_PREFIX)
+    ? pathname
+    : `${API_PATH_PREFIX}${pathname}`;
+
+  baseUrl.pathname = `/${normalizedPathname}`;
+  return `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
+}
+
 function buildUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) {
     return path;
   }
 
+  const normalizedPath = ensureApiPath(path);
+
   if (!ENV_API_URL) {
-    return path.startsWith('/') ? path : `/${path}`;
+    return normalizedPath;
   }
 
   const base = ensureTrailingSlash(ENV_API_URL);
-  return new URL(path, base).toString();
+  return new URL(normalizedPath, base).toString();
 }
 
 function buildHeaders(initHeaders?: HeadersInit): Headers {
