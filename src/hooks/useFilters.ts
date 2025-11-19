@@ -1,11 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 
 import type { DashboardFilters } from '@/lib/metrics';
 import { DEFAULT_DATE_RANGE_PRESET, isValidRangePreset } from '@/lib/date-range-presets';
-
-const DATE_FORMAT = 'yyyy-MM-dd';
 
 const parseDateParam = (value: string | null) => {
   if (!value) {
@@ -51,11 +49,11 @@ const buildSearchParams = (filters: DashboardFilters) => {
   const { from, to } = filters.dateRange;
 
   if (from) {
-    params.set('from', format(from, DATE_FORMAT));
+    params.set('from', from.toISOString());
   }
 
   if (to) {
-    params.set('to', format(to, DATE_FORMAT));
+    params.set('to', to.toISOString());
   }
 
   if (filters.rangePreset) {
