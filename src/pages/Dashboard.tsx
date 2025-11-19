@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
+import type { DateRange as DayPickerRange } from 'react-day-picker';
 import { Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { DateRange } from '@/components/filters/DateRange';
 import { RangeSelect } from '@/components/filters/RangeSelect';
 import { SiloMultiSelect } from '@/components/filters/SiloMultiSelect';
 import { KpiCard } from '@/components/kpi/KpiCard';
@@ -31,6 +33,7 @@ import {
 import {
   computePresetDateRange,
   DATE_RANGE_PRESETS,
+  DEFAULT_DATE_RANGE_PRESET,
   findMatchingPreset,
   isSameDateRange,
 } from '@/lib/date-range-presets';
@@ -240,6 +243,34 @@ export const DashboardPage = () => {
     }));
   };
 
+  const handleDateRangeChange = (nextRange: DayPickerRange | undefined) => {
+    console.info('[Dashboard] Intervalo manual ajustado.', {
+      from: nextRange?.from?.toISOString() ?? null,
+      to: nextRange?.to?.toISOString() ?? null,
+    });
+
+    setFilters((previous) => {
+      if (!nextRange) {
+        const fallbackPreset = previous.rangePreset ?? DEFAULT_DATE_RANGE_PRESET;
+        const fallbackRange = computePresetDateRange(fallbackPreset, minDate ?? null, maxDate ?? null);
+        return {
+          ...previous,
+          rangePreset: fallbackPreset,
+          dateRange: fallbackRange,
+        };
+      }
+
+      return {
+        ...previous,
+        dateRange: {
+          from: nextRange.from ?? null,
+          to: nextRange.to ?? null,
+        },
+        rangePreset: null,
+      };
+    });
+  };
+
   const handleSiloChange = (next: string[]) => {
     console.info('[Dashboard] Seleção de silos alterada.', { totalSelecionados: next.length, selecionados: next });
     setFilters((previous) => ({
@@ -296,12 +327,23 @@ export const DashboardPage = () => {
           {filtersDescription ? <p className="text-sm text-muted-foreground">{filtersDescription}</p> : null}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
           <RangeSelect
             value={selectedRangePreset}
             options={rangeOptions}
             onChange={handleRangeChange}
             disabled={isLoading || dataset.length === 0}
+          />
+          <DateRange
+            value={{
+              from: filters.dateRange.from ?? undefined,
+              to: filters.dateRange.to ?? undefined,
+            }}
+            onChange={handleDateRangeChange}
+            disabled={isLoading || dataset.length === 0}
+            minDate={minDate}
+            maxDate={maxDate}
+            className="w-full sm:w-[260px]"
           />
           <SiloMultiSelect
             options={siloOptions}

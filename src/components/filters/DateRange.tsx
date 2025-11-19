@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatDateRange } from '@/lib/date';
+import { cn } from '@/components/ui/utils';
 
 export interface DateRangeProps {
   value: { from?: Date; to?: Date };
@@ -16,6 +17,7 @@ export interface DateRangeProps {
   minDate?: Date;
   maxDate?: Date;
   locale?: Locale;
+  className?: string;
 }
 
 const buildLabel = (from: Date | undefined, to: Date | undefined, locale: Locale) =>
@@ -28,6 +30,7 @@ export const DateRange = ({
   minDate,
   maxDate,
   locale = ptBR,
+  className,
 }: DateRangeProps) => {
   const label = useMemo(
     () => buildLabel(value.from, value.to, locale),
@@ -39,7 +42,7 @@ export const DateRange = ({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="justify-start text-left font-normal"
+          className={cn('justify-start text-left font-normal', className)}
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
