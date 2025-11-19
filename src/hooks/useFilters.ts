@@ -23,18 +23,15 @@ const parseFilters = (params: URLSearchParams): DashboardFilters => {
   const from = parseDateParam(params.get('from'));
   const to = parseDateParam(params.get('to'));
   const rangeParam = params.get('range');
+  const presetFromParams = isValidRangePreset(rangeParam) ? rangeParam : null;
   const silosParam = params.get('silos') ?? '';
   const silos = silosParam
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
 
-  const hasManualRange = from !== null || to !== null;
-  const rangePreset = hasManualRange
-    ? null
-    : isValidRangePreset(rangeParam)
-      ? rangeParam
-      : DEFAULT_DATE_RANGE_PRESET;
+  const hasManualRange = (from !== null || to !== null) && !presetFromParams;
+  const rangePreset = hasManualRange ? null : presetFromParams ?? DEFAULT_DATE_RANGE_PRESET;
 
   return {
     dateRange: { from, to },
