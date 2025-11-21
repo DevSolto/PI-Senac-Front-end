@@ -21,7 +21,7 @@ type ChartRow = {
 
 const chartConfig = {
   aqi: {
-    label: 'Co2 no ambiente (ppm)',
+    label: 'CO2 no ambiente (ppm)',
     color: 'hsl(var(--chart-4))',
   },
 } satisfies ChartConfig;
@@ -54,8 +54,8 @@ export function AirQualityChart({ data, isLoading, isEmpty }: AirQualityChartPro
 
   return (
     <ChartCard
-      title="Qualidade do ar média"
-      description="Indicador agregado de AQI para os silos monitorados em cada período."
+      title="CO2 no ambiente"
+      description="Evolução do CO2 médio (ppm) nos silos monitorados em cada período."
       isLoading={isLoading}
       isEmpty={shouldShowEmpty}
       height={HEIGHT}
