@@ -5,6 +5,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSilos } from '@/features/silos/hooks/useSilos';
 import { listAlertsBySilo } from '@/shared/api/alerts';
@@ -53,6 +60,8 @@ export function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertModel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<AlertModel | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (silosStatus === 'ready' && silos.length > 0 && !selectedSiloId) {
@@ -178,31 +187,34 @@ export function AlertsPage() {
                 const typeLabel = alertTypeConfig[alert.type]?.label ?? alert.type;
 
                 return (
-                  <Alert key={alert.id} className={`border-l-4 ${severityConfig[bucket].border} flex items-start`}>
-                    <Icon className="h-4 w-4" />
-                    <AlertDescription className='w-full'>
-                      <div className="flex justify-between w-full">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <strong>{alert.message ?? 'Alerta'}</strong>
+                  <Alert key={alert.id} className={`border-l-4 ${severityConfig[bucket].border} flex items-start gap-3`}>
+                    <Icon className="h-5 w-5 mt-1" />
+                    <AlertDescription className="w-full space-y-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <strong className="text-base leading-none">{alert.message ?? 'Alerta'}</strong>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-muted-foreground">
                             Silo: {alert.silo?.name ?? `#${alert.siloId}`} • {formatDateTime(alert.createdAt)}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <div className='flex flex-col items-center gap-2'>
-                            <Badge variant="outline" className="text-xs">
-                              {typeLabel}
-                            </Badge>
-                              <Badge variant={severityConfig[bucket].badge}>{bucket}</Badge>
-
-                          </div>
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                          <Badge variant="outline" className="text-xs">
+                            {typeLabel}
+                          </Badge>
+                          <Badge variant={severityConfig[bucket].badge}>{bucket}</Badge>
                         </div>
                       </div>
-                      <Button size="sm" variant="outline">
-                            Detalhes
-                          </Button>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Valor atual: {alert.currentValue ?? 'Não informado'} • Status do email:{' '}
+                          {alert.emailSent ? 'Enviado' : 'Não enviado'}
+                        </p>
+                        <Button size="sm" variant="outline" onClick={() => { setSelectedAlert(alert); setIsDetailsOpen(true); }}>
+                          Detalhes
+                        </Button>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 );
@@ -211,6 +223,57 @@ export function AlertsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={isDetailsOpen}
+        onOpenChange={(open) => {
+          setIsDetailsOpen(open);
+          if (!open) {
+            setSelectedAlert(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalhes do alerta</DialogTitle>
+            <DialogDescription>Informações completas do alerta selecionado.</DialogDescription>
+          </DialogHeader>
+          {selectedAlert ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Mensagem</p>
+                <p className="font-semibold">{selectedAlert.message ?? 'Alerta'}</p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm text-muted-foreground">Silo</p>
+                  <p className="font-medium">{selectedAlert.silo?.name ?? `#${selectedAlert.siloId}`}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tipo</p>
+                  <p className="font-medium">{alertTypeConfig[selectedAlert.type]?.label ?? selectedAlert.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Severidade</p>
+                  <p className="font-medium">{getSeverityBucket(selectedAlert.level)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data de criação</p>
+                  <p className="font-medium">{formatDateTime(selectedAlert.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor atual</p>
+                  <p className="font-medium">{selectedAlert.currentValue ?? 'Não informado'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Envio de email</p>
+                  <p className="font-medium">{selectedAlert.emailSent ? 'Enviado' : 'Não enviado'}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
