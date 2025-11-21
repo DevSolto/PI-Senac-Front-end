@@ -82,6 +82,14 @@ export async function listAlerts(): Promise<Alert[]> {
   return response.map(normalizeAlert);
 }
 
+export async function listAlertsBySilo(siloId: number): Promise<Alert[]> {
+  const response = await apiClient.json<AlertResponse[]>({
+    path: `${ALERTS_ENDPOINT}/silo/${siloId}`,
+  });
+
+  return response.map(normalizeAlert);
+}
+
 export async function getAlert(id: number): Promise<Alert> {
   const response = await apiClient.json<AlertResponse>({
     path: `${ALERTS_ENDPOINT}/${id}`,
