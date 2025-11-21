@@ -11,7 +11,7 @@ export interface DateRangePreset {
 
 export type DateRangePresetId = DateRangePreset['id'];
 
-export const DEFAULT_DATE_RANGE_PRESET: DateRangePresetId = '90d';
+export const DEFAULT_DATE_RANGE_PRESET: DateRangePresetId = '8d';
 
 export const DATE_RANGE_PRESETS: DateRangePreset[] = [
   { id: '8d', label: 'Última semana', days: 8 },

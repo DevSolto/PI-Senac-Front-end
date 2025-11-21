@@ -54,9 +54,9 @@ export function AirQualityOverTime({
   return (
     <figure className="flex h-full w-full flex-col gap-3">
       <figcaption className="space-y-1">
-        <h3 className="text-lg font-semibold">Qualidade do ar média</h3>
+        <h3 className="text-lg font-semibold">CO2 no ambiente</h3>
         <p className="text-sm text-muted-foreground">
-          Indicador de qualidade do ar (AQI) agregado por período para os silos monitorados.
+              Evolução do CO2 médio (ppm) nos silos monitorados em cada período.
         </p>
       </figcaption>
       <div style={{ width: '100%', height }}>
