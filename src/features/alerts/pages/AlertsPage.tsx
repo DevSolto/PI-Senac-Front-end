@@ -178,28 +178,31 @@ export function AlertsPage() {
                 const typeLabel = alertTypeConfig[alert.type]?.label ?? alert.type;
 
                 return (
-                  <Alert key={alert.id} className={`border-l-4 ${severityConfig[bucket].border}`}>
+                  <Alert key={alert.id} className={`border-l-4 ${severityConfig[bucket].border} flex items-start`}>
                     <Icon className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="flex justify-between items-start">
+                    <AlertDescription className='w-full'>
+                      <div className="flex justify-between w-full">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <strong>{alert.message ?? 'Alerta'}</strong>
-                            <Badge variant="outline" className="text-xs">
-                              {typeLabel}
-                            </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             Silo: {alert.silo?.name ?? `#${alert.siloId}`} • {formatDateTime(alert.createdAt)}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Badge variant={severityConfig[bucket].badge}>{bucket}</Badge>
-                          <Button size="sm" variant="outline">
-                            Detalhes
-                          </Button>
+                          <div className='flex flex-col items-center gap-2'>
+                            <Badge variant="outline" className="text-xs">
+                              {typeLabel}
+                            </Badge>
+                              <Badge variant={severityConfig[bucket].badge}>{bucket}</Badge>
+
+                          </div>
                         </div>
                       </div>
+                      <Button size="sm" variant="outline">
+                            Detalhes
+                          </Button>
                     </AlertDescription>
                   </Alert>
                 );
