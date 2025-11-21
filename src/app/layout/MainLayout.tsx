@@ -152,7 +152,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               className="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
             >
               <MoreHorizontal className="w-5 h-5" />
-              <span className="text-xs">More</span>
+              <span className="text-xs">Mais</span>
             </button>
           </div>
         </nav>
