@@ -39,6 +39,14 @@ export const navigationItems: NavigationItem[] = [
     primary: true,
   },
   {
+    id: 'alerts',
+    label: 'Alertas',
+    icon: AlertTriangle,
+    path: '/alerts',
+    element: <AlertsPage />,
+    primary: true,
+  },
+  {
     id: 'companies',
     label: 'Companhias',
     icon: Building,
