@@ -78,7 +78,7 @@ export function AirQualityOverTime({
             <Tooltip
               labelFormatter={(ms) => fmtData(new Date(ms as number))}
               formatter={(v: number | string, name) => {
-                const label = name === 'aqi' ? 'Qualidade do ar (média)' : name;
+                const label = name === 'aqi' ? 'Co2 no ambiente (ppm)' : name;
                 return [typeof v === 'number' ? fmtAQI(v) : v, label];
               }}
             />
@@ -87,7 +87,7 @@ export function AirQualityOverTime({
             <Line
               type="monotone"
               dataKey="aqi"
-              name="Qualidade do ar (média)"
+              name="Co2 no ambiente (ppm)"
               stroke="#7c3aed"
               strokeWidth={2}
               dot

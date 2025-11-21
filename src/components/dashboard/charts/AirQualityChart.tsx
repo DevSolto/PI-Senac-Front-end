@@ -21,7 +21,7 @@ type ChartRow = {
 
 const chartConfig = {
   aqi: {
-    label: 'Qualidade do ar (média)',
+    label: 'Co2 no ambiente (ppm)',
     color: 'hsl(var(--chart-4))',
   },
 } satisfies ChartConfig;
