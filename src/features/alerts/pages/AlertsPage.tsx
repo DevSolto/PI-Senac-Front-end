@@ -32,6 +32,14 @@ const alertTypeConfig: Record<AlertModel['type'], { icon: typeof AlertTriangle; 
   airQuality: { icon: Wind, label: 'Qualidade do ar' },
 };
 
+function formatAlertValue(value?: number | null) {
+  if (value === null || value === undefined) return 'Não informado';
+
+  return value.toLocaleString('pt-BR', {
+    maximumFractionDigits: 2,
+  });
+}
+
 function getSeverityBucket(level: AlertLevel | null | undefined): SeverityBucket {
   switch (level) {
     case 'critical':
@@ -208,7 +216,7 @@ export function AlertsPage() {
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <p className="text-sm text-muted-foreground">
-                          Valor atual: {alert.currentValue ?? 'Não informado'} • Status do email:{' '}
+                          Valor atual: {formatAlertValue(alert.currentValue)} • Status do email:{' '}
                           {alert.emailSent ? 'Enviado' : 'Não enviado'}
                         </p>
                         <Button size="sm" variant="outline" onClick={() => { setSelectedAlert(alert); setIsDetailsOpen(true); }}>
@@ -263,7 +271,7 @@ export function AlertsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Valor atual</p>
-                  <p className="font-medium">{selectedAlert.currentValue ?? 'Não informado'}</p>
+                  <p className="font-medium">{formatAlertValue(selectedAlert.currentValue)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Envio de email</p>
