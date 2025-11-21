@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { MoreHorizontal } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -8,6 +9,9 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useMobile } from '../hooks/useMobile';
 import { useSidebar } from '../hooks/useSidebar';
+import { listRecentAlertsBySilo } from '@/shared/api/alerts';
+
+const DEFAULT_SILO_ID = Number.parseInt(import.meta.env.VITE_DEFAULT_SILO_ID ?? '', 10);
 
 interface MainLayoutProps {
   children?: ReactNode;
@@ -19,6 +23,35 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const resolvedSiloId = useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const siloParams = searchParams.get('silos');
+
+    if (siloParams) {
+      for (const value of siloParams.split(',')) {
+        const parsed = Number.parseInt(value.trim(), 10);
+        if (Number.isFinite(parsed)) {
+          return parsed;
+        }
+      }
+    }
+
+    return Number.isFinite(DEFAULT_SILO_ID) ? DEFAULT_SILO_ID : null;
+  }, [location.search]);
+
+  const { data: recentAlerts = [] } = useQuery({
+    queryKey: ['alerts', 'recent', resolvedSiloId],
+    queryFn: async () => {
+      if (resolvedSiloId === null) {
+        return [];
+      }
+
+      return listRecentAlertsBySilo(resolvedSiloId);
+    },
+    enabled: resolvedSiloId !== null,
+    refetchInterval: 60_000,
+  });
+
   const { primaryTabs, secondaryTabs } = useMemo(() => {
     const primary = navigationItems.filter((item) => item.primary);
     const secondary = navigationItems.filter((item) => !item.primary);
@@ -26,8 +59,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     return { primaryTabs: primary, secondaryTabs: secondary };
   }, []);
 
-  const criticalAlerts = 3;
-  const totalAlerts = 7;
+  const criticalAlerts = useMemo(
+    () => recentAlerts.filter((alert) => alert.level === 'critical').length,
+    [recentAlerts],
+  );
+
+  const totalAlerts = useMemo(() => recentAlerts.length, [recentAlerts]);
 
   useEffect(() => {
     const matchingItem = navigationItems.find((item) => {
