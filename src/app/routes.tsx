@@ -32,7 +32,7 @@ export interface NavigationItem {
 export const navigationItems: NavigationItem[] = [
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: 'Painel',
     icon: LayoutDashboard,
     path: '/dashboard',
     element: <DashboardPage />,

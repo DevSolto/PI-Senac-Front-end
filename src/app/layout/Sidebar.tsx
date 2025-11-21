@@ -93,12 +93,12 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
 
           <nav className="p-4 space-y-2">
             <div className="mb-4">
-              <h3 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Primary</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Principais</h3>
               {primaryTabs.map(renderNavButton)}
             </div>
 
             <div>
-              <h3 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Additional</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Adicionais</h3>
               {secondaryTabs.map(renderNavButton)}
             </div>
           </nav>
@@ -128,7 +128,7 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
       <div className="p-4 border-t border-sidebar-border">
         <Button variant="ghost" onClick={toggleTheme} className="w-full flex items-center space-x-3 px-3 py-2">
           {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+          <span>{isDarkMode ? 'Modo claro' : 'Modo escuro'}</span>
         </Button>
       </div>
     </div>

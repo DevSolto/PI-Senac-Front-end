@@ -17,13 +17,13 @@ import { useSilos } from '@/features/silos/hooks/useSilos';
 import { listAlertsBySilo } from '@/shared/api/alerts';
 import type { Alert as AlertModel, AlertLevel } from '@/shared/api/alerts.types';
 
-type SeverityBucket = 'Critical' | 'High' | 'Medium' | 'Low';
+type SeverityBucket = 'Crítico' | 'Alto' | 'Médio' | 'Baixo';
 
 const severityConfig: Record<SeverityBucket, { color: string; badge: 'destructive' | 'secondary' | 'outline'; border: string }> = {
-  Critical: { color: 'text-red-600', badge: 'destructive', border: 'border-l-red-500' },
-  High: { color: 'text-orange-500', badge: 'secondary', border: 'border-l-orange-500' },
-  Medium: { color: 'text-yellow-500', badge: 'secondary', border: 'border-l-yellow-500' },
-  Low: { color: 'text-muted-foreground', badge: 'outline', border: 'border-l-gray-500' },
+  Crítico: { color: 'text-red-600', badge: 'destructive', border: 'border-l-red-500' },
+  Alto: { color: 'text-orange-500', badge: 'secondary', border: 'border-l-orange-500' },
+  Médio: { color: 'text-yellow-500', badge: 'secondary', border: 'border-l-yellow-500' },
+  Baixo: { color: 'text-muted-foreground', badge: 'outline', border: 'border-l-gray-500' },
 };
 
 const alertTypeConfig: Record<AlertModel['type'], { icon: typeof AlertTriangle; label: string }> = {
@@ -43,13 +43,13 @@ function formatAlertValue(value?: number | null) {
 function getSeverityBucket(level: AlertLevel | null | undefined): SeverityBucket {
   switch (level) {
     case 'critical':
-      return 'Critical';
+      return 'Crítico';
     case 'warning':
-      return 'High';
+      return 'Alto';
     case 'info':
-      return 'Low';
+      return 'Baixo';
     default:
-      return 'Medium';
+      return 'Médio';
   }
 }
 
@@ -107,7 +107,7 @@ export function AlertsPage() {
         acc[bucket] += 1;
         return acc;
       },
-      { Critical: 0, High: 0, Medium: 0, Low: 0 } as Record<SeverityBucket, number>,
+      { Crítico: 0, Alto: 0, Médio: 0, Baixo: 0 } as Record<SeverityBucket, number>,
     );
   }, [alerts]);
 
@@ -121,9 +121,9 @@ export function AlertsPage() {
     <div className="space-y-6">
       <div className="space-y-4 lg:flex lg:items-end lg:justify-between">
         <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Alerts & Notifications</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Alertas e notificações</h1>
           <div className="max-w-prose text-base leading-relaxed text-muted-foreground">
-            <p>Real-time alerts and system notifications</p>
+            <p>Alertas em tempo real e notificações do sistema</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -143,7 +143,7 @@ export function AlertsPage() {
           </div>
           <Button variant="outline" disabled>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Mark All Read
+            Marcar tudo como lido
           </Button>
         </div>
       </div>
@@ -177,7 +177,7 @@ export function AlertsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Alerts</CardTitle>
+          <CardTitle>Alertas recentes</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
