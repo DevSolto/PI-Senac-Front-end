@@ -32,6 +32,7 @@ export interface Silo {
   description?: string | null;
   grain: string;
   inUse: boolean;
+  alertsCount?: number | null;
   maxTemperature?: number | null;
   minTemperature?: number | null;
   maxHumidity?: number | null;

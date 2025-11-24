@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, Factory, History, Leaf, Power, type LucideIcon } from 'lucide-react';
+import { BellRing, CalendarDays, Factory, History, Leaf, Power, type LucideIcon } from 'lucide-react';
 
 import type { Silo } from '@/shared/api/silos.types';
 
@@ -20,6 +20,8 @@ interface SiloCardProps {
 }
 
 export function SiloCard({ silo }: SiloCardProps) {
+  const alertsCount = Math.max(0, silo.alertsCount ?? 0);
+
   return (
     <Card data-silo-id={silo.id}>
       <CardHeader className="gap-2">
@@ -68,6 +70,13 @@ export function SiloCard({ silo }: SiloCardProps) {
           <Badge variant={silo.inUse ? 'default' : 'outline'} className="flex items-center gap-1">
             <Power className="h-3.5 w-3.5" aria-hidden />
             <span>{silo.inUse ? 'Em operação' : 'Disponível'}</span>
+          </Badge>
+
+          <Badge variant="outline" className="flex items-center gap-1" aria-label={`Alertas: ${alertsCount}`}>
+            <BellRing className="h-3.5 w-3.5" aria-hidden />
+            <span>
+              {alertsCount} {alertsCount === 1 ? 'alerta' : 'alertas'}
+            </span>
           </Badge>
         </div>
 
