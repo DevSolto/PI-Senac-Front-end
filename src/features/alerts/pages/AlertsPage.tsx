@@ -40,6 +40,17 @@ function formatAlertValue(value?: number | null) {
   });
 }
 
+function formatAlertMessage(message?: string | null) {
+  if (!message) return 'Alerta';
+
+  return message.replace(/\d+\.\d+/g, (match) =>
+    Number(match).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  );
+}
+
 function getSeverityBucket(level: AlertLevel | null | undefined): SeverityBucket {
   switch (level) {
     case 'critical':
@@ -197,7 +208,7 @@ export function AlertsPage() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <strong className="text-base leading-none">{alert.message ?? 'Alerta'}</strong>
+                            <strong className="text-base leading-none">{formatAlertMessage(alert.message)}</strong>
                           </div>
                           <p className="text-sm text-muted-foreground">
                             Silo: {alert.silo?.name ?? `#${alert.siloId}`} • {formatDateTime(alert.createdAt)}
@@ -246,7 +257,7 @@ export function AlertsPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Mensagem</p>
-                <p className="font-semibold">{selectedAlert.message ?? 'Alerta'}</p>
+                <p className="font-semibold">{formatAlertMessage(selectedAlert.message)}</p>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
