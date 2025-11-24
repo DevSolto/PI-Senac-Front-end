@@ -14,16 +14,14 @@ export const Header = ({ alertsToday }: HeaderProps) => {
   const { openSidebar } = useSidebar();
   const { isDarkMode, toggleTheme } = useTheme();
 
-  if (!isMobile) {
-    return null;
-  }
-
   return (
     <header className="flex items-center justify-between p-4 border-b border-border bg-card">
-      <div className="flex items-center space-x-3">
-        <Button variant="ghost" size="sm" onClick={openSidebar} className="p-2">
-          <Menu className="w-5 h-5" />
-        </Button>
+      <div className="flex items-center space-x-4">
+        {isMobile && (
+          <Button variant="ghost" size="sm" onClick={openSidebar} className="p-2">
+            <Menu className="w-5 h-5" />
+          </Button>
+        )}
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
