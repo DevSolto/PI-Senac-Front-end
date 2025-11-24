@@ -59,12 +59,25 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     return { primaryTabs: primary, secondaryTabs: secondary };
   }, []);
 
-  const criticalAlerts = useMemo(
-    () => recentAlerts.filter((alert) => alert.level === 'critical').length,
-    [recentAlerts],
-  );
+  const todayAlerts = useMemo(() => {
+    const now = new Date();
 
-  const totalAlerts = useMemo(() => recentAlerts.length, [recentAlerts]);
+    const isSameDay = (value: string) => {
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return false;
+      }
+
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate()
+      );
+    };
+
+    return recentAlerts.filter((alert) => isSameDay(alert.createdAt)).length;
+  }, [recentAlerts]);
 
   useEffect(() => {
     const matchingItem = navigationItems.find((item) => {
@@ -112,8 +125,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-background text-foreground">
-        <Header totalAlerts={totalAlerts} criticalAlerts={criticalAlerts} />
-        <Sidebar primaryTabs={primaryTabs} secondaryTabs={secondaryTabs} totalAlerts={totalAlerts} />
+        <Header alertsToday={todayAlerts} />
+        <Sidebar primaryTabs={primaryTabs} secondaryTabs={secondaryTabs} alertsToday={todayAlerts} />
 
         <main className="flex-1 overflow-auto pb-20">
           <div className="p-4">{content}</div>
@@ -136,9 +149,9 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
                 >
                   <div className="relative">
                     <Icon className="w-5 h-5" />
-                    {item.id === 'alerts' && totalAlerts > 0 && (
+                    {item.id === 'alerts' && todayAlerts > 0 && (
                       <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 flex items-center justify-center">
-                        <span className="text-white text-xs">{criticalAlerts}</span>
+                        <span className="text-white text-xs">{todayAlerts}</span>
                       </div>
                     )}
                   </div>
@@ -162,10 +175,10 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="flex h-screen bg-background text-foreground">
-      <Sidebar primaryTabs={primaryTabs} secondaryTabs={secondaryTabs} totalAlerts={totalAlerts} />
+      <Sidebar primaryTabs={primaryTabs} secondaryTabs={secondaryTabs} alertsToday={todayAlerts} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header totalAlerts={totalAlerts} criticalAlerts={criticalAlerts} />
+        <Header alertsToday={todayAlerts} />
         <main className="flex-1 overflow-auto p-6">{content}</main>
       </div>
     </div>
