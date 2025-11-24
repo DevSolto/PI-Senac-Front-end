@@ -59,8 +59,22 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     return { primaryTabs: primary, secondaryTabs: secondary };
   }, []);
 
+  const referenceDate = useMemo(() => {
+    const envDate = import.meta.env.VITE_ALERTS_REFERENCE_DATE; // permite fixar a data via .env para testes
+    if (!envDate) {
+      return new Date();
+    }
+
+    const parsedDate = new Date(envDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return new Date();
+    }
+
+    return parsedDate;
+  }, []);
+
   const todayAlerts = useMemo(() => {
-    const now = new Date();
+    const now = referenceDate;
 
     const isSameDay = (value: string) => {
       const date = new Date(value);
@@ -77,7 +91,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     };
 
     return recentAlerts.filter((alert) => isSameDay(alert.createdAt)).length;
-  }, [recentAlerts]);
+  }, [recentAlerts, referenceDate]);
 
   useEffect(() => {
     const matchingItem = navigationItems.find((item) => {
