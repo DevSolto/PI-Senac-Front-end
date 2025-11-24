@@ -15,7 +15,7 @@ export const Header = ({ alertsToday }: HeaderProps) => {
   const { isDarkMode, toggleTheme } = useTheme();
 
   return (
-    <header className="flex items-center justify-between p-4 border-b border-border bg-card">
+    <header className="flex h-16 items-center justify-between px-4 border-b border-border bg-card">
       <div className="flex items-center space-x-4">
         {isMobile && (
           <Button variant="ghost" size="sm" onClick={openSidebar} className="p-2">
