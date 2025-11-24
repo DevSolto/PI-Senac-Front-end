@@ -13,10 +13,10 @@ import { useTheme } from '../hooks/useTheme';
 interface SidebarProps {
   primaryTabs: NavigationItem[];
   secondaryTabs: NavigationItem[];
-  totalAlerts: number;
+  alertsToday: number;
 }
 
-export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProps) => {
+export const Sidebar = ({ primaryTabs, secondaryTabs, alertsToday }: SidebarProps) => {
   const { isMobile } = useMobile();
   const { activeTab, setActiveTab, sidebarOpen, closeSidebar } = useSidebar();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -58,9 +58,9 @@ export const Sidebar = ({ primaryTabs, secondaryTabs, totalAlerts }: SidebarProp
       >
         <Icon className="w-5 h-5 shrink-0" />
         <span className="truncate text-sm font-medium">{item.label}</span>
-        {item.id === 'alerts' && totalAlerts > 0 && (
+        {item.id === 'alerts' && alertsToday > 0 && (
           <Badge variant="destructive" className="ml-auto">
-            {totalAlerts}
+            {alertsToday}
           </Badge>
         )}
       </button>

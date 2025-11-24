@@ -6,11 +6,10 @@ import { useSidebar } from '../hooks/useSidebar';
 import { useTheme } from '../hooks/useTheme';
 
 interface HeaderProps {
-  totalAlerts: number;
-  criticalAlerts: number;
+  alertsToday: number;
 }
 
-export const Header = ({ totalAlerts, criticalAlerts }: HeaderProps) => {
+export const Header = ({ alertsToday }: HeaderProps) => {
   const { isMobile } = useMobile();
   const { openSidebar } = useSidebar();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -37,11 +36,11 @@ export const Header = ({ totalAlerts, criticalAlerts }: HeaderProps) => {
       </div>
 
       <div className="flex items-center space-x-2">
-        {totalAlerts > 0 && (
+        {alertsToday > 0 && (
           <div className="relative">
             <AlertTriangle className="w-5 h-5 text-orange-500" />
             <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 flex items-center justify-center">
-              <span className="text-white text-xs font-semibold">{criticalAlerts}</span>
+              <span className="text-white text-xs font-semibold">{alertsToday}</span>
             </div>
           </div>
         )}
