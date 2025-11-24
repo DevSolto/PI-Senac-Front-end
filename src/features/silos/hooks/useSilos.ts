@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { listAlertsBySilo } from '@/shared/api/alerts';
 import { listSilos } from '@/shared/api/silos';
 import type { Silo } from '@/shared/api/silos.types';
 
@@ -19,6 +20,16 @@ export function useSilos(): UseSilosResult {
   const [error, setError] = useState<string | null>(null);
   const isMounted = useRef(true);
 
+  const fetchAlertsCount = useCallback(async (siloId: number) => {
+    try {
+      const alerts = await listAlertsBySilo(siloId);
+      return alerts.length;
+    } catch (err) {
+      console.error('Erro ao carregar alertas do silo', siloId, err);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       isMounted.current = false;
@@ -31,9 +42,18 @@ export function useSilos(): UseSilosResult {
 
     try {
       const response = await listSilos();
+      const silosWithAlerts = await Promise.all(
+        response.map(async silo => {
+          const alertsCount = await fetchAlertsCount(silo.id);
+          return {
+            ...silo,
+            alertsCount: alertsCount ?? silo.alertsCount ?? 0,
+          };
+        }),
+      );
 
       if (isMounted.current) {
-        setSilos(response);
+        setSilos(silosWithAlerts);
         setStatus('ready');
       }
     } catch (err) {
@@ -45,7 +65,7 @@ export function useSilos(): UseSilosResult {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Não foi possível carregar os silos.');
     }
-  }, []);
+  }, [fetchAlertsCount]);
 
   useEffect(() => {
     void fetchSilos();
