@@ -14,6 +14,7 @@ import {
   DashboardChartsShadcn,
   type EnvironmentScoreSeriesPoint,
 } from '@/components/dashboard/DashboardChartsShadcn';
+import { RealtimeSensorChart } from '@/components/dashboard/RealtimeSensorChart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -34,6 +35,7 @@ import {
   findMatchingPreset,
   isSameDateRange,
 } from '@/lib/date-range-presets';
+import { appEnv } from '@/shared/env';
 
 const REFRESH_INTERVAL = 300_000;
 
@@ -270,6 +272,9 @@ export const DashboardPage = () => {
   const isRefreshing = query.isFetching && !query.isLoading;
   const showEmptyState = !showSkeletons && filteredData.length === 0;
   const showErrorAlert = query.isError;
+  const realtimeDeviceId = appEnv.VITE_REALTIME_DEVICE_ID ?? appEnv.VITE_DEVICE_ID ?? '';
+  const realtimeApiBaseUrl = appEnv.VITE_API_URL ?? appEnv.API_URL ?? '';
+  const showRealtimeChart = Boolean(realtimeDeviceId && realtimeApiBaseUrl);
   const environmentScoreSeries = useMemo<EnvironmentScoreSeriesPoint[]>(
     () =>
       metrics.tableRows.map((row) => ({
@@ -367,6 +372,24 @@ export const DashboardPage = () => {
           showEmptyState={showEmptyState}
         />
       )}
+
+      <section>
+        {showRealtimeChart ? (
+          <RealtimeSensorChart
+            deviceId={realtimeDeviceId}
+            apiBaseUrl={realtimeApiBaseUrl}
+            maxPoints={60}
+          />
+        ) : (
+          <Alert variant="secondary" role="alert">
+            <AlertTitle>Configure o dispositivo em tempo real</AlertTitle>
+            <AlertDescription>
+              Defina as variáveis VITE_REALTIME_DEVICE_ID e VITE_API_URL para habilitar o gráfico em
+              tempo real.
+            </AlertDescription>
+          </Alert>
+        )}
+      </section>
 
       <section className="flex flex-col gap-4">
         <Card className="border-border/60">
