@@ -115,9 +115,7 @@ export function RealtimeSensorChart({
     const loadHistory = async () => {
       setStatus('loading-history');
       try {
-        const historyUrl = buildEndpointUrl(
-          `/devices/${encodeURIComponent(deviceId)}/history`,
-        );
+        const historyUrl = buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/history`);
         const response = await fetch(historyUrl);
 
         if (!response.ok) {
@@ -205,9 +203,7 @@ export function RealtimeSensorChart({
       return undefined;
     }
 
-    const eventSourceUrl = buildEndpointUrl(
-      `/devices/${encodeURIComponent(deviceId)}/updates`,
-    );
+    const eventSourceUrl = buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/updates`);
     let source: EventSource | null = null;
 
     try {
