@@ -2,7 +2,7 @@ import { apiClient } from '../http';
 
 import type { Alert, AlertLevel, AlertType, CreateAlertDto, UpdateAlertDto } from './alerts.types';
 
-const ALERTS_ENDPOINT = '/alerts';
+const ALERTS_ENDPOINT = '/alerts/';
 
 const ALERT_TYPE_LOOKUP: Record<string, AlertType> = {
   temperature: 'temperature',
