@@ -14,6 +14,11 @@ const ENV_API_URL = (
 
 const API_PATH_PREFIX = 'api/';
 
+interface BuildApiUrlOptions {
+  baseUrlOverride?: string;
+  skipApiPrefix?: boolean;
+}
+
 const AUTH_HEADER_KEY = 'Authorization';
 
 type HttpMethod =
@@ -58,10 +63,10 @@ function ensureTrailingSlash(url: string): string {
   return url.endsWith('/') ? url : `${url}/`;
 }
 
-function ensureApiPath(path: string): string {
+function ensureApiPath(path: string, options: Pick<BuildApiUrlOptions, 'skipApiPrefix'> = {}): string {
   const baseUrl = new URL(path, 'http://local-placeholder/');
   const pathname = baseUrl.pathname.replace(/^\/+/, '');
-  const normalizedPathname = pathname.startsWith(API_PATH_PREFIX)
+  const normalizedPathname = options.skipApiPrefix || pathname.startsWith(API_PATH_PREFIX)
     ? pathname
     : `${API_PATH_PREFIX}${pathname}`;
 
@@ -69,13 +74,16 @@ function ensureApiPath(path: string): string {
   return `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
 }
 
-export function buildApiUrl(path: string, baseUrlOverride?: string): string {
+export function buildApiUrl(path: string, baseUrlOrOptions?: string | BuildApiUrlOptions): string {
   if (/^https?:\/\//i.test(path)) {
     return path;
   }
 
-  const normalizedPath = ensureApiPath(path);
-  const normalizedBase = baseUrlOverride ?? ENV_API_URL;
+  const normalizedOptions: BuildApiUrlOptions =
+    typeof baseUrlOrOptions === 'string' ? { baseUrlOverride: baseUrlOrOptions } : baseUrlOrOptions ?? {};
+
+  const normalizedPath = ensureApiPath(path, { skipApiPrefix: normalizedOptions.skipApiPrefix });
+  const normalizedBase = normalizedOptions.baseUrlOverride ?? ENV_API_URL;
 
   if (!normalizedBase) {
     return normalizedPath;
