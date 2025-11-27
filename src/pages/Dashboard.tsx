@@ -273,7 +273,8 @@ export const DashboardPage = () => {
   const showEmptyState = !showSkeletons && filteredData.length === 0;
   const showErrorAlert = query.isError;
   const realtimeDeviceId = appEnv.VITE_REALTIME_DEVICE_ID ?? appEnv.VITE_DEVICE_ID ?? '';
-  const realtimeApiBaseUrl = appEnv.VITE_API_URL ?? appEnv.API_URL ?? '';
+  const realtimeApiBaseUrl =
+    appEnv.VITE_REALTIME_API_URL ?? appEnv.VITE_API_URL ?? appEnv.API_URL ?? '';
   const showRealtimeChart = Boolean(realtimeDeviceId && realtimeApiBaseUrl);
   const environmentScoreSeries = useMemo<EnvironmentScoreSeriesPoint[]>(
     () =>
