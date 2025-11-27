@@ -63,9 +63,7 @@ describe('RealtimeSensorChart', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Histórico carregado/i)).toBeInTheDocument();
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://api.example.com/api/devices/device-123/history',
-      );
+      expect(fetchMock).toHaveBeenCalledWith('http://api.example.com/devices/device-123/history');
     });
 
     expect(screen.getByText('22.0°C')).toBeInTheDocument();
@@ -80,7 +78,7 @@ describe('RealtimeSensorChart', () => {
     );
 
     const source = await waitFor(() => MockEventSource.instances[0]);
-    expect(source.url).toBe('http://localhost:3000/api/devices/abc/updates');
+    expect(source.url).toBe('http://localhost:3000/devices/abc/updates');
     await act(async () => {
       source.emitOpen();
       source.emitMessage({ timestamp: '2024-03-01T12:00:00Z', temperature: 25.7, humidity: 61 });
