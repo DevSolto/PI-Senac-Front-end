@@ -8,6 +8,8 @@ const config = {
     '^@/shared/env$': '<rootDir>/tests/mocks/app-env.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^recharts@.+$': 'recharts',
+    '^@radix-ui/react-slot@.+$': '@radix-ui/react-slot',
+    '^class-variance-authority@.+$': 'class-variance-authority',
     '^date-fns-tz$': '<rootDir>/__mocks__/date-fns-tz.ts',
     '\\.(css|less|sass|scss)$': 'identity-obj-proxy',
   },
