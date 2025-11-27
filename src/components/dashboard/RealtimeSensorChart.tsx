@@ -106,7 +106,7 @@ export function RealtimeSensorChart({
   const [error, setError] = useState<string | null>(null);
   const normalizedBaseUrl = useMemo(() => apiBaseUrl.trim() || undefined, [apiBaseUrl]);
   const buildEndpointUrl = useCallback(
-    (path: string) => buildApiUrl(path, { baseUrlOverride: normalizedBaseUrl, skipApiPrefix: true }),
+    (path: string) => buildApiUrl(path, { baseUrlOverride: normalizedBaseUrl, skipApiPrefix: false }),
     [normalizedBaseUrl],
   );
 
