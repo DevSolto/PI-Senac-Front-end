@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Loader2, RadioTower, RefreshCw, WifiOff } from 'lucide-react';
 import {
   CartesianGrid,
@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { fmtData, fmtPerc, fmtTemp } from '@/lib/formatters';
 import type { DeviceHistoryEntry } from '@/shared/api/devices.types';
+import { buildApiUrl } from '@/shared/http';
 
 interface RealtimeSensorChartProps {
   deviceId: string;
@@ -70,9 +71,6 @@ const statusIcon: Record<ConnectionStatus, JSX.Element> = {
   error: <AlertTriangle className="h-3.5 w-3.5" aria-hidden />,
 };
 
-const normalizeBaseUrl = (apiBaseUrl: string): string =>
-  apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
-
 function parseSensorPoint(entry: DeviceHistoryEntry | null | undefined): SensorPoint | null {
   if (!entry) {
     return null;
@@ -106,19 +104,27 @@ export function RealtimeSensorChart({
   const [points, setPoints] = useState<SensorPoint[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [error, setError] = useState<string | null>(null);
-  const normalizedBaseUrl = useMemo(() => normalizeBaseUrl(apiBaseUrl), [apiBaseUrl]);
+  const normalizedBaseUrl = useMemo(() => apiBaseUrl.trim() || undefined, [apiBaseUrl]);
+  const buildEndpointUrl = useCallback(
+    (path: string) => buildApiUrl(path, normalizedBaseUrl),
+    [normalizedBaseUrl],
+  );
 
   useEffect(() => {
     let isActive = true;
     const loadHistory = async () => {
       setStatus('loading-history');
       try {
-        const response = await fetch(
-          `${normalizedBaseUrl}/devices/${encodeURIComponent(deviceId)}/history`,
+        const historyUrl = buildEndpointUrl(
+          `/devices/${encodeURIComponent(deviceId)}/history`,
         );
+        const response = await fetch(historyUrl);
 
         if (!response.ok) {
-          throw new Error(`Falha ao carregar histórico (${response.status}).`);
+          throw new Error(
+            `Não foi possível carregar o histórico (${response.status}). ` +
+              'Verifique se o dispositivo existe ou se a API está disponível.',
+          );
         }
 
         const payload = (await response.json()) as DeviceHistoryEntry[];
@@ -147,7 +153,7 @@ export function RealtimeSensorChart({
         setError(
           historyError instanceof Error
             ? historyError.message
-            : 'Erro ao carregar histórico do dispositivo.',
+            : 'Não foi possível carregar o histórico deste dispositivo. Tente novamente.',
         );
         setStatus('error');
       }
@@ -158,15 +164,28 @@ export function RealtimeSensorChart({
     return () => {
       isActive = false;
     };
-  }, [deviceId, maxPoints, normalizedBaseUrl]);
+  }, [buildEndpointUrl, deviceId, maxPoints]);
 
   useEffect(() => {
-    if (!deviceId || !normalizedBaseUrl) {
+    if (!deviceId) {
       return undefined;
     }
 
-    const eventSourceUrl = `${normalizedBaseUrl}/devices/${encodeURIComponent(deviceId)}/updates`;
-    const source = new EventSource(eventSourceUrl);
+    const eventSourceUrl = buildEndpointUrl(
+      `/devices/${encodeURIComponent(deviceId)}/updates`,
+    );
+    let source: EventSource | null = null;
+
+    try {
+      source = new EventSource(eventSourceUrl);
+    } catch (eventSourceError) {
+      console.error('[RealtimeSensorChart] Erro ao iniciar SSE', eventSourceError);
+      setStatus('error');
+      setError(
+        'Não foi possível iniciar a conexão em tempo real. Verifique se a URL da API está correta.',
+      );
+      return undefined;
+    }
 
     source.onopen = () => {
       setStatus((previous) => (previous === 'history-loaded' ? 'connected' : 'connecting'));
@@ -204,13 +223,15 @@ export function RealtimeSensorChart({
 
     source.onerror = () => {
       setStatus('disconnected');
-      setError('Conexão SSE perdida. Reconecte-se ou verifique o backend.');
+      setError(
+        'Conexão SSE perdida ou rota de updates indisponível. Verifique o backend e tente novamente.',
+      );
     };
 
     return () => {
-      source.close();
+      source?.close();
     };
-  }, [deviceId, maxPoints, normalizedBaseUrl]);
+  }, [buildEndpointUrl, deviceId, maxPoints]);
 
   const latest = useMemo(() => {
     if (points.length === 0) {

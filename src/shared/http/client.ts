@@ -69,18 +69,19 @@ function ensureApiPath(path: string): string {
   return `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`;
 }
 
-function buildUrl(path: string): string {
+export function buildApiUrl(path: string, baseUrlOverride?: string): string {
   if (/^https?:\/\//i.test(path)) {
     return path;
   }
 
   const normalizedPath = ensureApiPath(path);
+  const normalizedBase = baseUrlOverride ?? ENV_API_URL;
 
-  if (!ENV_API_URL) {
+  if (!normalizedBase) {
     return normalizedPath;
   }
 
-  const base = ensureTrailingSlash(ENV_API_URL);
+  const base = ensureTrailingSlash(normalizedBase);
   return new URL(normalizedPath, base).toString();
 }
 
@@ -150,7 +151,7 @@ async function request<T = unknown>(path: string, init: RequestInit = {}): Promi
   };
 
   const method = (requestInit.method ?? 'GET').toUpperCase();
-  const url = buildUrl(path);
+  const url = buildApiUrl(path);
   const startedAt = Date.now();
 
   let response: Response;
