@@ -121,6 +121,28 @@ export function RealtimeSensorChart({
         const response = await fetch(historyUrl);
 
         if (!response.ok) {
+          let apiMessage: string | null = null;
+          try {
+            const errorPayload = (await response.json()) as { message?: unknown };
+            if (
+              errorPayload &&
+              typeof errorPayload === 'object' &&
+              'message' in errorPayload &&
+              typeof errorPayload.message === 'string'
+            ) {
+              apiMessage = errorPayload.message;
+            }
+          } catch (parseError) {
+            console.warn(
+              '[RealtimeSensorChart] Não foi possível interpretar a mensagem de erro da API.',
+              parseError,
+            );
+          }
+
+          console.error('[RealtimeSensorChart] Histórico indisponível.', {
+            status: response.status,
+            apiMessage,
+          });
           throw new Error(
             `Não foi possível carregar o histórico (${response.status}). ` +
               'Verifique se o dispositivo existe ou se a API está disponível.',
@@ -128,6 +150,18 @@ export function RealtimeSensorChart({
         }
 
         const payload = (await response.json()) as DeviceHistoryEntry[];
+        if (
+          payload &&
+          !Array.isArray(payload) &&
+          typeof payload === 'object' &&
+          'message' in payload &&
+          typeof (payload as { message?: unknown }).message === 'string'
+        ) {
+          console.info('[RealtimeSensorChart] Mensagem retornada pela API.', {
+            message: (payload as { message: string }).message,
+          });
+        }
+
         if (!Array.isArray(payload)) {
           throw new Error('Resposta inesperada ao carregar histórico.');
         }
@@ -198,7 +232,13 @@ export function RealtimeSensorChart({
       }
 
       try {
-        const parsedEvent = JSON.parse(event.data) as DeviceHistoryEntry;
+        const parsedEvent = JSON.parse(event.data) as DeviceHistoryEntry & { message?: string };
+
+        if (parsedEvent && typeof parsedEvent.message === 'string') {
+          console.info('[RealtimeSensorChart] Mensagem retornada pela API.', {
+            message: parsedEvent.message,
+          });
+        }
         const point = parseSensorPoint(parsedEvent);
 
         if (!point) {
