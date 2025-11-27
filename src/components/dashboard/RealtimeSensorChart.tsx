@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { fmtData, fmtPerc, fmtTemp } from '@/lib/formatters';
 import type { DeviceHistoryEntry } from '@/shared/api/devices.types';
-import { buildApiUrl } from '@/shared/http';
+import { buildApiUrl, getAuthToken } from '@/shared/http';
 
 interface RealtimeSensorChartProps {
   deviceId: string;
@@ -52,6 +52,23 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const MAX_POINTS_DEFAULT = 60;
+
+function appendAuthToken(url: string): string {
+  const token = getAuthToken();
+
+  if (!token) {
+    return url;
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    const urlWithToken = new URL(url);
+    urlWithToken.searchParams.set('token', token);
+    return urlWithToken.toString();
+  }
+
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}token=${encodeURIComponent(token)}`;
+}
 
 const statusLabels: Record<ConnectionStatus, string> = {
   connecting: 'Conectando…',
@@ -115,8 +132,13 @@ export function RealtimeSensorChart({
     const loadHistory = async () => {
       setStatus('loading-history');
       try {
-        const historyUrl = buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/history`);
-        const response = await fetch(historyUrl);
+        const historyUrl = appendAuthToken(
+          buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/history`),
+        );
+        const authToken = getAuthToken();
+        const response = await fetch(historyUrl, {
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+        });
 
         if (!response.ok) {
           let apiMessage: string | null = null;
@@ -203,7 +225,9 @@ export function RealtimeSensorChart({
       return undefined;
     }
 
-    const eventSourceUrl = buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/updates`);
+    const eventSourceUrl = appendAuthToken(
+      buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/updates`),
+    );
     let source: EventSource | null = null;
 
     try {
