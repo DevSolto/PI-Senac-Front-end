@@ -1,4 +1,4 @@
-import { apiClient, getAuthToken } from '../http';
+import { apiClient, buildApiUrl, getAuthToken } from '../http';
 
 import type {
   CreateDevicePayload,
@@ -11,9 +11,6 @@ import type {
 
 const DEVICES_ENDPOINT = '/devices';
 const DEVICE_UPDATES_RETRY_DELAY = 5000;
-const ENV_API_URL = (
-  import.meta.env.VITE_API_URL ?? import.meta.env.API_URL ?? 'http://localhost:3000'
-) as string;
 
 type DeviceCommandResponse = {
   message: string;
@@ -23,23 +20,6 @@ type DeviceOnlineSummaryResponse = {
   online_count: number;
   devices: Device[];
 };
-
-function ensureTrailingSlash(url: string): string {
-  return url.endsWith('/') ? url : `${url}/`;
-}
-
-function buildApiUrl(path: string): string {
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
-  if (!ENV_API_URL) {
-    return path.startsWith('/') ? path : `/${path}`;
-  }
-
-  const base = ensureTrailingSlash(ENV_API_URL);
-  return new URL(path, base).toString();
-}
 
 function appendAuthToken(url: string): string {
   const token = getAuthToken();

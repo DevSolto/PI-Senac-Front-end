@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react-swc';
 
 
 const apiProxyRoutes = [
+  '/api',
   '/alerts',
   '/auth',
   '/companies',
