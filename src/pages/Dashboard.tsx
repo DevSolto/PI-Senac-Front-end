@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
+import { AlertTriangle, Droplets, Gauge, Loader2, RotateCw, ThermometerSun } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -91,6 +91,7 @@ const kpiIcons: Record<string, ReactNode> = {
   temperature: <ThermometerSun className="h-5 w-5" />,
   humidity: <Droplets className="h-5 w-5" />,
   environment: <Gauge className="h-5 w-5" />,
+  'spoilage-risk': <AlertTriangle className="h-5 w-5" />,
 };
 
 export const DashboardPage = () => {

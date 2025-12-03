@@ -123,6 +123,8 @@ export interface TableRow {
   environmentScore: number | null;
   alertsCount: number;
   criticalAlertsCount: number;
+  spoilageRiskProbability: number | null;
+  spoilageRiskCategory: string | null;
 }
 
 export interface DashboardMetrics {
@@ -190,10 +192,12 @@ export function computeKpis(data: ReadDataProcess[]): KpiSummary {
   const temperatureKpi = extractKpiValue(sorted, (item) => item.averageTemperature);
   const humidityKpi = extractKpiValue(sorted, (item) => item.averageHumidity);
   const environmentKpi = extractKpiValue(sorted, (item) => item.environmentScore);
+  const spoilageRiskKpi = extractKpiValue(sorted, (item) => item.spoilageRiskProbability);
 
   const { change: temperatureChange } = computeChange(temperatureKpi.current, temperatureKpi.previous);
   const { change: humidityChange } = computeChange(humidityKpi.current, humidityKpi.previous);
   const { change: environmentChange } = computeChange(environmentKpi.current, environmentKpi.previous);
+  const { change: spoilageRiskChange } = computeChange(spoilageRiskKpi.current, spoilageRiskKpi.previous);
 
   return [
     {
@@ -222,6 +226,22 @@ export function computeKpis(data: ReadDataProcess[]): KpiSummary {
       previousValue: normalizeNumber(environmentKpi.previous, 0),
       change: environmentChange,
       decimals: 0,
+      invertTrend: true,
+    },
+    {
+      id: 'spoilage-risk',
+      title: 'Risco de deterioração',
+      unit: '%',
+      value: normalizeNumber(
+        spoilageRiskKpi.current !== null ? spoilageRiskKpi.current * 100 : null,
+        1,
+      ),
+      previousValue: normalizeNumber(
+        spoilageRiskKpi.previous !== null ? spoilageRiskKpi.previous * 100 : null,
+        1,
+      ),
+      change: spoilageRiskChange,
+      decimals: 1,
       invertTrend: true,
     },
   ];
@@ -387,6 +407,41 @@ const buildDistribution = (data: DataProcessRecord[]): DistributionDataset[] => 
     }
   }
 
+  const riskDistribution = new Map<string, { label: string; value: number }>();
+
+  const resolveRiskLabel = (category: string | null) => {
+    if (!category) {
+      return 'Não informado';
+    }
+
+    switch (category.toUpperCase()) {
+      case 'LOW':
+        return 'Baixo';
+      case 'MEDIUM':
+        return 'Moderado';
+      case 'HIGH':
+        return 'Alto';
+      case 'CRITICAL':
+        return 'Crítico';
+      default:
+        return category;
+    }
+  };
+
+  for (const item of data) {
+    const category = item.spoilageRiskCategory ?? 'DESCONHECIDO';
+    const existing = riskDistribution.get(category);
+    const label = resolveRiskLabel(item.spoilageRiskCategory);
+
+    if (existing) {
+      existing.value += 1;
+    } else {
+      riskDistribution.set(category, { label, value: 1 });
+    }
+  }
+
+  const riskColors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+
   return [
     {
       id: 'environment',
@@ -408,6 +463,19 @@ const buildDistribution = (data: DataProcessRecord[]): DistributionDataset[] => 
         { id: 'severe', label: 'Acima de 10%', value: humiditySevere, color: 'hsl(var(--chart-7))' },
       ],
     },
+    {
+      id: 'spoilage-risk',
+      label: 'Risco de deterioração',
+      description: 'Distribuição por categoria de risco estimada.',
+      data: Array.from(riskDistribution.entries())
+        .map(([key, { label, value }], index) => ({
+          id: key,
+          label,
+          value,
+          color: riskColors[index % riskColors.length]!,
+        }))
+        .sort((a, b) => b.value - a.value),
+    },
   ];
 };
 
@@ -427,6 +495,8 @@ const buildTableRows = (data: DataProcessRecord[]): TableRow[] =>
     environmentScore: item.environmentScore,
     alertsCount: item.alertsCount,
     criticalAlertsCount: item.criticalAlertsCount,
+    spoilageRiskProbability: item.spoilageRiskProbability,
+    spoilageRiskCategory: item.spoilageRiskCategory,
   }));
 
 export const createDashboardMetrics = (

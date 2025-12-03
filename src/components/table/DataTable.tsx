@@ -21,19 +21,42 @@ export interface DataTableProps {
   isLoading?: boolean;
 }
 
-type SortColumn = 'period' | 'silo' | 'alerts' | 'criticalAlerts' | 'temperature' | 'humidity';
+type SortColumn =
+  | 'period'
+  | 'silo'
+  | 'alerts'
+  | 'criticalAlerts'
+  | 'temperature'
+  | 'humidity'
+  | 'spoilageRiskProbability'
+  | 'spoilageRiskCategory';
 type SortDirection = 'asc' | 'desc';
 
 const PAGE_SIZE = 10;
 
-const formatNumber = (value: number | null, suffix = '') => {
+const formatNumber = (value: number | null, suffix = '', decimals = 1) => {
   if (value === null) {
     return '--';
   }
 
   return `${
-    new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(value)
+    new Intl.NumberFormat('pt-BR', {
+      maximumFractionDigits: decimals,
+      minimumFractionDigits: Math.min(decimals, 1),
+    }).format(value)
   }${suffix}`;
+};
+
+const formatRiskProbability = (value: number | null) => {
+  if (value === null) {
+    return '--';
+  }
+
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'percent',
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1,
+  }).format(value);
 };
 
 const buildSortValue = (row: TableRow, column: SortColumn) => {
@@ -50,6 +73,10 @@ const buildSortValue = (row: TableRow, column: SortColumn) => {
       return row.averageTemperature ?? Number.NEGATIVE_INFINITY;
     case 'humidity':
       return row.averageHumidity ?? Number.NEGATIVE_INFINITY;
+    case 'spoilageRiskProbability':
+      return row.spoilageRiskProbability ?? Number.NEGATIVE_INFINITY;
+    case 'spoilageRiskCategory':
+      return row.spoilageRiskCategory?.toLocaleLowerCase('pt-BR') ?? '';
     default:
       return 0;
   }
@@ -88,8 +115,20 @@ export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
     return rows.filter((row) => {
       const period = formatPeriodRange(row.periodStart, row.periodEnd).toLocaleLowerCase('pt-BR');
       const silo = row.siloName.toLocaleLowerCase('pt-BR');
+      const riskCategory = row.spoilageRiskCategory?.toLocaleLowerCase('pt-BR') ?? '';
+      const riskProbability =
+        row.spoilageRiskProbability !== null && row.spoilageRiskProbability !== undefined
+          ? formatRiskProbability(row.spoilageRiskProbability)
+              .replace('%', '')
+              .toLocaleLowerCase('pt-BR')
+          : '';
 
-      return period.includes(normalized) || silo.includes(normalized);
+      return (
+        period.includes(normalized) ||
+        silo.includes(normalized) ||
+        riskCategory.includes(normalized) ||
+        riskProbability.includes(normalized)
+      );
     });
   }, [rows, searchTerm]);
 
@@ -158,6 +197,8 @@ export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
               <TableHead className="text-right">Alertas críticos</TableHead>
               <TableHead className="text-right">Temp média</TableHead>
               <TableHead className="text-right">Umidade média</TableHead>
+              <TableHead className="text-right">Risco de deterioração</TableHead>
+              <TableHead className="text-right">Categoria de risco</TableHead>
             </TableRowComponent>
           </TableHeader>
           <TableBody>
@@ -169,6 +210,8 @@ export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
                 <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-16" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
               </TableRowComponent>
             ))}
           </TableBody>
@@ -185,7 +228,7 @@ export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
           <Input
             value={searchTerm}
             onChange={handleSearch}
-            placeholder="Buscar por período ou silo"
+            placeholder="Buscar por período, silo ou risco"
             className="pl-9"
           />
         </div>
@@ -275,6 +318,29 @@ export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
                 <SortIndicator active={sort.column === 'humidity'} direction={sort.direction} />
               </button>
             </TableHead>
+            <TableHead className="text-right">
+              <button
+                type="button"
+                onClick={() => handleSort('spoilageRiskProbability')}
+                className="flex w-full items-center justify-end text-sm font-medium"
+              >
+                Risco de deterioração
+                <SortIndicator
+                  active={sort.column === 'spoilageRiskProbability'}
+                  direction={sort.direction}
+                />
+              </button>
+            </TableHead>
+            <TableHead>
+              <button
+                type="button"
+                onClick={() => handleSort('spoilageRiskCategory')}
+                className="flex w-full items-center justify-start text-left text-sm font-medium"
+              >
+                Categoria de risco
+                <SortIndicator active={sort.column === 'spoilageRiskCategory'} direction={sort.direction} />
+              </button>
+            </TableHead>
           </TableRowComponent>
         </TableHeader>
         <TableBody>
@@ -290,11 +356,13 @@ export const DataTable = ({ rows, isLoading = false }: DataTableProps) => {
               </TableCell>
               <TableCell className="text-right">{formatNumber(row.averageTemperature, ' °C')}</TableCell>
               <TableCell className="text-right">{formatNumber(row.averageHumidity, ' %')}</TableCell>
+              <TableCell className="text-right">{formatRiskProbability(row.spoilageRiskProbability)}</TableCell>
+              <TableCell>{row.spoilageRiskCategory ?? '--'}</TableCell>
             </TableRowComponent>
           ))}
           {paginatedRows.length === 0 ? (
             <TableRowComponent>
-              <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                 Nenhum dado encontrado.
               </TableCell>
             </TableRowComponent>
