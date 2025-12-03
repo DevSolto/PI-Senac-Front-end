@@ -32,6 +32,19 @@ const RawReadDataProcessSchema = z.object({
   percentOverTempLimit: z.number().nullable().optional(),
   percentOverHumLimit: z.number().nullable().optional(),
   environmentScore: z.number().nullable().optional(),
+  spoilageRiskProbability: z
+    .number()
+    .min(0, { message: 'Probabilidade mínima é 0' })
+    .max(1, { message: 'Probabilidade máxima é 1' })
+    .nullable()
+    .optional(),
+  spoilageRiskCategory: z
+    .string()
+    .refine((value) => value === value.toUpperCase(), {
+      message: 'Categoria deve estar em caixa alta',
+    })
+    .nullable()
+    .optional(),
   createdAt: z.string().nullable().optional(),
   siloId: z.number().nullable().optional(),
   siloName: z.string().nullable().optional(),
@@ -57,6 +70,8 @@ export interface DataProcessRecord {
   percentOverTempLimit: number | null;
   percentOverHumLimit: number | null;
   environmentScore: number | null;
+  spoilageRiskProbability: number | null;
+  spoilageRiskCategory: string | null;
   createdAt: Date | null;
   siloId: number | null;
   siloName: string;
@@ -92,6 +107,8 @@ export const ReadDataProcessSchema = RawReadDataProcessSchema.transform<DataProc
     percentOverTempLimit: record.percentOverTempLimit ?? null,
     percentOverHumLimit: record.percentOverHumLimit ?? null,
     environmentScore: record.environmentScore ?? null,
+    spoilageRiskProbability: record.spoilageRiskProbability ?? null,
+    spoilageRiskCategory: record.spoilageRiskCategory ?? null,
     createdAt,
     siloId,
     siloName,
