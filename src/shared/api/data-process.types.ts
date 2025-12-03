@@ -17,6 +17,8 @@ export interface CreateDataProcessDto {
   percentOverTempLimit?: number | null;
   percentOverHumLimit?: number | null;
   environmentScore?: number | null;
+  spoilageRiskProbability?: number | null;
+  spoilageRiskCategory?: string | null;
 }
 
 export interface UpdateDataProcessDto {
@@ -38,6 +40,8 @@ export interface UpdateDataProcessDto {
   percentOverTempLimit?: number | null;
   percentOverHumLimit?: number | null;
   environmentScore?: number | null;
+  spoilageRiskProbability?: number | null;
+  spoilageRiskCategory?: string | null;
 }
 
 export interface DataProcess {
@@ -61,5 +65,7 @@ export interface DataProcess {
   percentOverTempLimit?: number | null;
   percentOverHumLimit?: number | null;
   environmentScore?: number | null;
+  spoilageRiskProbability?: number | null;
+  spoilageRiskCategory?: string | null;
   createdAt: string;
 }
