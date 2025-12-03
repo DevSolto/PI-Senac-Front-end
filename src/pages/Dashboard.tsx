@@ -356,6 +356,23 @@ export const DashboardPage = () => {
         ) : null}
       </section>
 
+        <section>
+        {showRealtimeChart ? (
+          <RealtimeSensorChart
+            deviceId={realtimeDeviceId}
+            apiBaseUrl={realtimeApiBaseUrl}
+            maxPoints={60}
+          />
+        ) : (
+          <Alert variant="secondary" role="alert">
+            <AlertTitle>Configure o dispositivo em tempo real</AlertTitle>
+            <AlertDescription>
+              Defina as variáveis VITE_REALTIME_DEVICE_ID e VITE_API_URL para habilitar o gráfico em
+              tempo real.
+            </AlertDescription>
+          </Alert>
+        )}
+      </section>
       {shouldUseLegacyCharts ? (
         <DashboardChartsLegacy
           temperatureSeries={metrics.temperatureSeries}
@@ -374,23 +391,7 @@ export const DashboardPage = () => {
         />
       )}
 
-      <section>
-        {showRealtimeChart ? (
-          <RealtimeSensorChart
-            deviceId={realtimeDeviceId}
-            apiBaseUrl={realtimeApiBaseUrl}
-            maxPoints={60}
-          />
-        ) : (
-          <Alert variant="secondary" role="alert">
-            <AlertTitle>Configure o dispositivo em tempo real</AlertTitle>
-            <AlertDescription>
-              Defina as variáveis VITE_REALTIME_DEVICE_ID e VITE_API_URL para habilitar o gráfico em
-              tempo real.
-            </AlertDescription>
-          </Alert>
-        )}
-      </section>
+      
 
       <section className="flex flex-col gap-4">
         <Card className="border-border/60">
