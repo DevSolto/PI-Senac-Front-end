@@ -1,6 +1,7 @@
-import { AlertTriangle, Leaf, Menu, Moon, Sun } from 'lucide-react';
+import { AlertTriangle, Leaf, LogOut, Menu, Moon, Sun } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { useAuth } from '../hooks/useAuth';
 import { useMobile } from '../hooks/useMobile';
 import { useSidebar } from '../hooks/useSidebar';
 import { useTheme } from '../hooks/useTheme';
@@ -10,6 +11,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ alertsToday }: HeaderProps) => {
+  const { logout } = useAuth();
   const { isMobile } = useMobile();
   const { openSidebar } = useSidebar();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -46,6 +48,9 @@ export const Header = ({ alertsToday }: HeaderProps) => {
       <div className="flex items-center space-x-2">
         <Button variant="ghost" size="sm" onClick={toggleTheme}>
           {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={logout}>
+          <LogOut className="w-5 h-5" />
         </Button>
       </div>
     </header>
