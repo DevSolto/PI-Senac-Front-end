@@ -104,4 +104,28 @@ describe('RealtimeSensorChart', () => {
       expect(screen.getByText(/Transmitindo em tempo real/i)).toBeInTheDocument();
     });
   });
+
+  it('aceita eventos SSE com payload aninhado e mantém atualizações', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
+
+    render(
+      <RealtimeSensorChart deviceId="nested" apiBaseUrl="http://localhost:3000" maxPoints={3} />,
+    );
+
+    const source = await waitFor(() => MockEventSource.instances[0]);
+
+    await act(async () => {
+      source.emitOpen();
+      source.emitMessage({ payload: { timestamp: 1764872234, value: { temperature: 26.1, humidity: 59 } } });
+      source.emitMessage({
+        payload: { timestamp: 1764872239, value: { temperature: 26.2, humidity: 60 } },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('26.2°C')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('60%')[0]).toBeInTheDocument();
+      expect(screen.getByText(/Transmitindo em tempo real/i)).toBeInTheDocument();
+    });
+  });
 });

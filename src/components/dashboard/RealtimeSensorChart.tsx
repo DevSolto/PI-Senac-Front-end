@@ -155,8 +155,16 @@ function normalizeEventPayload(raw: unknown): DeviceHistoryEntry[] {
   }
 
   if (raw && typeof raw === 'object') {
-    if ('payload' in raw && Array.isArray((raw as { payload?: unknown }).payload)) {
-      return (raw as { payload: DeviceHistoryEntry[] }).payload;
+    if ('payload' in raw) {
+      const payload = (raw as { payload?: unknown }).payload;
+
+      if (Array.isArray(payload)) {
+        return payload as DeviceHistoryEntry[];
+      }
+
+      if (payload && typeof payload === 'object') {
+        return [payload as DeviceHistoryEntry];
+      }
     }
 
     return [raw as DeviceHistoryEntry];
