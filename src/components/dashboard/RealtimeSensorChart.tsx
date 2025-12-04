@@ -565,12 +565,8 @@ export function RealtimeSensorChart({
                   type="monotone"
                   dataKey="temperature"
                   strokeWidth={2}
-                  dot={{
-                    r: 4,
-                    strokeWidth: 2,
-                    stroke: 'var(--color-temperature)',
-                    fill: 'var(--color-temperature)',
-                  }}
+                  dot={false}
+                  activeDot={false}
                   connectNulls
                   className="stroke-[--color-temperature]"
                 />
@@ -579,12 +575,8 @@ export function RealtimeSensorChart({
                   type="monotone"
                   dataKey="humidity"
                   strokeWidth={2}
-                  dot={{
-                    r: 4,
-                    strokeWidth: 2,
-                    stroke: 'var(--color-humidity)',
-                    fill: 'var(--color-humidity)',
-                  }}
+                  dot={false}
+                  activeDot={false}
                   connectNulls
                   className="stroke-[--color-humidity]"
                 />
