@@ -88,18 +88,40 @@ const statusIcon: Record<ConnectionStatus, JSX.Element> = {
   error: <AlertTriangle className="h-3.5 w-3.5" aria-hidden />,
 };
 
+function parseTimestampMs(timestamp: unknown): number | null {
+  if (typeof timestamp === 'number') {
+    const milliseconds = timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
+    const parsed = new Date(milliseconds).getTime();
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  if (typeof timestamp === 'string') {
+    const parsed = new Date(timestamp).getTime();
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  return null;
+}
+
 function parseSensorPoint(entry: DeviceHistoryEntry | null | undefined): SensorPoint | null {
   if (!entry) {
     return null;
   }
 
-  const timestamp = entry.timestamp ? new Date(entry.timestamp).getTime() : Date.now();
+  const timestamp = parseTimestampMs(entry.timestamp ?? null) ?? Date.now();
   if (Number.isNaN(timestamp)) {
     return null;
   }
 
-  const temperature = typeof entry.temperature === 'number' ? entry.temperature : null;
-  const humidity = typeof entry.humidity === 'number' ? entry.humidity : null;
+  const nestedValue = entry.value && typeof entry.value === 'object' ? entry.value : null;
+  const nestedTemperature =
+    nestedValue && typeof nestedValue.temperature === 'number' ? nestedValue.temperature : null;
+  const nestedHumidity =
+    nestedValue && typeof nestedValue.humidity === 'number' ? nestedValue.humidity : null;
+
+  const temperature =
+    nestedTemperature ?? (typeof entry.temperature === 'number' ? entry.temperature : null);
+  const humidity = nestedHumidity ?? (typeof entry.humidity === 'number' ? entry.humidity : null);
 
   if (temperature === null && humidity === null) {
     return null;
@@ -110,6 +132,37 @@ function parseSensorPoint(entry: DeviceHistoryEntry | null | undefined): SensorP
     temperature,
     humidity,
   };
+}
+
+function normalizeHistoryPayload(raw: unknown): DeviceHistoryEntry[] {
+  if (Array.isArray(raw)) {
+    return raw as DeviceHistoryEntry[];
+  }
+
+  if (raw && typeof raw === 'object' && 'payload' in raw) {
+    const payload = (raw as { payload?: unknown }).payload;
+    if (Array.isArray(payload)) {
+      return payload as DeviceHistoryEntry[];
+    }
+  }
+
+  throw new Error('Resposta inesperada ao carregar histórico.');
+}
+
+function normalizeEventPayload(raw: unknown): DeviceHistoryEntry[] {
+  if (Array.isArray(raw)) {
+    return raw as DeviceHistoryEntry[];
+  }
+
+  if (raw && typeof raw === 'object') {
+    if ('payload' in raw && Array.isArray((raw as { payload?: unknown }).payload)) {
+      return (raw as { payload: DeviceHistoryEntry[] }).payload;
+    }
+
+    return [raw as DeviceHistoryEntry];
+  }
+
+  return [];
 }
 
 export function RealtimeSensorChart({
@@ -187,23 +240,20 @@ export function RealtimeSensorChart({
           );
         }
 
-        const payload = (await response.json()) as DeviceHistoryEntry[];
+        const rawPayload = await response.json();
         if (
-          payload &&
-          !Array.isArray(payload) &&
-          typeof payload === 'object' &&
-          'message' in payload &&
-          typeof (payload as { message?: unknown }).message === 'string'
+          rawPayload &&
+          typeof rawPayload === 'object' &&
+          'message' in rawPayload &&
+          typeof (rawPayload as { message?: unknown }).message === 'string'
         ) {
           console.info('[RealtimeSensorChart] Mensagem retornada pela API.', {
-            message: (payload as { message: string }).message,
+            message: (rawPayload as { message: string }).message,
             historyUrl,
           });
         }
 
-        if (!Array.isArray(payload)) {
-          throw new Error('Resposta inesperada ao carregar histórico.');
-        }
+        const payload = normalizeHistoryPayload(rawPayload);
 
         const parsed = payload
           .map(parseSensorPoint)
@@ -289,21 +339,31 @@ export function RealtimeSensorChart({
       }
 
       try {
-        const parsedEvent = JSON.parse(event.data) as DeviceHistoryEntry & { message?: string };
+        const parsedEvent = JSON.parse(event.data) as unknown;
 
-        if (parsedEvent && typeof parsedEvent.message === 'string') {
+        if (
+          parsedEvent &&
+          typeof parsedEvent === 'object' &&
+          'message' in parsedEvent &&
+          typeof (parsedEvent as { message?: unknown }).message === 'string'
+        ) {
           console.info('[RealtimeSensorChart] Mensagem retornada pela API.', {
-            message: parsedEvent.message,
+            message: (parsedEvent as { message: string }).message,
           });
         }
-        const point = parseSensorPoint(parsedEvent);
 
-        if (!point) {
+        const entries = normalizeEventPayload(parsedEvent);
+        const parsedPoints = entries
+          .map(parseSensorPoint)
+          .filter((point): point is SensorPoint => point !== null)
+          .sort((a, b) => a.timestamp - b.timestamp);
+
+        if (parsedPoints.length === 0) {
           return;
         }
 
         setPoints((previous) => {
-          const next = [...previous, point];
+          const next = [...previous, ...parsedPoints];
           next.sort((a, b) => a.timestamp - b.timestamp);
 
           if (next.length > maxPoints) {
@@ -316,11 +376,10 @@ export function RealtimeSensorChart({
             return trimmed;
           }
 
-          console.debug('[RealtimeSensorChart] Novo ponto incluído.', {
-            timestamp: point.timestamp,
-            temperature: point.temperature,
-            humidity: point.humidity,
-            total: next.length,
+          console.debug('[RealtimeSensorChart] Novos pontos incluídos.', {
+            total: parsedPoints.length,
+            ultimoTimestamp: parsedPoints[parsedPoints.length - 1]?.timestamp,
+            totalAcumulado: next.length,
           });
           return next;
         });

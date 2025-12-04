@@ -19,10 +19,18 @@ export interface DeviceCommandPayload {
   command: string;
 }
 
-export interface DeviceHistoryEntry {
-  timestamp: string;
+export interface DeviceHistoryEntryValue {
   temperature?: number | null;
   humidity?: number | null;
+  airQuality?: number | null;
+  [key: string]: unknown;
+}
+
+export interface DeviceHistoryEntry {
+  timestamp: string | number;
+  temperature?: number | null;
+  humidity?: number | null;
+  value?: DeviceHistoryEntryValue | null;
   airQuality?: number | null;
   [key: string]: unknown;
 }
