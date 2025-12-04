@@ -478,6 +478,8 @@ export function RealtimeSensorChart({
     [points],
   );
 
+  const chartTicks = useMemo(() => chartRows.map((row) => row.t), [chartRows]);
+
   const shouldShowEmptyState =
     status !== 'loading-history' && status !== 'connecting' && chartRows.length === 0;
 
@@ -544,6 +546,7 @@ export function RealtimeSensorChart({
                   type="number"
                   dataKey="t"
                   domain={['dataMin', 'dataMax']}
+                  ticks={chartTicks}
                   tickFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
                   minTickGap={24}
                 />
