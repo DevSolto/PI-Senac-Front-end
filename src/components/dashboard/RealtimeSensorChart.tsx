@@ -12,7 +12,12 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { fmtMinuteSecond, fmtPerc, fmtTemp } from '@/lib/formatters';
@@ -551,6 +556,7 @@ export function RealtimeSensorChart({
                   minTickGap={24}
                 />
                 <YAxis yAxisId="shared" domain={[0, 100]} tickFormatter={(value) => `${value}`} width={48} />
+                <ChartLegend content={<ChartLegendContent />} />
                 <RechartsTooltip
                   labelFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
                   formatter={(value: number | string, name) => {
@@ -571,6 +577,7 @@ export function RealtimeSensorChart({
                   dot={false}
                   activeDot={false}
                   connectNulls
+                  stroke="var(--color-temperature)"
                   className="stroke-[--color-temperature]"
                 />
                 <Line
@@ -581,6 +588,7 @@ export function RealtimeSensorChart({
                   dot={false}
                   activeDot={false}
                   connectNulls
+                  stroke="var(--color-humidity)"
                   className="stroke-[--color-humidity]"
                 />
               </LineChart>
