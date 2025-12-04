@@ -24,3 +24,16 @@ export const fmtData = (iso?: string | Date | null) => {
     minute: '2-digit',
   });
 };
+
+export const fmtMinuteSecond = (iso?: string | Date | null) => {
+  if (!iso) {
+    return '-';
+  }
+
+  const d = iso instanceof Date ? iso : new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return '-';
+  }
+
+  return d.toLocaleTimeString('pt-BR', { minute: '2-digit', second: '2-digit' });
+};
