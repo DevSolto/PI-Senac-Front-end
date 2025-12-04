@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, RadioTower, RefreshCw, WifiOff } from 'lucide-react';
 import {
   CartesianGrid,
@@ -182,6 +182,9 @@ export function RealtimeSensorChart({
   const [points, setPoints] = useState<SensorPoint[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [error, setError] = useState<string | null>(null);
+  const isActiveRef = useRef(true);
+  const hasLoadedHistoryRef = useRef(false);
+  const isFetchingHistoryRef = useRef(false);
 
   useEffect(() => {
     console.info('[RealtimeSensorChart] Status atualizado.', { status });
@@ -193,14 +196,27 @@ export function RealtimeSensorChart({
     [normalizedBaseUrl],
   );
 
-  useEffect(() => {
-    let isActive = true;
-    const loadHistory = async () => {
+  const loadHistory = useCallback(
+    async ({ background = false } = {}) => {
+      if (!isActiveRef.current) {
+        console.debug('[RealtimeSensorChart] Componente inativo. Ignorando carregamento.');
+        return;
+      }
+
+      if (isFetchingHistoryRef.current) {
+        console.debug('[RealtimeSensorChart] Carregamento de histórico já em andamento. Ignorando.');
+        return;
+      }
+
+      isFetchingHistoryRef.current = true;
       console.info('[RealtimeSensorChart] Iniciando carregamento do histórico.', {
         deviceId,
         maxPoints,
+        background,
       });
-      setStatus('loading-history');
+      if (!background) {
+        setStatus('loading-history');
+      }
       try {
         const historyUrl = appendAuthToken(
           buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/history`),
@@ -274,35 +290,63 @@ export function RealtimeSensorChart({
           payload,
         });
 
-        if (!isActive) {
+        if (!isActiveRef.current) {
           return;
         }
 
-        setPoints(parsed.slice(-maxPoints));
-        setStatus('history-loaded');
+        if (!hasLoadedHistoryRef.current && background) {
+          console.debug('[RealtimeSensorChart] Ignorando atualização em segundo plano sem histórico inicial.');
+          return;
+        }
+
+        setPoints((previous) => {
+          const combined = background ? [...previous, ...parsed] : parsed;
+
+          const deduped = Array.from(
+            combined
+              .reduce((byTimestamp, entry) => byTimestamp.set(entry.timestamp, entry), new Map<number, SensorPoint>())
+              .values(),
+          ).sort((a, b) => a.timestamp - b.timestamp);
+
+          return deduped.slice(-maxPoints);
+        });
+        hasLoadedHistoryRef.current = true;
+        setStatus((previous) => (previous === 'connected' ? 'connected' : 'history-loaded'));
         setError(null);
       } catch (historyError) {
         console.error('[RealtimeSensorChart] Erro ao carregar histórico', historyError);
-        if (!isActive) {
-          return;
-        }
-
         setError(
           historyError instanceof Error
             ? historyError.message
             : 'Não foi possível carregar o histórico deste dispositivo. Tente novamente.',
         );
         setStatus('error');
+      } finally {
+        isFetchingHistoryRef.current = false;
       }
-    };
+    },
+    [buildEndpointUrl, deviceId, maxPoints],
+  );
 
-    loadHistory();
+  useEffect(() => {
+    isActiveRef.current = true;
+    let isActive = true;
+    const intervalId = window.setInterval(() => {
+      if (!isActive) {
+        return;
+      }
+      loadHistory({ background: true });
+    }, 5000);
+
+    void loadHistory();
 
     return () => {
       isActive = false;
+      isActiveRef.current = false;
       console.info('[RealtimeSensorChart] Descartando carregamento de histórico pendente.');
+      window.clearInterval(intervalId);
     };
-  }, [buildEndpointUrl, deviceId, maxPoints]);
+  }, [loadHistory]);
 
   useEffect(() => {
     if (!deviceId) {
