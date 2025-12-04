@@ -579,6 +579,7 @@ export function RealtimeSensorChart({
                   dot={false}
                   activeDot={false}
                   connectNulls
+                  stroke="var(--color-temperature)"
                   className="stroke-[--color-temperature]"
                 />
                 <Line
@@ -589,6 +590,7 @@ export function RealtimeSensorChart({
                   dot={false}
                   activeDot={false}
                   connectNulls
+                  stroke="var(--color-humidity)"
                   className="stroke-[--color-humidity]"
                 />
               </LineChart>
