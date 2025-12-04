@@ -56,10 +56,14 @@ describe('RealtimeSensorChart', () => {
   it('carrega o histórico inicial e exibe status', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => [
-        { timestamp: '2024-02-01T10:00:00Z', temperature: 21.5, humidity: 55 },
-        { timestamp: '2024-02-01T10:05:00Z', temperature: 22, humidity: 56 },
-      ],
+      json: async () => ({
+        total: 2,
+        historyUrl: 'http://api.example.com/api/devices/device-123/history',
+        payload: [
+          { timestamp: 1764872209, value: { temperature: 31.3, humidity: 67 } },
+          { timestamp: 1764872214, value: { temperature: 31.4, humidity: 68 } },
+        ],
+      }),
     });
 
     render(
@@ -74,8 +78,10 @@ describe('RealtimeSensorChart', () => {
       );
     });
 
-    expect(screen.getByText('22.0°C')).toBeInTheDocument();
-    expect(screen.getByText('56%')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByText('31.4°C')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('68%')[0]).toBeInTheDocument();
+    });
   });
 
   it('processa eventos SSE e atualiza a leitura mais recente', async () => {
@@ -89,12 +95,36 @@ describe('RealtimeSensorChart', () => {
     expect(source.url).toBe(`http://localhost:3000/api/devices/abc/updates?token=${token}`);
     await act(async () => {
       source.emitOpen();
-      source.emitMessage({ timestamp: '2024-03-01T12:00:00Z', temperature: 25.7, humidity: 61 });
+      source.emitMessage({ timestamp: 1764872209, value: { temperature: 25.7, humidity: 61 } });
     });
 
     await waitFor(() => {
       expect(screen.getAllByText('25.7°C')[0]).toBeInTheDocument();
       expect(screen.getAllByText('61%')[0]).toBeInTheDocument();
+      expect(screen.getByText(/Transmitindo em tempo real/i)).toBeInTheDocument();
+    });
+  });
+
+  it('aceita eventos SSE com payload aninhado e mantém atualizações', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
+
+    render(
+      <RealtimeSensorChart deviceId="nested" apiBaseUrl="http://localhost:3000" maxPoints={3} />,
+    );
+
+    const source = await waitFor(() => MockEventSource.instances[0]);
+
+    await act(async () => {
+      source.emitOpen();
+      source.emitMessage({ payload: { timestamp: 1764872234, value: { temperature: 26.1, humidity: 59 } } });
+      source.emitMessage({
+        payload: { timestamp: 1764872239, value: { temperature: 26.2, humidity: 60 } },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('26.2°C')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('60%')[0]).toBeInTheDocument();
       expect(screen.getByText(/Transmitindo em tempo real/i)).toBeInTheDocument();
     });
   });
