@@ -121,6 +121,11 @@ export function RealtimeSensorChart({
   const [points, setPoints] = useState<SensorPoint[]>([]);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.info('[RealtimeSensorChart] Status atualizado.', { status });
+  }, [status]);
+
   const normalizedBaseUrl = useMemo(() => apiBaseUrl.trim() || undefined, [apiBaseUrl]);
   const buildEndpointUrl = useCallback(
     (path: string) => buildApiUrl(path, { baseUrlOverride: normalizedBaseUrl, skipApiPrefix: false }),
@@ -130,6 +135,10 @@ export function RealtimeSensorChart({
   useEffect(() => {
     let isActive = true;
     const loadHistory = async () => {
+      console.info('[RealtimeSensorChart] Iniciando carregamento do histórico.', {
+        deviceId,
+        maxPoints,
+      });
       setStatus('loading-history');
       try {
         const historyUrl = appendAuthToken(
@@ -191,6 +200,10 @@ export function RealtimeSensorChart({
           .filter((point): point is SensorPoint => point !== null)
           .sort((a, b) => a.timestamp - b.timestamp);
 
+        console.info('[RealtimeSensorChart] Histórico carregado com sucesso.', {
+          total: parsed.length,
+        });
+
         if (!isActive) {
           return;
         }
@@ -217,11 +230,13 @@ export function RealtimeSensorChart({
 
     return () => {
       isActive = false;
+      console.info('[RealtimeSensorChart] Descartando carregamento de histórico pendente.');
     };
   }, [buildEndpointUrl, deviceId, maxPoints]);
 
   useEffect(() => {
     if (!deviceId) {
+      console.warn('[RealtimeSensorChart] ID do dispositivo ausente. SSE não iniciado.');
       return undefined;
     }
 
@@ -231,6 +246,7 @@ export function RealtimeSensorChart({
     let source: EventSource | null = null;
 
     try {
+      console.info('[RealtimeSensorChart] Iniciando SSE.', { eventSourceUrl });
       source = new EventSource(eventSourceUrl);
     } catch (eventSourceError) {
       console.error('[RealtimeSensorChart] Erro ao iniciar SSE', eventSourceError);
@@ -242,12 +258,15 @@ export function RealtimeSensorChart({
     }
 
     source.onopen = () => {
+      console.info('[RealtimeSensorChart] Conexão SSE aberta.');
       setStatus((previous) => (previous === 'history-loaded' ? 'connected' : 'connecting'));
       setError(null);
     };
 
     source.onmessage = (event) => {
+      console.debug('[RealtimeSensorChart] Evento SSE recebido.', { raw: event.data });
       if (!event.data) {
+        console.warn('[RealtimeSensorChart] Evento SSE sem dados ignorado.');
         return;
       }
 
@@ -270,9 +289,21 @@ export function RealtimeSensorChart({
           next.sort((a, b) => a.timestamp - b.timestamp);
 
           if (next.length > maxPoints) {
-            return next.slice(-maxPoints);
+            const trimmed = next.slice(-maxPoints);
+            console.debug('[RealtimeSensorChart] Máximo de pontos atingido. Aplicando trim.', {
+              maxPoints,
+              anterior: next.length,
+              novoTotal: trimmed.length,
+            });
+            return trimmed;
           }
 
+          console.debug('[RealtimeSensorChart] Novo ponto incluído.', {
+            timestamp: point.timestamp,
+            temperature: point.temperature,
+            humidity: point.humidity,
+            total: next.length,
+          });
           return next;
         });
         setStatus('connected');
@@ -282,6 +313,7 @@ export function RealtimeSensorChart({
     };
 
     source.onerror = () => {
+      console.error('[RealtimeSensorChart] Erro na conexão SSE.');
       setStatus('disconnected');
       setError(
         'Conexão SSE perdida ou rota de updates indisponível. Verifique o backend e tente novamente.',
@@ -289,6 +321,7 @@ export function RealtimeSensorChart({
     };
 
     return () => {
+      console.info('[RealtimeSensorChart] Encerrando SSE.');
       source?.close();
     };
   }, [buildEndpointUrl, deviceId, maxPoints]);
