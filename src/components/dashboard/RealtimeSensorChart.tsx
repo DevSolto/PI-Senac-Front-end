@@ -145,8 +145,15 @@ export function RealtimeSensorChart({
           buildEndpointUrl(`/devices/${encodeURIComponent(deviceId)}/history`),
         );
         const authToken = getAuthToken();
+        console.info('[RealtimeSensorChart] Disparando requisição de histórico.', { historyUrl });
         const response = await fetch(historyUrl, {
           headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+        });
+
+        console.info('[RealtimeSensorChart] Resposta de histórico recebida.', {
+          historyUrl,
+          status: response.status,
+          ok: response.ok,
         });
 
         if (!response.ok) {
@@ -165,10 +172,12 @@ export function RealtimeSensorChart({
             console.warn(
               '[RealtimeSensorChart] Não foi possível interpretar a mensagem de erro da API.',
               parseError,
+              { historyUrl },
             );
           }
 
           console.error('[RealtimeSensorChart] Histórico indisponível.', {
+            historyUrl,
             status: response.status,
             apiMessage,
           });
@@ -188,6 +197,7 @@ export function RealtimeSensorChart({
         ) {
           console.info('[RealtimeSensorChart] Mensagem retornada pela API.', {
             message: (payload as { message: string }).message,
+            historyUrl,
           });
         }
 
@@ -202,6 +212,8 @@ export function RealtimeSensorChart({
 
         console.info('[RealtimeSensorChart] Histórico carregado com sucesso.', {
           total: parsed.length,
+          historyUrl,
+          payload,
         });
 
         if (!isActive) {
@@ -258,13 +270,19 @@ export function RealtimeSensorChart({
     }
 
     source.onopen = () => {
-      console.info('[RealtimeSensorChart] Conexão SSE aberta.');
+      console.info('[RealtimeSensorChart] Conexão SSE aberta.', {
+        eventSourceUrl,
+        readyState: source?.readyState,
+      });
       setStatus((previous) => (previous === 'history-loaded' ? 'connected' : 'connecting'));
       setError(null);
     };
 
     source.onmessage = (event) => {
-      console.debug('[RealtimeSensorChart] Evento SSE recebido.', { raw: event.data });
+      console.debug('[RealtimeSensorChart] Evento SSE recebido.', {
+        raw: event.data,
+        eventSourceUrl,
+      });
       if (!event.data) {
         console.warn('[RealtimeSensorChart] Evento SSE sem dados ignorado.');
         return;
@@ -313,7 +331,10 @@ export function RealtimeSensorChart({
     };
 
     source.onerror = () => {
-      console.error('[RealtimeSensorChart] Erro na conexão SSE.');
+      console.error('[RealtimeSensorChart] Erro na conexão SSE.', {
+        eventSourceUrl,
+        readyState: source?.readyState,
+      });
       setStatus('disconnected');
       setError(
         'Conexão SSE perdida ou rota de updates indisponível. Verifique o backend e tente novamente.',
@@ -321,7 +342,7 @@ export function RealtimeSensorChart({
     };
 
     return () => {
-      console.info('[RealtimeSensorChart] Encerrando SSE.');
+      console.info('[RealtimeSensorChart] Encerrando SSE.', { eventSourceUrl });
       source?.close();
     };
   }, [buildEndpointUrl, deviceId, maxPoints]);
