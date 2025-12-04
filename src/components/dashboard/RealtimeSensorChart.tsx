@@ -5,14 +5,20 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { fmtMinuteSecond, fmtPerc, fmtTemp } from '@/lib/formatters';
@@ -43,11 +49,11 @@ type ConnectionStatus =
 const chartConfig = {
   temperature: {
     label: 'Temperatura (°C)',
-    color: 'hsl(var(--chart-1))',
+    color: 'hsl(17 90% 56%)',
   },
   humidity: {
     label: 'Umidade relativa (%)',
-    color: 'hsl(var(--chart-2))',
+    color: 'hsl(202 83% 48%)',
   },
 } satisfies ChartConfig;
 
@@ -551,17 +557,43 @@ export function RealtimeSensorChart({
                   minTickGap={24}
                 />
                 <YAxis yAxisId="shared" domain={[0, 100]} tickFormatter={(value) => `${value}`} width={48} />
-                <RechartsTooltip
-                  labelFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
-                  formatter={(value: number | string, name) => {
-                    if (name === 'temperature' && typeof value === 'number') {
-                      return fmtTemp(value);
+                <ChartTooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) {
+                      return null;
                     }
-                    if (name === 'humidity' && typeof value === 'number') {
-                      return fmtPerc(value);
-                    }
-                    return value;
+
+                    const formattedPayload = payload.map((item) => {
+                      if (!item || typeof item.value !== 'number') {
+                        return item;
+                      }
+
+                      if (item.dataKey === 'temperature') {
+                        return { ...item, value: fmtTemp(item.value) };
+                      }
+
+                      if (item.dataKey === 'humidity') {
+                        return { ...item, value: fmtPerc(item.value) };
+                      }
+
+                      return item;
+                    });
+
+                    return (
+                      <ChartTooltipContent
+                        indicator="line"
+                        active={active}
+                        label={fmtMinuteSecond(new Date(label as number))}
+                        payload={formattedPayload}
+                      />
+                    );
                   }}
+                />
+                <ChartLegend
+                  align="center"
+                  verticalAlign="bottom"
+                  content={<ChartLegendContent />}
+                  wrapperStyle={{ paddingTop: 12 }}
                 />
                 <Line
                   yAxisId="shared"
