@@ -5,14 +5,20 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { fmtMinuteSecond, fmtPerc, fmtTemp } from '@/lib/formatters';
@@ -478,6 +484,8 @@ export function RealtimeSensorChart({
     [points],
   );
 
+  const chartTicks = useMemo(() => chartRows.map((row) => row.t), [chartRows]);
+
   const shouldShowEmptyState =
     status !== 'loading-history' && status !== 'connecting' && chartRows.length === 0;
 
@@ -544,11 +552,13 @@ export function RealtimeSensorChart({
                   type="number"
                   dataKey="t"
                   domain={['dataMin', 'dataMax']}
+                  ticks={chartTicks}
                   tickFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
                   minTickGap={24}
                 />
                 <YAxis yAxisId="shared" domain={[0, 100]} tickFormatter={(value) => `${value}`} width={48} />
-                <RechartsTooltip
+                <ChartTooltip
+                  content={<ChartTooltipContent indicator="line" />}
                   labelFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
                   formatter={(value: number | string, name) => {
                     if (name === 'temperature' && typeof value === 'number') {
@@ -560,6 +570,7 @@ export function RealtimeSensorChart({
                     return value;
                   }}
                 />
+                <ChartLegend content={<ChartLegendContent />} />
                 <Line
                   yAxisId="shared"
                   type="monotone"
