@@ -547,22 +547,7 @@ export function RealtimeSensorChart({
                   tickFormatter={(value) => fmtData(new Date(value as number))}
                   minTickGap={24}
                 />
-                <YAxis
-                  yAxisId="left"
-                  dataKey="temperature"
-                  domain={['dataMin - 1', 'dataMax + 1']}
-                  tickFormatter={(value) => fmtTemp(value as number)}
-                  width={56}
-                  allowDataOverflow
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  dataKey="humidity"
-                  domain={[0, 100]}
-                  tickFormatter={(value) => fmtPerc(value as number)}
-                  width={48}
-                />
+                <YAxis yAxisId="shared" domain={[0, 100]} tickFormatter={(value) => `${value}`} width={48} />
                 <RechartsTooltip
                   labelFormatter={(value) => fmtData(new Date(value as number))}
                   formatter={(value: number | string, name) => {
@@ -576,20 +561,30 @@ export function RealtimeSensorChart({
                   }}
                 />
                 <Line
-                  yAxisId="left"
+                  yAxisId="shared"
                   type="monotone"
                   dataKey="temperature"
                   strokeWidth={2}
-                  dot={false}
+                  dot={{
+                    r: 4,
+                    strokeWidth: 2,
+                    stroke: 'var(--color-temperature)',
+                    fill: 'var(--color-temperature)',
+                  }}
                   connectNulls
                   className="stroke-[--color-temperature]"
                 />
                 <Line
-                  yAxisId="right"
+                  yAxisId="shared"
                   type="monotone"
                   dataKey="humidity"
                   strokeWidth={2}
-                  dot={false}
+                  dot={{
+                    r: 4,
+                    strokeWidth: 2,
+                    stroke: 'var(--color-humidity)',
+                    fill: 'var(--color-humidity)',
+                  }}
                   connectNulls
                   className="stroke-[--color-humidity]"
                 />
