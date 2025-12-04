@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
-import { fmtData, fmtPerc, fmtTemp } from '@/lib/formatters';
+import { fmtMinuteSecond, fmtPerc, fmtTemp } from '@/lib/formatters';
 import type { DeviceHistoryEntry } from '@/shared/api/devices.types';
 import { buildApiUrl, getAuthToken } from '@/shared/http';
 
@@ -544,27 +544,12 @@ export function RealtimeSensorChart({
                   type="number"
                   dataKey="t"
                   domain={['dataMin', 'dataMax']}
-                  tickFormatter={(value) => fmtData(new Date(value as number))}
+                  tickFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
                   minTickGap={24}
                 />
-                <YAxis
-                  yAxisId="left"
-                  dataKey="temperature"
-                  domain={['dataMin - 1', 'dataMax + 1']}
-                  tickFormatter={(value) => fmtTemp(value as number)}
-                  width={56}
-                  allowDataOverflow
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  dataKey="humidity"
-                  domain={[0, 100]}
-                  tickFormatter={(value) => fmtPerc(value as number)}
-                  width={48}
-                />
+                <YAxis yAxisId="shared" domain={[0, 100]} tickFormatter={(value) => `${value}`} width={48} />
                 <RechartsTooltip
-                  labelFormatter={(value) => fmtData(new Date(value as number))}
+                  labelFormatter={(value) => fmtMinuteSecond(new Date(value as number))}
                   formatter={(value: number | string, name) => {
                     if (name === 'temperature' && typeof value === 'number') {
                       return fmtTemp(value);
@@ -576,7 +561,7 @@ export function RealtimeSensorChart({
                   }}
                 />
                 <Line
-                  yAxisId="left"
+                  yAxisId="shared"
                   type="monotone"
                   dataKey="temperature"
                   strokeWidth={2}
@@ -585,7 +570,7 @@ export function RealtimeSensorChart({
                   className="stroke-[--color-temperature]"
                 />
                 <Line
-                  yAxisId="right"
+                  yAxisId="shared"
                   type="monotone"
                   dataKey="humidity"
                   strokeWidth={2}
